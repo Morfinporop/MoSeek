@@ -47,8 +47,6 @@ export interface ChatState {
   currentChatId: string | null;
   isGenerating: boolean;
   sidebarOpen: boolean;
-  
-  // Actions
   createNewChat: () => string;
   deleteChat: (id: string) => void;
   setCurrentChat: (id: string) => void;

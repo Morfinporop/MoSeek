@@ -14,7 +14,7 @@ marked.setOptions({
   gfm: true,
 });
 
-const MAX_LENGTH = 800;
+const MAX_LENGTH = 500;
 
 export function ChatMessage({ message }: ChatMessageProps) {
   const [copied, setCopied] = useState(false);
@@ -72,7 +72,8 @@ export function ChatMessage({ message }: ChatMessageProps) {
       return (
         <div>
           <div
-            className="prose prose-sm max-w-none text-zinc-200"
+            className="prose prose-sm max-w-none text-zinc-200 break-words overflow-hidden"
+            style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}
             dangerouslySetInnerHTML={{ __html: html }}
             onClick={(e) => {
               const target = e.target as HTMLElement;
@@ -106,7 +107,10 @@ export function ChatMessage({ message }: ChatMessageProps) {
 
     return (
       <div>
-        <p className="text-[15px] leading-relaxed text-white whitespace-pre-wrap">
+        <p
+          className="text-[15px] leading-relaxed text-white whitespace-pre-wrap break-words overflow-hidden"
+          style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}
+        >
           {displayContent}
         </p>
         {isLong && (
@@ -160,10 +164,10 @@ export function ChatMessage({ message }: ChatMessageProps) {
         )}
       </motion.div>
 
-      <div className={`group relative max-w-[85%]`}>
+      <div className="group relative max-w-[85%] min-w-0 overflow-hidden">
         <motion.div
           whileHover={{ scale: 1.005 }}
-          className={`relative px-4 py-3 rounded-2xl ${
+          className={`relative px-4 py-3 rounded-2xl overflow-hidden ${
             isAssistant
               ? 'glass-light rounded-tl-md'
               : 'bg-gradient-to-br from-violet-500 to-purple-600 rounded-tr-md shadow-lg shadow-violet-500/10'

@@ -4,7 +4,7 @@ import { useChatStore } from '../store/chatStore';
 import { useAuthStore } from '../store/authStore';
 import { useState } from 'react';
 
-type ModalType = 'terms' | 'privacy' | 'cookies' | 'profile' | null;
+type ModalType = 'terms' | 'privacy' | 'cookies' | 'profile' | 'auth' | null;
 
 const MODAL_CONTENT = {
   terms: {
@@ -89,7 +89,7 @@ export function Sidebar() {
     createNewChat,
   } = useChatStore();
 
-  const { user, logout } = useAuthStore();
+  const { user, isAuthenticated, logout, guestMessages, maxGuestMessages } = useAuthStore();
 
   const [activeModal, setActiveModal] = useState<ModalType>(null);
 
@@ -203,51 +203,71 @@ export function Sidebar() {
               )}
             </div>
 
-            <div className="border-t border-white/5">
-              <button
-                onClick={() => setActiveModal('profile')}
-                className="w-full flex items-center gap-3 px-4 py-4 hover:bg-white/5 transition-all"
-              >
-                {user?.avatar ? (
-                  <img
-                    src={user.avatar}
-                    alt={user.name}
-                    className="w-10 h-10 rounded-full flex-shrink-0 border-2 border-violet-500/30"
-                  />
-                ) : (
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
-                    {initials}
+            <div className="p-4 border-t border-white/5">
+              {isAuthenticated ? (
+                <div
+                  onClick={() => setActiveModal('profile')}
+                  className="flex items-center gap-3 px-2 py-2 rounded-xl cursor-pointer mb-4"
+                >
+                  {user?.avatar ? (
+                    <img
+                      src={user.avatar}
+                      alt={user.name}
+                      className="w-10 h-10 rounded-full flex-shrink-0 border-2 border-violet-500/30"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                      {initials}
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-white font-medium truncate">{user?.name}</p>
+                    <p className="text-[11px] text-zinc-500 truncate">{user?.email}</p>
                   </div>
-                )}
-                <div className="flex-1 min-w-0 text-left">
-                  <p className="text-sm text-white font-medium truncate">{user?.name}</p>
-                  <p className="text-[11px] text-zinc-500 truncate">{user?.email}</p>
                 </div>
-              </button>
+              ) : (
+                <div className="mb-4">
+                  <div className="flex items-center gap-3 px-2 py-2 mb-3">
+                    <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center flex-shrink-0 border border-white/5">
+                      <span className="text-zinc-500 text-sm">👤</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-zinc-400 font-medium">Гость</p>
+                      <p className="text-[11px] text-zinc-600">{guestMessages}/{maxGuestMessages} запросов</p>
+                    </div>
+                  </div>
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => setActiveModal('auth')}
+                    className="w-full py-2.5 rounded-xl bg-gradient-to-r from-violet-500/20 to-purple-500/20 border border-violet-500/30 text-sm text-violet-300 font-medium hover:border-violet-500/50 transition-all"
+                  >
+                    Войти / Регистрация
+                  </motion.button>
+                </div>
+              )}
 
-              <div className="px-4 pb-3">
-                <div className="flex items-center justify-center gap-3 text-[10px]">
-                  <button
-                    onClick={() => setActiveModal('terms')}
-                    className="text-zinc-500 hover:text-violet-400 transition-colors"
-                  >
-                    Terms of Use
-                  </button>
-                  <span className="text-zinc-700">•</span>
-                  <button
-                    onClick={() => setActiveModal('privacy')}
-                    className="text-zinc-500 hover:text-violet-400 transition-colors"
-                  >
-                    Privacy Policy
-                  </button>
-                  <span className="text-zinc-700">•</span>
-                  <button
-                    onClick={() => setActiveModal('cookies')}
-                    className="text-zinc-500 hover:text-violet-400 transition-colors"
-                  >
-                    Cookies
-                  </button>
-                </div>
+              <div className="flex items-center justify-center gap-3 text-[10px]">
+                <button
+                  onClick={() => setActiveModal('terms')}
+                  className="text-zinc-500 hover:text-violet-400 transition-colors"
+                >
+                  Terms of Use
+                </button>
+                <span className="text-zinc-700">•</span>
+                <button
+                  onClick={() => setActiveModal('privacy')}
+                  className="text-zinc-500 hover:text-violet-400 transition-colors"
+                >
+                  Privacy Policy
+                </button>
+                <span className="text-zinc-700">•</span>
+                <button
+                  onClick={() => setActiveModal('cookies')}
+                  className="text-zinc-500 hover:text-violet-400 transition-colors"
+                >
+                  Cookies
+                </button>
               </div>
             </div>
           </motion.aside>
@@ -320,7 +340,13 @@ export function Sidebar() {
       </AnimatePresence>
 
       <AnimatePresence>
-        {activeModal && activeModal !== 'profile' && (
+        {activeModal === 'auth' && (
+          <AuthModal onClose={() => setActiveModal(null)} />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {activeModal && activeModal !== 'profile' && activeModal !== 'auth' && (
           <>
             <motion.div
               initial={{ opacity: 0 }}
@@ -405,5 +431,199 @@ export function Sidebar() {
         )}
       </AnimatePresence>
     </AnimatePresence>
+  );
+}
+
+function AuthModal({ onClose }: { onClose: () => void }) {
+  const [mode, setMode] = useState<'login' | 'register'>('login');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [shake, setShake] = useState(false);
+
+  const { register, login } = useAuthStore();
+
+  const triggerShake = () => {
+    setShake(true);
+    setTimeout(() => setShake(false), 500);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setIsLoading(true);
+
+    await new Promise(resolve => setTimeout(resolve, 600));
+
+    if (mode === 'register') {
+      const result = register(name, email, password);
+      if (!result.success) {
+        setError(result.error || 'Ошибка');
+        triggerShake();
+      } else {
+        onClose();
+      }
+    } else {
+      const result = login(email, password);
+      if (!result.success) {
+        setError(result.error || 'Ошибка');
+        triggerShake();
+      } else {
+        onClose();
+      }
+    }
+
+    setIsLoading(false);
+  };
+
+  return (
+    <>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        className="fixed inset-0 bg-black/80 backdrop-blur-md z-[60]"
+      />
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+        className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[380px] max-w-[calc(100vw-32px)] glass-strong border border-white/10 rounded-2xl z-[70] overflow-hidden"
+      >
+        <motion.div
+          animate={shake ? { x: [-8, 8, -8, 8, 0] } : {}}
+          transition={{ duration: 0.4 }}
+        >
+          <div className="px-6 pt-8 pb-4 text-center">
+            <motion.div
+              initial={{ scale: 0, rotate: -180 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ type: 'spring', stiffness: 200 }}
+              className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-violet-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-2xl shadow-violet-500/30 glow-soft overflow-hidden"
+            >
+              <img
+                src="https://img.icons8.com/fluency/96/artificial-intelligence.png"
+                alt="AI"
+                className="w-10 h-10 object-contain"
+              />
+            </motion.div>
+
+            <h2 className="text-xl font-bold text-white mb-1">MoSeek</h2>
+            <p className="text-xs text-zinc-500">
+              {mode === 'login' ? 'Войди в аккаунт' : 'Создай аккаунт'}
+            </p>
+          </div>
+
+          <div className="flex mx-6 mb-4 rounded-xl glass-light p-1">
+            <button
+              type="button"
+              onClick={() => { setMode('login'); setError(''); }}
+              className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
+                mode === 'login'
+                  ? 'bg-violet-500/20 text-violet-300'
+                  : 'text-zinc-500 hover:text-zinc-400'
+              }`}
+            >
+              Вход
+            </button>
+            <button
+              type="button"
+              onClick={() => { setMode('register'); setError(''); }}
+              className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
+                mode === 'register'
+                  ? 'bg-violet-500/20 text-violet-300'
+                  : 'text-zinc-500 hover:text-zinc-400'
+              }`}
+            >
+              Регистрация
+            </button>
+          </div>
+
+          <form onSubmit={handleSubmit} className="px-6 pb-6 space-y-3">
+            <AnimatePresence mode="wait">
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-red-500/10 border border-red-500/20"
+                >
+                  <span className="text-xs text-red-300">{error}</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <AnimatePresence mode="wait">
+              {mode === 'register' && (
+                <motion.div
+                  key="name"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Имя"
+                    className="w-full px-4 py-3 rounded-xl glass-light text-white placeholder-zinc-600 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/30 border border-white/5 focus:border-violet-500/30 transition-all mb-3"
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Email"
+              required
+              className="w-full px-4 py-3 rounded-xl glass-light text-white placeholder-zinc-600 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/30 border border-white/5 focus:border-violet-500/30 transition-all"
+            />
+
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Пароль"
+                required
+                className="w-full px-4 py-3 pr-11 rounded-xl glass-light text-white placeholder-zinc-600 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/30 border border-white/5 focus:border-violet-500/30 transition-all"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-zinc-400 transition-colors"
+              >
+                <span className="text-xs">{showPassword ? '🙈' : '👁'}</span>
+              </button>
+            </div>
+
+            <motion.button
+              type="submit"
+              disabled={isLoading}
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.99 }}
+              className="w-full py-3 rounded-xl bg-gradient-to-r from-violet-500 to-purple-600 text-white font-medium text-sm shadow-xl shadow-violet-500/20 hover:shadow-violet-500/40 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {isLoading ? (
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                  className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full"
+                />
+              ) : (
+                <span>{mode === 'login' ? 'Войти' : 'Создать аккаунт'}</span>
+              )}
+            </motion.button>
+          </form>
+        </motion.div>
+      </motion.div>
+    </>
   );
 }

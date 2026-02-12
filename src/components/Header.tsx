@@ -51,20 +51,17 @@ export function Header() {
             <Menu className="w-5 h-5 text-zinc-400" />
           </motion.button>
 
-          <div className="relative ml-1.5 sm:ml-2.5" ref={menuRef}>
+          <div className="relative ml-1" ref={menuRef}>
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => setShowModelMenu(!showModelMenu)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl hover:bg-white/5 transition-all"
+              className="flex items-center gap-1.5 px-2 py-1.5 rounded-xl hover:bg-white/5 transition-all"
             >
               <div className={`w-5 h-5 rounded-md bg-gradient-to-br ${currentModel.color} flex items-center justify-center flex-shrink-0`}>
                 <img src={currentModel.icon} alt="" className="w-3 h-3 invert opacity-90" />
               </div>
-              <span className="text-sm font-semibold text-zinc-300 hidden sm:inline">{currentModel.name}</span>
-              <span className="text-sm font-semibold text-zinc-300 sm:hidden">
-                {currentModel.name.split(' ').pop()}
-              </span>
+              <span className="text-sm font-semibold text-zinc-300">{currentModel.name}</span>
               <ChevronDown className={`w-3.5 h-3.5 text-zinc-500 transition-transform duration-200 ${showModelMenu ? 'rotate-180' : ''}`} />
             </motion.button>
 

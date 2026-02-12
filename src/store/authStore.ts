@@ -1,7 +1,11 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import emailjs from '@emailjs/browser';
 
 const API_URL = 'https://moseek-api-production.up.railway.app';
+const EMAILJS_SERVICE = 'service_jijg2le';
+const EMAILJS_TEMPLATE = 'template_ov1skr7';
+const EMAILJS_PUBLIC_KEY = 't8XHLcCRf_5ITFOHp';
 
 export interface User {
   id: string;
@@ -108,16 +112,29 @@ export const useAuthStore = create<AuthState>()(
 
       sendVerificationCode: async (email, turnstileToken) => {
         try {
-          const res = await fetch(`${API_URL}/api/send-code`, {
+          const res = await fetch(`${API_URL}/api/generate-code`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, turnstileToken }),
           });
           const data = await res.json();
+
           if (!res.ok) return { success: false, error: data.error };
+
+          await emailjs.send(
+            EMAILJS_SERVICE,
+            EMAILJS_TEMPLATE,
+            {
+              to_email: email,
+              code: data.code,
+            },
+            EMAILJS_PUBLIC_KEY
+          );
+
           return { success: true };
-        } catch {
-          return { success: false, error: 'Ошибка соединения с сервером' };
+        } catch (error) {
+          console.error('Send code error:', error);
+          return { success: false, error: 'Ошибка отправки кода' };
         }
       },
 
@@ -132,7 +149,7 @@ export const useAuthStore = create<AuthState>()(
           if (!res.ok) return { success: false, error: data.error };
           return { success: true };
         } catch {
-          return { success: false, error: 'Ошибка соединения с сервером' };
+          return { success: false, error: 'Ошибка соединения' };
         }
       },
 

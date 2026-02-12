@@ -5,6 +5,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  avatar: string;
   createdAt: number;
 }
 
@@ -20,6 +21,7 @@ interface StoredUser {
   id: string;
   name: string;
   email: string;
+  avatar: string;
   password: string;
   createdAt: number;
 }
@@ -47,6 +49,52 @@ const hashPassword = (password: string): string => {
   return 'h_' + Math.abs(hash).toString(36) + '_' + password.length;
 };
 
+const VALID_EMAIL_DOMAINS = [
+  'gmail.com',
+  'yahoo.com',
+  'outlook.com',
+  'hotmail.com',
+  'mail.ru',
+  'yandex.ru',
+  'ya.ru',
+  'icloud.com',
+  'protonmail.com',
+  'proton.me',
+  'bk.ru',
+  'inbox.ru',
+  'list.ru',
+  'rambler.ru',
+  'live.com',
+  'aol.com',
+  'zoho.com',
+  'gmx.com',
+  'tutanota.com',
+  'fastmail.com',
+  'me.com',
+  'mac.com',
+  'msn.com',
+  'qq.com',
+  '163.com',
+  'ukr.net',
+  'i.ua',
+  'meta.ua',
+  'email.ua',
+  'bigmir.net',
+];
+
+const isValidEmailDomain = (email: string): boolean => {
+  const domain = email.split('@')[1]?.toLowerCase();
+  if (!domain) return false;
+  return VALID_EMAIL_DOMAINS.includes(domain);
+};
+
+const generateAvatar = (name: string): string => {
+  const colors = ['7c3aed', '8b5cf6', 'a855f7', 'c084fc', '6d28d9', '5b21b6', '4c1d95'];
+  const color = colors[Math.abs(name.charCodeAt(0)) % colors.length];
+  const initials = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(initials)}&background=${color}&color=fff&size=128&bold=true&format=svg`;
+};
+
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
@@ -56,16 +104,8 @@ export const useAuthStore = create<AuthState>()(
       register: (name, email, password) => {
         const storedUsers = getStoredUsers();
 
-        if (storedUsers.find(u => u.email.toLowerCase() === email.toLowerCase())) {
-          return { success: false, error: 'Этот email уже зарегистрирован' };
-        }
-
         if (name.trim().length < 2) {
           return { success: false, error: 'Имя слишком короткое' };
-        }
-
-        if (password.length < 6) {
-          return { success: false, error: 'Пароль минимум 6 символов' };
         }
 
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -73,10 +113,27 @@ export const useAuthStore = create<AuthState>()(
           return { success: false, error: 'Некорректный email' };
         }
 
+        if (!isValidEmailDomain(email)) {
+          return { success: false, error: 'Используй настоящий email (Gmail, Outlook, Mail.ru и т.д.)' };
+        }
+
+        if (storedUsers.find(u => u.email.toLowerCase() === email.toLowerCase())) {
+          return { success: false, error: 'Этот email уже зарегистрирован' };
+        }
+
+        if (storedUsers.find(u => u.name.toLowerCase() === name.trim().toLowerCase())) {
+          return { success: false, error: 'Это имя уже занято' };
+        }
+
+        if (password.length < 6) {
+          return { success: false, error: 'Пароль минимум 6 символов' };
+        }
+
         const newUser: StoredUser = {
           id: Date.now().toString(36) + Math.random().toString(36).slice(2),
           name: name.trim(),
           email: email.toLowerCase().trim(),
+          avatar: generateAvatar(name.trim()),
           password: hashPassword(password),
           createdAt: Date.now(),
         };
@@ -89,6 +146,7 @@ export const useAuthStore = create<AuthState>()(
             id: newUser.id,
             name: newUser.name,
             email: newUser.email,
+            avatar: newUser.avatar,
             createdAt: newUser.createdAt,
           },
           isAuthenticated: true,
@@ -114,6 +172,7 @@ export const useAuthStore = create<AuthState>()(
             id: found.id,
             name: found.name,
             email: found.email,
+            avatar: found.avatar,
             createdAt: found.createdAt,
           },
           isAuthenticated: true,

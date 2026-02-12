@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
+const API_URL = 'https://moseek-api-production.up.railway.app';
+
 export interface User {
   id: string;
   name: string;
@@ -19,6 +21,8 @@ interface AuthState {
   logout: () => void;
   incrementGuestMessages: () => void;
   canSendMessage: () => boolean;
+  sendVerificationCode: (email: string, turnstileToken: string) => Promise<{ success: boolean; error?: string }>;
+  verifyCode: (email: string, code: string) => Promise<{ success: boolean; error?: string }>;
 }
 
 interface StoredUser {
@@ -54,36 +58,13 @@ const hashPassword = (password: string): string => {
 };
 
 const VALID_EMAIL_DOMAINS = [
-  'gmail.com',
-  'yahoo.com',
-  'outlook.com',
-  'hotmail.com',
-  'mail.ru',
-  'yandex.ru',
-  'ya.ru',
-  'icloud.com',
-  'protonmail.com',
-  'proton.me',
-  'bk.ru',
-  'inbox.ru',
-  'list.ru',
-  'rambler.ru',
-  'live.com',
-  'aol.com',
-  'zoho.com',
-  'gmx.com',
-  'tutanota.com',
-  'fastmail.com',
-  'me.com',
-  'mac.com',
-  'msn.com',
-  'qq.com',
-  '163.com',
-  'ukr.net',
-  'i.ua',
-  'meta.ua',
-  'email.ua',
-  'bigmir.net',
+  'gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com',
+  'mail.ru', 'yandex.ru', 'ya.ru', 'icloud.com',
+  'protonmail.com', 'proton.me', 'bk.ru', 'inbox.ru',
+  'list.ru', 'rambler.ru', 'live.com', 'aol.com',
+  'zoho.com', 'gmx.com', 'tutanota.com', 'fastmail.com',
+  'me.com', 'mac.com', 'msn.com', 'qq.com', '163.com',
+  'ukr.net', 'i.ua', 'meta.ua', 'email.ua', 'bigmir.net',
 ];
 
 const isValidEmailDomain = (email: string): boolean => {
@@ -92,11 +73,19 @@ const isValidEmailDomain = (email: string): boolean => {
   return VALID_EMAIL_DOMAINS.includes(domain);
 };
 
-const generateAvatar = (name: string): string => {
-  const colors = ['7c3aed', '8b5cf6', 'a855f7', 'c084fc', '6d28d9', '5b21b6', '4c1d95'];
-  const color = colors[Math.abs(name.charCodeAt(0)) % colors.length];
-  const initials = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
-  return `https://ui-avatars.com/api/?name=${encodeURIComponent(initials)}&background=${color}&color=fff&size=128&bold=true&format=svg`;
+const getGravatarUrl = (email: string): string => {
+  const hash = simpleHash(email.trim().toLowerCase());
+  return `https://www.gravatar.com/avatar/${hash}?d=identicon&s=128`;
+};
+
+const simpleHash = (str: string): string => {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return Math.abs(hash).toString(16).padStart(32, '0');
 };
 
 export const useAuthStore = create<AuthState>()(
@@ -114,9 +103,37 @@ export const useAuthStore = create<AuthState>()(
       },
 
       incrementGuestMessages: () => {
-        set((state) => ({
-          guestMessages: state.guestMessages + 1,
-        }));
+        set((state) => ({ guestMessages: state.guestMessages + 1 }));
+      },
+
+      sendVerificationCode: async (email, turnstileToken) => {
+        try {
+          const res = await fetch(`${API_URL}/api/send-code`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, turnstileToken }),
+          });
+          const data = await res.json();
+          if (!res.ok) return { success: false, error: data.error };
+          return { success: true };
+        } catch {
+          return { success: false, error: 'Ошибка соединения с сервером' };
+        }
+      },
+
+      verifyCode: async (email, code) => {
+        try {
+          const res = await fetch(`${API_URL}/api/verify-code`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, code }),
+          });
+          const data = await res.json();
+          if (!res.ok) return { success: false, error: data.error };
+          return { success: true };
+        } catch {
+          return { success: false, error: 'Ошибка соединения с сервером' };
+        }
       },
 
       register: (name, email, password) => {
@@ -151,7 +168,7 @@ export const useAuthStore = create<AuthState>()(
           id: Date.now().toString(36) + Math.random().toString(36).slice(2),
           name: name.trim(),
           email: email.toLowerCase().trim(),
-          avatar: generateAvatar(name.trim()),
+          avatar: getGravatarUrl(email),
           password: hashPassword(password),
           createdAt: Date.now(),
         };
@@ -200,10 +217,7 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: () => {
-        set({
-          user: null,
-          isAuthenticated: false,
-        });
+        set({ user: null, isAuthenticated: false });
       },
     }),
     {

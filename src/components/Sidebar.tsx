@@ -6,7 +6,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Turnstile } from '@marsidev/react-turnstile';
 
 const TURNSTILE_SITE_KEY = '0x4AAAAAACa5EobYKh_TrmuZ';
-const AI_ICON = 'https://img.icons8.com/ios-filled/50/FFFFFF/artificial-intelligence.png';
+const AI_ICON = 'https://png.pngtree.com/png-vector/20240321/ourmid/pngtree-neural-network-seamless-pattern-neural-network-png-image_12019904.png';
 
 type ModalType = 'terms' | 'privacy' | 'cookies' | 'profile' | 'auth' | null;
 

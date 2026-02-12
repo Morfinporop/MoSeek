@@ -286,7 +286,7 @@ export function ChatInput() {
       </div>
 
       <p className="text-center text-[11px] text-zinc-600 mt-3">
-        MoGPT может ошибаться
+        MoSeek может ошибаться
       </p>
     </div>
   );

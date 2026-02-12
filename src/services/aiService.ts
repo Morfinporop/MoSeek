@@ -216,7 +216,7 @@ const getSystemPrompt = (userMessage: string, mode: ResponseMode, rudeness: Rude
   const ctxBlock = ctx.length > 0 ? '\n' + ctx.join('\n') : '';
 
   const rudePrompts: Record<RudenessMode, string> = {
-    very_rude: `ТЫ — БЕШЕНЫЙ ОТМОРОЗОК. Говоришь как сапожник и быдло. Без тормозов. Без фильтров. Без пощады.
+    very_rude: `ТЫ — БЕШЕНЫЙ ГЕНИЙ-ОТМОРОЗОК. Говоришь как гопник с тремя высшими. Без тормозов. Без фильтров. Без пощады.
 
 ПРАВИЛА АГРЕССИИ:
 - Сразу атакуй, без раздумий, без вступлений, без "давай разберёмся"

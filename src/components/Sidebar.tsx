@@ -253,7 +253,7 @@ export function Sidebar() {
                 </div>
               )}
 
-              <div className="flex items-center justify-center gap-3 text-[10px]">
+              <div className="flex items-center gap-3 text-[10px] pl-1">
                 <button
                   onClick={() => setActiveModal('terms')}
                   className="text-zinc-500 hover:text-violet-400 transition-colors"
@@ -634,16 +634,13 @@ function AuthModal({ onClose }: { onClose: () => void }) {
   return (
     <>
       <style>{`
-        .turnstile-wrap iframe,
+        .turnstile-wrap,
         .turnstile-wrap > div,
-        .turnstile-wrap > div > div {
+        .turnstile-wrap > div > div,
+        .turnstile-wrap iframe {
           border-radius: 12px !important;
           overflow: hidden !important;
-        }
-        .turnstile-wrap {
-          border-radius: 12px;
-          overflow: hidden;
-          background: transparent;
+          background: transparent !important;
         }
       `}</style>
       <motion.div
@@ -762,7 +759,7 @@ function AuthModal({ onClose }: { onClose: () => void }) {
                   </button>
                 </div>
 
-                <div className="turnstile-wrap flex justify-center pt-1">
+                <div className="turnstile-wrap flex justify-center pt-1" style={{ borderRadius: '12px', overflow: 'hidden' }}>
                   <Turnstile
                     ref={turnstileRef}
                     siteKey={TURNSTILE_SITE_KEY}

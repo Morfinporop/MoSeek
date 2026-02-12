@@ -11,13 +11,13 @@ export function Header() {
       animate={{ opacity: 1, y: 0 }}
       className="fixed top-0 left-0 right-0 z-50"
     >
-      <div className="border-b border-white/5">
+      <div className="glass-strong border-b border-white/5">
         <div className="max-w-5xl mx-auto h-16 flex items-center">
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={toggleSidebar}
-            className="p-2.5 rounded-xl hover:bg-white/10 transition-all ml-2 sm:ml-4 lg:ml-0 lg:absolute lg:left-4"
+            className="p-2.5 rounded-xl glass-light hover:bg-white/10 transition-all ml-2 sm:ml-4 lg:ml-0 lg:absolute lg:left-4"
           >
             <Menu className="w-5 h-5 text-zinc-400" />
           </motion.button>

@@ -4,6 +4,7 @@ import { Send, Code, Sparkles, MessageCircle, Flame, Smile, Angry, Lock } from '
 import { useChatStore, type ResponseMode, type RudenessMode } from '../store/chatStore';
 import { useAuthStore } from '../store/authStore';
 import { aiService } from '../services/aiService';
+import { AI_MODELS } from '../config/models';
 
 const MODES: { id: ResponseMode; label: string; icon: typeof Code; desc: string }[] = [
   { id: 'normal', label: 'Обычный', icon: MessageCircle, desc: 'Код и общение' },
@@ -39,6 +40,7 @@ export function ChatInput() {
     setResponseMode,
     rudenessMode,
     setRudenessMode,
+    selectedModel,
     setGeneratingChat,
     isCurrentChatGenerating,
   } = useChatStore();
@@ -46,11 +48,10 @@ export function ChatInput() {
   const { canSendMessage, incrementGuestMessages, isAuthenticated, user } = useAuthStore();
 
   const generating = isCurrentChatGenerating();
-
   const isUnlimitedUser = user?.email && UNLIMITED_EMAILS.includes(user.email);
-
   const charCount = input.length;
   const isOverLimit = !isUnlimitedUser && charCount > CHAR_LIMIT;
+  const currentModelData = AI_MODELS.find(m => m.id === selectedModel) || AI_MODELS[0];
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -78,21 +79,18 @@ export function ChatInput() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;
-
     if (!isUnlimitedUser && value.length > CHAR_LIMIT) {
       setShowCharLimitWarning(true);
       setTimeout(() => setShowCharLimitWarning(false), 3000);
       setInput(value.slice(0, CHAR_LIMIT));
       return;
     }
-
     setShowCharLimitWarning(false);
     setInput(value);
   };
 
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
-
     const trimmedInput = input.trim();
     if (!trimmedInput || generating || isOverLimit) return;
 
@@ -125,13 +123,13 @@ export function ChatInput() {
       role: 'assistant',
       content: '',
       isLoading: true,
-      model: 'MoSeek V3',
+      model: currentModelData.name,
       thinking: 'Печатаю...',
     });
 
     try {
       const allMessages = [...getCurrentMessages()];
-      const response = await aiService.generateResponse(allMessages, responseMode, rudenessMode);
+      const response = await aiService.generateResponse(allMessages, responseMode, rudenessMode, selectedModel);
 
       updateMessage(assistantId, '', 'Печатаю...');
 

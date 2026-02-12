@@ -5,39 +5,24 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  avatar: string;
   createdAt: number;
 }
 
 interface AuthState {
   user: User | null;
-  users: User[];
   isAuthenticated: boolean;
   register: (name: string, email: string, password: string) => { success: boolean; error?: string };
   login: (email: string, password: string) => { success: boolean; error?: string };
   logout: () => void;
-  updateProfile: (data: Partial<User>) => void;
 }
 
 interface StoredUser {
   id: string;
   name: string;
   email: string;
-  avatar: string;
   password: string;
   createdAt: number;
 }
-
-const AVATARS = [
-  'https://api.dicebear.com/7.x/glass/svg?seed=1',
-  'https://api.dicebear.com/7.x/glass/svg?seed=2',
-  'https://api.dicebear.com/7.x/glass/svg?seed=3',
-  'https://api.dicebear.com/7.x/glass/svg?seed=4',
-  'https://api.dicebear.com/7.x/glass/svg?seed=5',
-  'https://api.dicebear.com/7.x/glass/svg?seed=6',
-  'https://api.dicebear.com/7.x/glass/svg?seed=7',
-  'https://api.dicebear.com/7.x/glass/svg?seed=8',
-];
 
 const getStoredUsers = (): StoredUser[] => {
   try {
@@ -66,7 +51,6 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       user: null,
-      users: [],
       isAuthenticated: false,
 
       register: (name, email, password) => {
@@ -93,7 +77,6 @@ export const useAuthStore = create<AuthState>()(
           id: Date.now().toString(36) + Math.random().toString(36).slice(2),
           name: name.trim(),
           email: email.toLowerCase().trim(),
-          avatar: AVATARS[Math.floor(Math.random() * AVATARS.length)],
           password: hashPassword(password),
           createdAt: Date.now(),
         };
@@ -101,10 +84,13 @@ export const useAuthStore = create<AuthState>()(
         storedUsers.push(newUser);
         saveStoredUsers(storedUsers);
 
-        const { password: _, ...userWithoutPassword } = newUser;
-
         set({
-          user: userWithoutPassword,
+          user: {
+            id: newUser.id,
+            name: newUser.name,
+            email: newUser.email,
+            createdAt: newUser.createdAt,
+          },
           isAuthenticated: true,
         });
 
@@ -123,10 +109,13 @@ export const useAuthStore = create<AuthState>()(
           return { success: false, error: 'Неверный пароль' };
         }
 
-        const { password: _, ...userWithoutPassword } = found;
-
         set({
-          user: userWithoutPassword,
+          user: {
+            id: found.id,
+            name: found.name,
+            email: found.email,
+            createdAt: found.createdAt,
+          },
           isAuthenticated: true,
         });
 
@@ -137,22 +126,6 @@ export const useAuthStore = create<AuthState>()(
         set({
           user: null,
           isAuthenticated: false,
-        });
-      },
-
-      updateProfile: (data) => {
-        set((state) => {
-          if (!state.user) return state;
-          const updated = { ...state.user, ...data };
-
-          const storedUsers = getStoredUsers();
-          const idx = storedUsers.findIndex(u => u.id === state.user!.id);
-          if (idx !== -1) {
-            storedUsers[idx] = { ...storedUsers[idx], ...data };
-            saveStoredUsers(storedUsers);
-          }
-
-          return { user: updated };
         });
       },
     }),

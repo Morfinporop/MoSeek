@@ -6,6 +6,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Turnstile } from '@marsidev/react-turnstile';
 
 const TURNSTILE_SITE_KEY = '0x4AAAAAACa5EobYKh_TrmuZ';
+const AI_ICON = 'https://img.icons8.com/ios-filled/50/FFFFFF/artificial-intelligence.png';
 
 type ModalType = 'terms' | 'privacy' | 'cookies' | 'profile' | 'auth' | null;
 
@@ -616,12 +617,12 @@ function AuthModal({ onClose }: { onClose: () => void }) {
               initial={{ scale: 0, rotate: -180 }}
               animate={{ scale: 1, rotate: 0 }}
               transition={{ type: 'spring', stiffness: 200 }}
-              className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-violet-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-2xl shadow-violet-500/30 glow-soft overflow-hidden"
+              className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-violet-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-2xl shadow-violet-500/30 glow-soft"
             >
               <img
-                src="https://img.icons8.com/fluency/96/artificial-intelligence.png"
+                src={AI_ICON}
                 alt="AI"
-                className="w-10 h-10 object-contain"
+                className="w-8 h-8 object-contain"
               />
             </motion.div>
 
@@ -634,193 +635,203 @@ function AuthModal({ onClose }: { onClose: () => void }) {
             </p>
           </div>
 
-          {step === 'form' && (
-            <>
-              <div className="flex mx-6 mb-4 rounded-xl glass-light p-1">
-                <button
-                  type="button"
-                  onClick={() => { setMode('login'); setError(''); }}
-                  className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
-                    mode === 'login'
-                      ? 'bg-violet-500/20 text-violet-300'
-                      : 'text-zinc-500 hover:text-zinc-400'
-                  }`}
-                >
-                  Вход
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setMode('register'); setError(''); }}
-                  className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
-                    mode === 'register'
-                      ? 'bg-violet-500/20 text-violet-300'
-                      : 'text-zinc-500 hover:text-zinc-400'
-                  }`}
-                >
-                  Регистрация
-                </button>
-              </div>
+          <AnimatePresence mode="wait">
+            {step === 'form' && (
+              <motion.div
+                key="form"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.2 }}
+              >
+                <div className="flex mx-6 mb-4 rounded-xl glass-light p-1">
+                  <button
+                    type="button"
+                    onClick={() => { setMode('login'); setError(''); }}
+                    className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
+                      mode === 'login'
+                        ? 'bg-violet-500/20 text-violet-300'
+                        : 'text-zinc-500 hover:text-zinc-400'
+                    }`}
+                  >
+                    Вход
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setMode('register'); setError(''); }}
+                    className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
+                      mode === 'register'
+                        ? 'bg-violet-500/20 text-violet-300'
+                        : 'text-zinc-500 hover:text-zinc-400'
+                    }`}
+                  >
+                    Регистрация
+                  </button>
+                </div>
 
-              <div className="px-6 pb-6 space-y-3">
+                <div className="px-6 pb-6 space-y-3">
+                  <AnimatePresence mode="wait">
+                    {error && (
+                      <motion.div
+                        key="error"
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="px-3 py-2.5 rounded-xl bg-red-500/10 border border-red-500/20"
+                      >
+                        <span className="text-xs text-red-300">{error}</span>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  <AnimatePresence mode="wait">
+                    {mode === 'register' && (
+                      <motion.input
+                        key="name-input"
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.2 }}
+                        type="text"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="Имя"
+                        className="w-full px-4 py-3.5 rounded-xl glass-light text-white placeholder-zinc-600 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/30 border border-white/5 focus:border-violet-500/30 transition-all"
+                      />
+                    )}
+                  </AnimatePresence>
+
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Email"
+                    className="w-full px-4 py-3.5 rounded-xl glass-light text-white placeholder-zinc-600 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/30 border border-white/5 focus:border-violet-500/30 transition-all"
+                  />
+
+                  <div className="relative">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Пароль"
+                      className="w-full px-4 py-3.5 pr-11 rounded-xl glass-light text-white placeholder-zinc-600 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/30 border border-white/5 focus:border-violet-500/30 transition-all"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-zinc-400 transition-colors"
+                    >
+                      <span className="text-xs">{showPassword ? '🙈' : '👁'}</span>
+                    </button>
+                  </div>
+
+                  <div className="flex justify-center pt-1 overflow-hidden rounded-xl [&_iframe]:!w-full [&>div]:!w-full [&_div]:!w-full">
+                    <Turnstile
+                      ref={turnstileRef}
+                      siteKey={TURNSTILE_SITE_KEY}
+                      onSuccess={(token) => setTurnstileToken(token)}
+                      onError={() => setTurnstileToken('')}
+                      onExpire={() => setTurnstileToken('')}
+                      options={{
+                        theme: 'dark',
+                        size: 'flexible',
+                      }}
+                    />
+                  </div>
+
+                  <motion.button
+                    type="button"
+                    disabled={isLoading}
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.99 }}
+                    onClick={handleSendCode}
+                    className="w-full py-3.5 rounded-xl bg-gradient-to-r from-violet-500 to-purple-600 text-white font-medium text-sm shadow-xl shadow-violet-500/20 hover:shadow-violet-500/40 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {isLoading ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <span>Отправить код на почту</span>
+                    )}
+                  </motion.button>
+                </div>
+              </motion.div>
+            )}
+
+            {step === 'verify' && (
+              <motion.div
+                key="verify"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.2 }}
+                className="px-6 pb-6 space-y-4"
+              >
                 <AnimatePresence mode="wait">
                   {error && (
                     <motion.div
+                      key="verify-error"
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}
                       exit={{ opacity: 0, height: 0 }}
-                      className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-red-500/10 border border-red-500/20"
+                      className="px-3 py-2.5 rounded-xl bg-red-500/10 border border-red-500/20"
                     >
                       <span className="text-xs text-red-300">{error}</span>
                     </motion.div>
                   )}
                 </AnimatePresence>
 
-                <AnimatePresence mode="wait">
-                  {mode === 'register' && (
-                    <motion.div
-                      key="name"
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      <input
-                        type="text"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        placeholder="Имя"
-                        className="w-full px-4 py-3 rounded-xl glass-light text-white placeholder-zinc-600 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/30 border border-white/5 focus:border-violet-500/30 transition-all mb-3"
-                      />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Email"
-                  className="w-full px-4 py-3 rounded-xl glass-light text-white placeholder-zinc-600 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/30 border border-white/5 focus:border-violet-500/30 transition-all"
-                />
-
-                <div className="relative">
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Пароль"
-                    className="w-full px-4 py-3 pr-11 rounded-xl glass-light text-white placeholder-zinc-600 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/30 border border-white/5 focus:border-violet-500/30 transition-all"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-zinc-400 transition-colors"
-                  >
-                    <span className="text-xs">{showPassword ? '🙈' : '👁'}</span>
-                  </button>
-                </div>
-
-                <div className="flex justify-center pt-2 [&_iframe]:!w-full [&>div]:!w-full">
-                  <Turnstile
-                    ref={turnstileRef}
-                    siteKey={TURNSTILE_SITE_KEY}
-                    onSuccess={(token) => setTurnstileToken(token)}
-                    onError={() => setTurnstileToken('')}
-                    onExpire={() => setTurnstileToken('')}
-                    options={{
-                      theme: 'dark',
-                      size: 'normal',
-                    }}
-                  />
+                <div className="flex justify-center gap-2.5" onPaste={handleCodePaste}>
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <motion.input
+                      key={i}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.05 }}
+                      ref={(el) => { codeInputsRef.current[i] = el; }}
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={1}
+                      value={code[i] || ''}
+                      onChange={(e) => handleCodeChange(i, e.target.value)}
+                      onKeyDown={(e) => handleCodeKeyDown(i, e)}
+                      className="w-12 h-14 text-center text-xl font-bold rounded-xl glass-light text-white border border-white/10 focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/30 focus:outline-none transition-all"
+                    />
+                  ))}
                 </div>
 
                 <motion.button
                   type="button"
-                  disabled={isLoading}
+                  disabled={isLoading || code.length !== 6}
                   whileHover={{ scale: 1.01 }}
                   whileTap={{ scale: 0.99 }}
-                  onClick={handleSendCode}
-                  className="w-full py-3 rounded-xl bg-gradient-to-r from-violet-500 to-purple-600 text-white font-medium text-sm shadow-xl shadow-violet-500/20 hover:shadow-violet-500/40 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                  onClick={handleVerifyAndComplete}
+                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-violet-500 to-purple-600 text-white font-medium text-sm shadow-xl shadow-violet-500/20 hover:shadow-violet-500/40 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {isLoading ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
                   ) : (
-                    <span>Отправить код на почту</span>
+                    <span>Подтвердить</span>
                   )}
                 </motion.button>
-              </div>
-            </>
-          )}
 
-          {step === 'verify' && (
-            <div className="px-6 pb-6 space-y-4">
-              <AnimatePresence mode="wait">
-                {error && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-red-500/10 border border-red-500/20"
+                <div className="flex justify-center">
+                  <button
+                    type="button"
+                    onClick={handleResend}
+                    disabled={countdown > 0 || isLoading}
+                    className={`text-xs transition-colors ${
+                      countdown > 0
+                        ? 'text-zinc-600 cursor-not-allowed'
+                        : 'text-violet-400 hover:text-violet-300'
+                    }`}
                   >
-                    <span className="text-xs text-red-300">{error}</span>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              <div className="flex justify-center gap-2" onPaste={handleCodePaste}>
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <input
-                    key={i}
-                    ref={(el) => { codeInputsRef.current[i] = el; }}
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={1}
-                    value={code[i] || ''}
-                    onChange={(e) => handleCodeChange(i, e.target.value)}
-                    onKeyDown={(e) => handleCodeKeyDown(i, e)}
-                    className="w-12 h-14 text-center text-xl font-bold rounded-xl glass-light text-white border border-white/10 focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/30 focus:outline-none transition-all"
-                  />
-                ))}
-              </div>
-
-              <motion.button
-                type="button"
-                disabled={isLoading || code.length !== 6}
-                whileHover={{ scale: 1.01 }}
-                whileTap={{ scale: 0.99 }}
-                onClick={handleVerifyAndComplete}
-                className="w-full py-3 rounded-xl bg-gradient-to-r from-violet-500 to-purple-600 text-white font-medium text-sm shadow-xl shadow-violet-500/20 hover:shadow-violet-500/40 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {isLoading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <span>Подтвердить</span>
-                )}
-              </motion.button>
-
-              <div className="flex items-center justify-between">
-                <button
-                  type="button"
-                  onClick={() => { setStep('form'); setError(''); setCode(''); }}
-                  className="text-xs text-zinc-500 hover:text-zinc-400 transition-colors"
-                >
-                  ← Назад
-                </button>
-                <button
-                  type="button"
-                  onClick={handleResend}
-                  disabled={countdown > 0 || isLoading}
-                  className={`text-xs transition-colors ${
-                    countdown > 0
-                      ? 'text-zinc-600 cursor-not-allowed'
-                      : 'text-violet-400 hover:text-violet-300'
-                  }`}
-                >
-                  {countdown > 0 ? `Повторить через ${countdown}с` : 'Отправить снова'}
-                </button>
-              </div>
-            </div>
-          )}
+                    {countdown > 0 ? `Повторить через ${countdown}с` : 'Отправить снова'}
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.div>
       </motion.div>
     </>

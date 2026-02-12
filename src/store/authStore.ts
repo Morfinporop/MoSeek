@@ -78,7 +78,7 @@ const isValidEmailDomain = (email: string): boolean => {
   return VALID_EMAIL_DOMAINS.includes(domain);
 };
 
-const DEFAULT_AVATAR = 'https://api.dicebear.com/7.x/bottts-neutral/svg?seed=default&backgroundColor=7c3aed';
+const DEFAULT_AVATAR = 'https://png.pngtree.com/png-clipart/20240418/original/pngtree-line-art-of-a-neural-network-png-image_14882495.png';
 
 const generateAvatar = (name: string): string => {
   const seed = encodeURIComponent(name.trim().toLowerCase());

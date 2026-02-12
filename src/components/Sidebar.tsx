@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, MessageSquare, Plus, LogOut, Loader2, Camera, ChevronLeft } from 'lucide-react';
+import { X, MessageSquare, Plus, LogOut, Loader2, Camera } from 'lucide-react';
 import { useChatStore } from '../store/chatStore';
 import { useAuthStore } from '../store/authStore';
 import { useState, useRef, useEffect } from 'react';
@@ -71,7 +71,6 @@ export function Sidebar() {
 
   const { user, isAuthenticated, logout, guestMessages, maxGuestMessages, updateAvatar } = useAuthStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
-
   const [activeModal, setActiveModal] = useState<ModalType>(null);
 
   const handleNewChat = () => {
@@ -84,14 +83,13 @@ export function Sidebar() {
 
   const handleDeleteChat = (chatId: string) => {
     const chatIndex = chats.findIndex(c => c.id === chatId);
+    const remainingChats = chats.filter(c => c.id !== chatId);
+
     deleteChat(chatId);
 
-    const remainingChats = chats.filter(c => c.id !== chatId);
-    if (remainingChats.length > 0) {
-      if (currentChatId === chatId) {
-        const newIndex = Math.min(chatIndex, remainingChats.length - 1);
-        setCurrentChat(remainingChats[newIndex].id);
-      }
+    if (currentChatId === chatId && remainingChats.length > 0) {
+      const newIndex = Math.min(chatIndex, remainingChats.length - 1);
+      setCurrentChat(remainingChats[newIndex].id);
     }
   };
 
@@ -330,23 +328,16 @@ export function Sidebar() {
                   <X className="w-4 h-4 text-zinc-400" />
                 </motion.button>
               </div>
-
               <div className="flex-1 overflow-y-auto px-6 py-5">
                 <div className="space-y-4">
                   {MODAL_CONTENT[activeModal].content.map((block, i) => {
-                    if (block.type === 'meta') {
-                      return <p key={i} className="text-[11px] text-zinc-500 italic">{block.text}</p>;
-                    }
-                    if (block.type === 'copyright') {
-                      return <p key={i} className="text-[11px] text-zinc-600 pt-3 mt-4 border-t border-white/5 font-medium">{block.text}</p>;
-                    }
-                    if (block.type === 'important') {
-                      return (
-                        <div key={i} className="px-4 py-3 rounded-xl bg-violet-500/10 border border-violet-500/20">
-                          <p className="text-[12px] text-violet-300 leading-relaxed font-medium">{block.text}</p>
-                        </div>
-                      );
-                    }
+                    if (block.type === 'meta') return <p key={i} className="text-[11px] text-zinc-500 italic">{block.text}</p>;
+                    if (block.type === 'copyright') return <p key={i} className="text-[11px] text-zinc-600 pt-3 mt-4 border-t border-white/5 font-medium">{block.text}</p>;
+                    if (block.type === 'important') return (
+                      <div key={i} className="px-4 py-3 rounded-xl bg-violet-500/10 border border-violet-500/20">
+                        <p className="text-[12px] text-violet-300 leading-relaxed font-medium">{block.text}</p>
+                      </div>
+                    );
                     return (
                       <div key={i}>
                         <h3 className="text-[13px] font-semibold text-white mb-1.5">{block.title}</h3>
@@ -356,7 +347,6 @@ export function Sidebar() {
                   })}
                 </div>
               </div>
-
               <div className="px-6 py-4 border-t border-white/5">
                 <motion.button
                   whileHover={{ scale: 1.02 }}
@@ -389,7 +379,7 @@ function AuthModal({ onClose }: { onClose: () => void }) {
   const [isLoading, setIsLoading] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState('');
   const [countdown, setCountdown] = useState(0);
-  const codeInputRef = useRef<HTMLInputElement>(null);
+  const codeInputsRef = useRef<(HTMLInputElement | null)[]>([]);
   const turnstileRef = useRef<any>(null);
 
   const { register, login, sendVerificationCode, verifyCode } = useAuthStore();
@@ -420,16 +410,13 @@ function AuthModal({ onClose }: { onClose: () => void }) {
 
   const handleSubmit = async () => {
     setError('');
-
     if (!email.trim()) { setError('Введи email'); return; }
-
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) { setError('Некорректный email'); return; }
 
     if (mode === 'register') {
       if (!name.trim() || name.trim().length < 2) { setError('Имя слишком короткое'); return; }
       if (!password || password.length < 6) { setError('Пароль минимум 6 символов'); return; }
-
       const VALID_DOMAINS = [
         'gmail.com','yahoo.com','outlook.com','hotmail.com','mail.ru','yandex.ru','ya.ru','icloud.com',
         'protonmail.com','proton.me','bk.ru','inbox.ru','list.ru','rambler.ru','live.com','aol.com',
@@ -437,7 +424,7 @@ function AuthModal({ onClose }: { onClose: () => void }) {
         'ukr.net','i.ua','meta.ua','email.ua','bigmir.net',
       ];
       const domain = email.split('@')[1]?.toLowerCase();
-      if (!domain || !VALID_DOMAINS.includes(domain)) { setError('Используй настоящий email'); return; }
+      if (!domain || !VALID_DOMAINS.includes(domain)) { setError('Используй настоящий email (Gmail, Outlook, Mail.ru и т.д.)'); return; }
       if (!checkExisting()) return;
     } else {
       if (!password) { setError('Введи пароль'); return; }
@@ -460,7 +447,7 @@ function AuthModal({ onClose }: { onClose: () => void }) {
       setStep('verify');
       setCountdown(60);
       setCode('');
-      setTimeout(() => codeInputRef.current?.focus(), 200);
+      setTimeout(() => codeInputsRef.current[0]?.focus(), 100);
     } else {
       setError(result.error || 'Ошибка отправки кода');
       if (turnstileRef.current) { turnstileRef.current.reset(); setTurnstileToken(''); }
@@ -480,9 +467,26 @@ function AuthModal({ onClose }: { onClose: () => void }) {
     onClose();
   };
 
-  const handleCodeInput = (value: string) => {
-    const cleaned = value.replace(/\D/g, '').slice(0, 6);
-    setCode(cleaned);
+  const handleCodeChange = (index: number, value: string) => {
+    if (value.length > 1) value = value[value.length - 1];
+    if (!/^\d*$/.test(value)) return;
+    const newCode = code.split('');
+    while (newCode.length < 6) newCode.push('');
+    newCode[index] = value;
+    const joined = newCode.join('').slice(0, 6);
+    setCode(joined);
+    if (value && index < 5) codeInputsRef.current[index + 1]?.focus();
+  };
+
+  const handleCodeKeyDown = (index: number, e: React.KeyboardEvent) => {
+    if (e.key === 'Backspace' && !code[index] && index > 0) codeInputsRef.current[index - 1]?.focus();
+  };
+
+  const handleCodePaste = (e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+    setCode(pasted);
+    codeInputsRef.current[Math.min(pasted.length, 5)]?.focus();
   };
 
   const handleResend = async () => {
@@ -493,41 +497,6 @@ function AuthModal({ onClose }: { onClose: () => void }) {
     if (result.success) { setCountdown(60); setCode(''); }
     else { setError(result.error || 'Ошибка повторной отправки'); }
     setIsLoading(false);
-  };
-
-  const renderCodeDots = () => {
-    const dots = [];
-    for (let i = 0; i < 6; i++) {
-      const filled = i < code.length;
-      const digit = code[i];
-      dots.push(
-        <motion.div
-          key={i}
-          initial={{ scale: 0.8 }}
-          animate={{ scale: filled ? 1.1 : 1 }}
-          transition={{ type: 'spring', stiffness: 500, damping: 25 }}
-          className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 ${
-            filled
-              ? 'bg-violet-500 border-2 border-violet-400 shadow-lg shadow-violet-500/30'
-              : 'bg-zinc-800/80 border-2 border-zinc-700/50'
-          }`}
-        >
-          {filled ? (
-            <motion.span
-              initial={{ opacity: 0, scale: 0 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ type: 'spring', stiffness: 500, damping: 20 }}
-              className="text-white font-bold text-lg"
-            >
-              {digit}
-            </motion.span>
-          ) : (
-            <div className="w-2.5 h-2.5 rounded-full bg-zinc-600" />
-          )}
-        </motion.div>
-      );
-    }
-    return dots;
   };
 
   return (
@@ -544,31 +513,31 @@ function AuthModal({ onClose }: { onClose: () => void }) {
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
         className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] max-w-[calc(100vw-32px)] max-h-[90vh] overflow-y-auto glass-strong border border-white/10 rounded-2xl z-[70]"
       >
+        <div className="px-6 pt-6 pb-2 text-center">
+          <h2 className="text-xl font-bold text-white mb-1">MoSeek</h2>
+          <p className="text-xs text-zinc-500">
+            {step === 'verify'
+              ? `Код отправлен на ${email}`
+              : mode === 'login' ? 'Войди в аккаунт' : 'Создай аккаунт'
+            }
+          </p>
+        </div>
+
         <AnimatePresence mode="wait">
           {step === 'form' && (
             <motion.div
               key="form"
-              initial={{ opacity: 0, x: 0 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -30 }}
-              transition={{ duration: 0.25 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
             >
-              <div className="px-6 pt-6 pb-2 text-center">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center mx-auto mb-4 shadow-xl shadow-violet-500/20">
-                  <span className="text-white font-black text-xl">M</span>
-                </div>
-                <h2 className="text-xl font-bold text-white mb-1">MoSeek</h2>
-                <p className="text-xs text-zinc-500">
-                  {mode === 'login' ? 'Войди в свой аккаунт' : 'Создай новый аккаунт'}
-                </p>
-              </div>
-
-              <div className="flex mx-6 mt-4 mb-5 rounded-xl bg-zinc-800/50 p-1">
+              <div className="flex mx-6 mt-4 mb-6 rounded-xl glass-light p-1">
                 <button
                   type="button"
                   onClick={() => { setMode('login'); setError(''); }}
-                  className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 ${
-                    mode === 'login' ? 'bg-violet-500/20 text-violet-300 shadow-sm' : 'text-zinc-500 hover:text-zinc-400'
+                  className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
+                    mode === 'login' ? 'bg-violet-500/20 text-violet-300' : 'text-zinc-500 hover:text-zinc-400'
                   }`}
                 >
                   Вход
@@ -576,8 +545,8 @@ function AuthModal({ onClose }: { onClose: () => void }) {
                 <button
                   type="button"
                   onClick={() => { setMode('register'); setError(''); }}
-                  className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 ${
-                    mode === 'register' ? 'bg-violet-500/20 text-violet-300 shadow-sm' : 'text-zinc-500 hover:text-zinc-400'
+                  className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
+                    mode === 'register' ? 'bg-violet-500/20 text-violet-300' : 'text-zinc-500 hover:text-zinc-400'
                   }`}
                 >
                   Регистрация
@@ -592,7 +561,8 @@ function AuthModal({ onClose }: { onClose: () => void }) {
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}
                       exit={{ opacity: 0, height: 0 }}
-                      className="px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20"
+                      transition={{ duration: 0.2 }}
+                      className="px-3 py-2.5 rounded-xl bg-red-500/10 border border-red-500/20"
                     >
                       <span className="text-xs text-red-300">{error}</span>
                     </motion.div>
@@ -602,21 +572,23 @@ function AuthModal({ onClose }: { onClose: () => void }) {
                 <motion.div
                   initial={false}
                   animate={{
-                    height: mode === 'register' ? 56 : 0,
+                    height: mode === 'register' ? 60 : 0,
                     opacity: mode === 'register' ? 1 : 0,
                     marginBottom: mode === 'register' ? 0 : -12,
                   }}
                   transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
                   style={{ overflow: 'hidden' }}
                 >
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Имя"
-                    tabIndex={mode === 'register' ? 0 : -1}
-                    className="w-full h-[48px] px-4 rounded-xl bg-zinc-800/50 text-white placeholder-zinc-600 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/30 border border-zinc-700/50 focus:border-violet-500/30 transition-all"
-                  />
+                  <div className="pb-3">
+                    <input
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="Имя"
+                      tabIndex={mode === 'register' ? 0 : -1}
+                      className="w-full h-[48px] px-4 rounded-xl glass-light text-white placeholder-zinc-600 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/30 border border-white/5 focus:border-violet-500/30 transition-colors"
+                    />
+                  </div>
                 </motion.div>
 
                 <input
@@ -624,7 +596,7 @@ function AuthModal({ onClose }: { onClose: () => void }) {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Email"
-                  className="w-full h-[48px] px-4 rounded-xl bg-zinc-800/50 text-white placeholder-zinc-600 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/30 border border-zinc-700/50 focus:border-violet-500/30 transition-all"
+                  className="w-full h-[48px] px-4 rounded-xl glass-light text-white placeholder-zinc-600 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/30 border border-white/5 focus:border-violet-500/30 transition-colors"
                 />
 
                 <div className="relative">
@@ -633,18 +605,18 @@ function AuthModal({ onClose }: { onClose: () => void }) {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Пароль"
-                    className="w-full h-[48px] px-4 pr-12 rounded-xl bg-zinc-800/50 text-white placeholder-zinc-600 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/30 border border-zinc-700/50 focus:border-violet-500/30 transition-all"
+                    className="w-full h-[48px] px-4 pr-11 rounded-xl glass-light text-white placeholder-zinc-600 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/30 border border-white/5 focus:border-violet-500/30 transition-colors"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg hover:bg-white/5 transition-colors"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-zinc-400 transition-colors"
                   >
-                    <span className="text-zinc-500 text-xs font-medium">{showPassword ? 'Скрыть' : 'Показать'}</span>
+                    <span className="text-sm">{showPassword ? '🙈' : '👁'}</span>
                   </button>
                 </div>
 
-                <div className="turnstile-wrap flex justify-center pt-1">
+                <div className="turnstile-wrap flex justify-center pt-1" style={{ borderRadius: '12px', overflow: 'hidden' }}>
                   <Turnstile
                     ref={turnstileRef}
                     siteKey={TURNSTILE_SITE_KEY}
@@ -661,9 +633,13 @@ function AuthModal({ onClose }: { onClose: () => void }) {
                   whileHover={{ scale: 1.01 }}
                   whileTap={{ scale: 0.99 }}
                   onClick={handleSubmit}
-                  className="w-full h-[48px] rounded-xl bg-gradient-to-r from-violet-500 to-purple-600 text-white font-semibold text-sm shadow-xl shadow-violet-500/20 hover:shadow-violet-500/40 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="w-full h-[48px] rounded-xl bg-gradient-to-r from-violet-500 to-purple-600 text-white font-medium text-sm shadow-xl shadow-violet-500/20 hover:shadow-violet-500/40 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                 >
-                  {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <span>{mode === 'login' ? 'Войти' : 'Продолжить'}</span>}
+                  {isLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <span>{mode === 'login' ? 'Войти' : 'Отправить код на почту'}</span>
+                  )}
                 </motion.button>
               </div>
             </motion.div>
@@ -672,95 +648,68 @@ function AuthModal({ onClose }: { onClose: () => void }) {
           {step === 'verify' && (
             <motion.div
               key="verify"
-              initial={{ opacity: 0, x: 30 }}
+              initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -30 }}
-              transition={{ duration: 0.25 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.2 }}
+              className="px-6 pb-6 space-y-4"
             >
-              <div className="px-6 pt-5 pb-2">
-                <button
-                  onClick={() => { setStep('form'); setError(''); setCode(''); }}
-                  className="flex items-center gap-1.5 text-zinc-500 hover:text-zinc-300 transition-colors mb-4"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                  <span className="text-xs font-medium">Назад</span>
-                </button>
+              <AnimatePresence mode="wait">
+                {error && (
+                  <motion.div
+                    key="verify-error"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="px-3 py-2.5 rounded-xl bg-red-500/10 border border-red-500/20"
+                  >
+                    <span className="text-xs text-red-300">{error}</span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
-                <div className="text-center mb-6">
-                  <div className="w-14 h-14 rounded-full bg-violet-500/15 border border-violet-500/30 flex items-center justify-center mx-auto mb-4">
-                    <svg className="w-7 h-7 text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
-                    </svg>
-                  </div>
-                  <h3 className="text-lg font-bold text-white mb-1">Проверка почты</h3>
-                  <p className="text-xs text-zinc-500">
-                    Введи 6-значный код, отправленный на
-                  </p>
-                  <p className="text-xs text-violet-400 font-medium mt-0.5">{email}</p>
-                </div>
-              </div>
-
-              <div className="px-6 pb-6 space-y-5">
-                <AnimatePresence mode="wait">
-                  {error && (
-                    <motion.div
-                      key="verify-error"
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20"
-                    >
-                      <span className="text-xs text-red-300">{error}</span>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
-                <div className="relative">
-                  <div className="flex justify-center gap-3">
-                    {renderCodeDots()}
-                  </div>
-                  <input
-                    ref={codeInputRef}
+              <div className="flex justify-center gap-2.5" onPaste={handleCodePaste}>
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <motion.input
+                    key={i}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.05 }}
+                    ref={(el) => { codeInputsRef.current[i] = el; }}
                     type="text"
                     inputMode="numeric"
-                    maxLength={6}
-                    value={code}
-                    onChange={(e) => handleCodeInput(e.target.value)}
-                    onPaste={(e) => {
-                      e.preventDefault();
-                      const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
-                      setCode(pasted);
-                    }}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    autoFocus
+                    maxLength={1}
+                    value={code[i] || ''}
+                    onChange={(e) => handleCodeChange(i, e.target.value)}
+                    onKeyDown={(e) => handleCodeKeyDown(i, e)}
+                    className="w-12 h-14 text-center text-xl font-bold rounded-xl glass-light text-white border border-white/10 focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/30 focus:outline-none transition-all"
                   />
-                </div>
+                ))}
+              </div>
 
-                <p className="text-center text-[11px] text-zinc-600">Нажми на кружки и введи код</p>
+              <motion.button
+                type="button"
+                disabled={isLoading || code.length !== 6}
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
+                onClick={handleVerifyAndComplete}
+                className="w-full h-[48px] rounded-xl bg-gradient-to-r from-violet-500 to-purple-600 text-white font-medium text-sm shadow-xl shadow-violet-500/20 hover:shadow-violet-500/40 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <span>Подтвердить</span>}
+              </motion.button>
 
-                <motion.button
+              <div className="flex justify-center">
+                <button
                   type="button"
-                  disabled={isLoading || code.length !== 6}
-                  whileHover={{ scale: 1.01 }}
-                  whileTap={{ scale: 0.99 }}
-                  onClick={handleVerifyAndComplete}
-                  className="w-full h-[48px] rounded-xl bg-gradient-to-r from-violet-500 to-purple-600 text-white font-semibold text-sm shadow-xl shadow-violet-500/20 hover:shadow-violet-500/40 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                  onClick={handleResend}
+                  disabled={countdown > 0 || isLoading}
+                  className={`text-xs transition-colors ${
+                    countdown > 0 ? 'text-zinc-600 cursor-not-allowed' : 'text-violet-400 hover:text-violet-300'
+                  }`}
                 >
-                  {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <span>Подтвердить</span>}
-                </motion.button>
-
-                <div className="flex justify-center">
-                  <button
-                    type="button"
-                    onClick={handleResend}
-                    disabled={countdown > 0 || isLoading}
-                    className={`text-xs font-medium transition-colors ${
-                      countdown > 0 ? 'text-zinc-600 cursor-not-allowed' : 'text-violet-400 hover:text-violet-300'
-                    }`}
-                  >
-                    {countdown > 0 ? `Отправить повторно через ${countdown}с` : 'Отправить код повторно'}
-                  </button>
-                </div>
+                  {countdown > 0 ? `Повторить через ${countdown}с` : 'Отправить снова'}
+                </button>
               </div>
             </motion.div>
           )}

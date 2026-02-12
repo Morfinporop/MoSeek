@@ -249,8 +249,8 @@ export function ChatInput() {
           onSubmit={handleSubmit}
           className="flex-1 relative rounded-2xl overflow-hidden glass-strong shadow-lg shadow-violet-500/5 border border-white/5"
         >
-          <div className="relative flex items-center gap-2 px-4 h-[52px]">
-            <div className="flex-1 flex items-center">
+          <div className="relative flex items-end gap-2 px-4 py-2">
+            <div className="flex-1 flex items-center min-h-[36px]">
               <textarea
                 ref={textareaRef}
                 value={input}
@@ -273,7 +273,7 @@ export function ChatInput() {
               disabled={!input.trim() || isGenerating}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className={`flex-shrink-0 p-2.5 rounded-xl transition-all duration-200 ${
+              className={`flex-shrink-0 p-2.5 rounded-xl transition-all duration-200 mb-[2px] ${
                 input.trim() && !isGenerating
                   ? 'bg-gradient-to-r from-violet-500 to-purple-600 text-white shadow-lg shadow-violet-500/25'
                   : 'bg-white/5 text-zinc-600 cursor-not-allowed'

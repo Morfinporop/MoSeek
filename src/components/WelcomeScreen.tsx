@@ -1,5 +1,7 @@
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
+import { useChatStore } from '../store/chatStore';
+import { AI_MODELS } from '../config/models';
 
 const GREETING_TEXTS = [
   "С чего сегодня начнем?",
@@ -37,6 +39,8 @@ const GREETING_TEXTS = [
 
 export function WelcomeScreen() {
   const [text, setText] = useState('');
+  const { selectedModel } = useChatStore();
+  const currentModel = AI_MODELS.find(m => m.id === selectedModel) || AI_MODELS[0];
 
   useEffect(() => {
     const getGreeting = () => {
@@ -67,10 +71,31 @@ export function WelcomeScreen() {
       className="flex flex-col items-center justify-center"
       style={{ minHeight: 'calc(100vh - 250px)' }}
     >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5, ease: 'easeOut' }}
+        className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${currentModel.color} flex items-center justify-center mb-6 shadow-lg`}
+        style={{ boxShadow: `0 0 40px rgba(139, 92, 246, 0.15)` }}
+      >
+        <img src={currentModel.icon} alt={currentModel.name} className="w-8 h-8 invert opacity-90" />
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.2 }}
+        className="mb-4"
+      >
+        <span className={`text-xs font-medium px-3 py-1 rounded-full bg-gradient-to-r ${currentModel.color} bg-clip-text text-transparent border border-white/5`}>
+          {currentModel.name}
+        </span>
+      </motion.div>
+
       <motion.h1
         initial={{ opacity: 0, y: 20, filter: 'blur(10px)' }}
         animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-        transition={{ duration: 0.8, ease: 'easeInOut' }}
+        transition={{ duration: 0.8, ease: 'easeInOut', delay: 0.1 }}
         className="text-3xl md:text-4xl lg:text-5xl font-bold text-center px-4 text-white"
       >
         {text}

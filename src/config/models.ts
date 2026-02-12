@@ -14,7 +14,7 @@ export const AI_MODELS: AIModel[] = [
   {
     id: 'deepseek/deepseek-r1',
     name: 'MoSeek R1',
-    description: 'Продвинутая модель с рассуждениями',
+    description: 'Продвинутая модель с глубокими рассуждениями',
     provider: 'MoGPT',
     icon: MODEL_ICON,
     color: 'from-cyan-500 to-blue-600',

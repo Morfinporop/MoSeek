@@ -1,10 +1,19 @@
 import { useEffect, useRef } from 'react';
+import { useThemeStore } from '../store/themeStore';
 
 export function Background() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>(0);
+  const { theme } = useThemeStore();
 
   useEffect(() => {
+    if (theme === 'light') {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+      return;
+    }
+
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -24,7 +33,6 @@ export function Background() {
 
       const time = Date.now() * 0.001;
 
-      // Большие светящиеся области - красивое свечение без точек
       const glowPoints = [
         { x: canvas.width * 0.1, y: canvas.height * 0.2, size: 350, color: '139, 92, 246' },
         { x: canvas.width * 0.9, y: canvas.height * 0.7, size: 400, color: '168, 85, 247' },
@@ -62,7 +70,9 @@ export function Background() {
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, []);
+  }, [theme]);
+
+  if (theme === 'light') return null;
 
   return (
     <canvas

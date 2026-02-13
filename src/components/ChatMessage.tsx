@@ -8,7 +8,7 @@ import { MODEL_ICON } from '../config/models';
 interface ChatMessageProps {
   message: Message;
   compact?: boolean;
-  side?: 'left' | 'right';
+  hideModelLabel?: boolean;
 }
 
 marked.setOptions({
@@ -18,7 +18,7 @@ marked.setOptions({
 
 const MAX_LENGTH = 500;
 
-export function ChatMessage({ message, compact, side }: ChatMessageProps) {
+export function ChatMessage({ message, compact, hideModelLabel }: ChatMessageProps) {
   const [copied, setCopied] = useState(false);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
@@ -136,70 +136,19 @@ export function ChatMessage({ message, compact, side }: ChatMessageProps) {
     );
   };
 
-  // Определяем направление для dual режима
-  const getDualAlignment = () => {
-    if (!side) return isAssistant ? '' : 'flex-row-reverse';
-    if (side === 'left') return ''; // левая нейросеть — аватар слева, текст справа
-    if (side === 'right') return 'flex-row-reverse'; // правая нейросеть — аватар справа, текст слева
-    return isAssistant ? '' : 'flex-row-reverse';
-  };
-
-  const getModelLabelAlign = () => {
-    if (side === 'right') return 'items-end text-right';
-    return 'items-start text-left';
-  };
-
-  const getBubbleRounding = () => {
-    if (side === 'left') return 'rounded-2xl rounded-tl-md';
-    if (side === 'right') return 'rounded-2xl rounded-tr-md';
-    return isAssistant ? 'rounded-2xl rounded-tl-md' : 'rounded-2xl rounded-tr-md';
-  };
-
-  const getTimeAlign = () => {
-    if (side === 'right') return 'justify-end';
-    return '';
-  };
-
-  // Цвет бордера для dual режима
-  const getDualBorderColor = () => {
-    if (side === 'left') return 'border-violet-500/30';
-    if (side === 'right') return 'border-blue-500/30';
-    return '';
-  };
-
-  const getDualGlow = () => {
-    if (side === 'left') return 'bg-gradient-to-br from-violet-500 via-purple-500 to-pink-500';
-    if (side === 'right') return 'bg-gradient-to-br from-blue-500 via-cyan-500 to-teal-500';
-    return isAssistant
-      ? 'bg-gradient-to-br from-violet-500 via-purple-500 to-pink-500'
-      : 'bg-gradient-to-br from-emerald-500 to-teal-500';
-  };
-
-  const getDualModelColor = () => {
-    if (side === 'left') return 'text-violet-400/80';
-    if (side === 'right') return 'text-blue-400/80';
-    return 'text-violet-400/80';
-  };
-
-  const getDualDotColor = () => {
-    if (side === 'left') return 'bg-violet-500/60';
-    if (side === 'right') return 'bg-blue-500/60';
-    return 'bg-violet-500/60';
-  };
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
-      className={`flex gap-3 ${getDualAlignment()}`}
+      className={`flex gap-3 ${isAssistant ? '' : 'flex-row-reverse'}`}
     >
       <motion.div
         whileHover={{ scale: 1.1 }}
-        className={`flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center overflow-hidden glow-soft ${
-          !isAssistant
-            ? 'bg-gradient-to-br from-emerald-500 to-teal-500'
-            : getDualGlow()
+        className={`flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center overflow-hidden ${
+          isAssistant
+            ? 'bg-gradient-to-br from-violet-500 via-purple-500 to-pink-500 glow-soft'
+            : 'bg-gradient-to-br from-emerald-500 to-teal-500'
         }`}
       >
         {isAssistant ? (
@@ -218,24 +167,22 @@ export function ChatMessage({ message, compact, side }: ChatMessageProps) {
       </motion.div>
 
       <div className={`group relative ${compact ? 'max-w-full flex-1' : 'max-w-[85%]'} min-w-0 overflow-hidden`}>
-        {/* Подпись модели над ответом */}
-        {isAssistant && message.model && (
-          <div className={`flex gap-1.5 mb-1.5 px-1 ${getModelLabelAlign()}`}>
-            <div className={`flex items-center gap-1.5`}>
-              <div className={`w-2 h-2 rounded-full animate-pulse ${getDualDotColor()}`} />
-              <span className={`text-[11px] font-medium tracking-wide ${getDualModelColor()}`}>
-                {message.model}
-              </span>
-            </div>
+        {/* Подпись модели — только если НЕ скрыта (в dual режиме она в контейнере) */}
+        {isAssistant && message.model && !hideModelLabel && (
+          <div className="flex items-center gap-1.5 mb-1.5 px-1">
+            <div className="w-2 h-2 rounded-full bg-violet-500/60 animate-pulse" />
+            <span className="text-[11px] text-violet-400/80 font-medium tracking-wide">
+              {message.model}
+            </span>
           </div>
         )}
 
         <motion.div
           whileHover={{ scale: 1.005 }}
-          className={`relative px-4 py-3 overflow-hidden ${getBubbleRounding()} ${
+          className={`relative px-4 py-3 rounded-2xl overflow-hidden ${
             isAssistant
-              ? `glass-light ${side ? `border ${getDualBorderColor()}` : ''}`
-              : 'bg-gradient-to-br from-violet-500 to-purple-600 shadow-lg shadow-violet-500/10'
+              ? 'glass-light rounded-tl-md'
+              : 'bg-gradient-to-br from-violet-500 to-purple-600 rounded-tr-md shadow-lg shadow-violet-500/10'
           }`}
         >
           {renderContent()}
@@ -260,7 +207,7 @@ export function ChatMessage({ message, compact, side }: ChatMessageProps) {
           )}
         </motion.div>
 
-        <div className={`flex items-center gap-2 mt-1.5 px-1 ${isAssistant ? getTimeAlign() : 'justify-end'}`}>
+        <div className={`flex items-center gap-2 mt-1.5 px-1 ${isAssistant ? '' : 'justify-end'}`}>
           <span className="text-[10px] text-zinc-600">
             {new Date(message.timestamp).toLocaleTimeString('ru-RU', {
               hour: '2-digit',

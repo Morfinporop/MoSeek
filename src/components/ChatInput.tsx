@@ -5,6 +5,7 @@ import { useChatStore, type ResponseMode, type RudenessMode } from '../store/cha
 import { useAuthStore } from '../store/authStore';
 import { aiService } from '../services/aiService';
 import { AI_MODELS } from '../config/models';
+import { useCompareMode } from './Header';
 
 const MODES: { id: ResponseMode; label: string; icon: typeof Code; desc: string }[] = [
   { id: 'normal', label: 'Обычный', icon: MessageCircle, desc: 'Код и общение' },
@@ -49,7 +50,6 @@ export function ChatInput() {
   const isUnlimitedUser = user?.email && UNLIMITED_EMAILS.includes(user.email);
   const charCount = input.length;
   const isOverLimit = !isUnlimitedUser && charCount > CHAR_LIMIT;
-  const currentModelData = AI_MODELS.find(m => m.id === selectedModel) || AI_MODELS[0];
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -64,12 +64,8 @@ export function ChatInput() {
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (modesRef.current && !modesRef.current.contains(e.target as Node)) {
-        setShowModes(false);
-      }
-      if (rudenessRef.current && !rudenessRef.current.contains(e.target as Node)) {
-        setShowRudeness(false);
-      }
+      if (modesRef.current && !modesRef.current.contains(e.target as Node)) setShowModes(false);
+      if (rudenessRef.current && !rudenessRef.current.contains(e.target as Node)) setShowRudeness(false);
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -92,50 +88,107 @@ export function ChatInput() {
     const trimmedInput = input.trim();
     if (!trimmedInput || generating || isOverLimit) return;
 
-    setInput('');
-    if (textareaRef.current) {
-      textareaRef.current.style.height = '36px';
-    }
+    const { isDual, secondModelId } = useCompareMode();
 
-    addMessage({
-      role: 'user',
-      content: trimmedInput,
-    });
+    setInput('');
+    if (textareaRef.current) textareaRef.current.style.height = '36px';
+
+    addMessage({ role: 'user', content: trimmedInput });
 
     const chatId = useChatStore.getState().currentChatId;
     if (!chatId) return;
 
     setGeneratingChat(chatId, true);
 
-    const assistantId = addMessage({
-      role: 'assistant',
-      content: '',
-      isLoading: true,
-      model: currentModelData.name,
-      thinking: 'Печатаю...',
-    });
+    const model1Data = AI_MODELS.find(m => m.id === selectedModel) || AI_MODELS[0];
+    const allMessages = [...getCurrentMessages()];
 
-    try {
-      const allMessages = [...getCurrentMessages()];
-      const response = await aiService.generateResponse(allMessages, responseMode, rudenessMode, selectedModel);
+    if (isDual) {
+      const model2Data = AI_MODELS.find(m => m.id === secondModelId) || AI_MODELS[1] || AI_MODELS[0];
 
-      updateMessage(assistantId, '', 'Печатаю...');
+      const assistantId1 = addMessage({
+        role: 'assistant',
+        content: '',
+        isLoading: true,
+        model: model1Data.name,
+        thinking: 'Печатаю...',
+      });
 
-      let currentContent = '';
-      const words = response.content.split(' ');
+      const assistantId2 = addMessage({
+        role: 'assistant',
+        content: '',
+        isLoading: true,
+        model: model2Data.name,
+        thinking: 'Печатаю...',
+      });
 
-      for (let i = 0; i < words.length; i++) {
-        currentContent += (i > 0 ? ' ' : '') + words[i];
-        updateMessage(assistantId, currentContent, 'Печатаю...');
-        await new Promise(resolve => setTimeout(resolve, 10));
+      try {
+        const [response1, response2] = await Promise.all([
+          aiService.generateResponse(allMessages, responseMode, rudenessMode, selectedModel),
+          aiService.generateResponse(allMessages, responseMode, rudenessMode, secondModelId),
+        ]);
+
+        updateMessage(assistantId1, '', 'Печатаю...');
+        updateMessage(assistantId2, '', 'Печатаю...');
+
+        const words1 = response1.content.split(' ');
+        const words2 = response2.content.split(' ');
+        const maxLen = Math.max(words1.length, words2.length);
+
+        let content1 = '';
+        let content2 = '';
+
+        for (let i = 0; i < maxLen; i++) {
+          if (i < words1.length) {
+            content1 += (i > 0 ? ' ' : '') + words1[i];
+            updateMessage(assistantId1, content1, 'Печатаю...');
+          }
+          if (i < words2.length) {
+            content2 += (i > 0 ? ' ' : '') + words2[i];
+            updateMessage(assistantId2, content2, 'Печатаю...');
+          }
+          await new Promise(resolve => setTimeout(resolve, 10));
+        }
+
+        updateMessage(assistantId1, content1, '');
+        updateMessage(assistantId2, content2, '');
+      } catch (error) {
+        console.error('Error:', error);
+        updateMessage(assistantId1, 'Ошибка. Попробуй ещё раз.', '');
+        updateMessage(assistantId2, 'Ошибка. Попробуй ещё раз.', '');
+      } finally {
+        setGeneratingChat(chatId, false);
       }
+    } else {
+      const assistantId = addMessage({
+        role: 'assistant',
+        content: '',
+        isLoading: true,
+        model: model1Data.name,
+        thinking: 'Печатаю...',
+      });
 
-      updateMessage(assistantId, currentContent, '');
-    } catch (error) {
-      console.error('Error:', error);
-      updateMessage(assistantId, 'Что-то пошло не так. Попробуй ещё раз.', '');
-    } finally {
-      setGeneratingChat(chatId, false);
+      try {
+        const response = await aiService.generateResponse(allMessages, responseMode, rudenessMode, selectedModel);
+
+        updateMessage(assistantId, '', 'Печатаю...');
+
+        let currentContent = '';
+        const words = response.content.split(' ');
+
+        for (let i = 0; i < words.length; i++) {
+          currentContent += (i > 0 ? ' ' : '') + words[i];
+          updateMessage(assistantId, currentContent, 'Печатаю...');
+          await new Promise(resolve => setTimeout(resolve, 10));
+        }
+
+        updateMessage(assistantId, currentContent, '');
+      } catch (error) {
+        console.error('Error:', error);
+        updateMessage(assistantId, 'Что-то пошло не так. Попробуй ещё раз.', '');
+      } finally {
+        setGeneratingChat(chatId, false);
+      }
     }
   };
 
@@ -159,9 +212,7 @@ export function ChatInput() {
             exit={{ opacity: 0, y: 10 }}
             className="flex items-center gap-2 px-4 py-3 mb-3 rounded-xl bg-red-500/10 border border-red-500/20"
           >
-            <p className="text-sm text-red-300">
-              Лимит {CHAR_LIMIT} символов достигнут.
-            </p>
+            <p className="text-sm text-red-300">Лимит {CHAR_LIMIT} символов достигнут.</p>
           </motion.div>
         )}
       </AnimatePresence>
@@ -299,13 +350,7 @@ export function ChatInput() {
                 maxLength={isUnlimitedUser ? undefined : CHAR_LIMIT}
                 rows={1}
                 className="w-full bg-transparent text-white placeholder-zinc-600 resize-none text-[15px] leading-9 max-h-[160px] focus:outline-none"
-                style={{
-                  outline: 'none',
-                  border: 'none',
-                  boxShadow: 'none',
-                  height: '36px',
-                  minHeight: '36px',
-                }}
+                style={{ outline: 'none', border: 'none', boxShadow: 'none', height: '36px', minHeight: '36px' }}
               />
             </div>
 

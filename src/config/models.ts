@@ -12,14 +12,6 @@ export const AI_MODELS: AIModel[] = [
     color: 'from-emerald-500 to-teal-600',
   },
   {
-    id: 'meta-llama/llama-4-maverick',
-    name: 'MoSeek Maverick',
-    description: 'Креативная и мощная',
-    provider: 'MoGPT',
-    icon: MODEL_ICON,
-    color: 'from-orange-500 to-red-600',
-  },
-  {
     id: 'google/gemma-3-27b-it',
     name: 'MoSeek Gemma',
     description: 'Компактная и умная',

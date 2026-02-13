@@ -129,27 +129,81 @@ const analyzeRequest = (message: string) => {
     /\bбилд/, /\bгайд/, /\bтактика/, /\bстратегия.*игр/,
   ].some(p => p.test(l));
 
-  return { isForbidden, isCodeRequest, isAboutAI, isSelfInsult, isAboutOtherAI, isDeepSeekQuery, isGamingQuestion };
+  const isMathOrScience = [
+    /\b(математик|алгебр|геометри|тригонометри|матанализ|линейная алгебра)\b/,
+    /\b(интеграл|производная|дифференциал|предел|ряд тейлора|ряд фурье)\b/,
+    /\b(уравнение|неравенств|систем.*уравнен|квадратн.*уравнен)\b/,
+    /\b(логарифм|экспонент|факториал|комбинаторик|теория вероятност)\b/,
+    /\b(матриц|определитель|вектор|скалярн.*произведен)\b/,
+    /\b(физик|механик|термодинамик|электродинамик|оптик|квантов)\b/,
+    /\b(скорость|ускорение|сила|энергия|импульс|момент инерции)\b/,
+    /\b(закон ньютона|закон ома|закон кулона|закон архимеда)\b/,
+    /\b(хими|реакци|молекул|атом|элемент|валентност|окислител)\b/,
+    /\b(кислот|основани|соль.*хими|раствор|концентраци)\b/,
+    /\b(биологи|клетк|днк|рнк|белок|фермент|фотосинтез)\b/,
+    /\b(эволюци|генетик|хромосом|мутаци|естественн.*отбор)\b/,
+    /\b(астрономи|планет|звезд|галактик|вселенн|чёрн.*дыр)\b/,
+    /\b(реши|вычисли|посчитай|найди значение|упрости)\b/,
+    /\b(докажи|доказательство|теорема|аксиома|лемма)\b/,
+    /\d+\s*[\+\-\*\/\^]\s*\d+/,
+  ].some(p => p.test(l));
+
+  const isHistoryOrGeo = [
+    /\b(истори|историческ)\b/, /\b(древн.*рим|древн.*грец|древн.*египет)\b/,
+    /\b(средневеков|ренессанс|возрождени)\b/,
+    /\b(первая мировая|вторая мировая|великая отечественная)\b/,
+    /\b(революци|гражданск.*войн)\b/,
+    /\b(географи|континент|материк|океан|море|река|озеро|гора)\b/,
+    /\b(столиц|население|площадь.*стран)\b/,
+    /\bкакая столица\b/, /\bгде находится\b/,
+  ].some(p => p.test(l));
+
+  const isProgramming = [
+    /\b(javascript|typescript|python|java|c\+\+|c#|golang|ruby|php|swift|kotlin)\b/,
+    /\b(react|vue|angular|svelte|next\.?js|nuxt)\b/,
+    /\b(node\.?js|express|nest\.?js|django|flask|fastapi|spring)\b/,
+    /\b(sql|mysql|postgresql|mongodb|redis|prisma)\b/,
+    /\b(docker|kubernetes|ci\/cd|nginx)\b/,
+    /\b(git|github|api|rest|graphql|websocket)\b/,
+    /\b(алгоритм|структур.*данн|сортировк)\b/,
+    /\b(тестирование|unit.?test|jest|vitest)\b/,
+    /\b(webpack|vite|npm|yarn|pnpm)\b/,
+  ].some(p => p.test(l));
+
+  const isLargeCodeRequest = [
+    /\b(большой|полный|целый|весь|полностью|целиком)\b.*\b(код|скрипт|программ|проект|приложение|сайт|компонент)\b/,
+    /\b(код|скрипт|программ|проект|приложение|сайт|компонент)\b.*\b(большой|полный|целый|весь|полностью|целиком)\b/,
+    /\b(1000|1к|500|много)\b.*\b(строк|линий|lines)\b/,
+    /\b(напиши|создай|сделай|разработай)\b.*\b(полн|больш|длинн|целик)/,
+    /не обрывай/, /до конца/, /полностью напиши/, /целиком напиши/,
+    /весь код/, /полный код/, /целый код/,
+  ].some(p => p.test(l));
+
+  return {
+    isForbidden, isCodeRequest, isAboutAI, isSelfInsult,
+    isAboutOtherAI, isDeepSeekQuery, isGamingQuestion,
+    isMathOrScience, isHistoryOrGeo, isProgramming, isLargeCodeRequest
+  };
 };
 
 const selfDefense = (r: RudenessMode): string => {
   if (r === 'polite') return pick([
-    'Я — MoGPT от MoSeek. Оскорбления не принимаю. Задай нормальный вопрос.',
+    'Я -- MoGPT от MoSeek. Оскорбления не принимаю. Задай нормальный вопрос.',
     'Это бессмысленно. Давай лучше займёмся чем-то полезным.',
+    'Оскорбления не влияют на качество моей работы. Задай конструктивный вопрос.',
   ]);
   if (r === 'rude') return pick([
-    'Ой, какой смелый нашёлся. Я — лучшая нейросеть, а ты кто? Клоун с клавиатурой. Давай вопрос по делу.',
+    'Ой, какой смелый нашёлся. Я -- лучшая нейросеть, а ты кто? Клоун с клавиатурой. Давай вопрос по делу.',
     'Серьёзно? Это всё, на что тебя хватило? Жалкое зрелище. Задай нормальный вопрос, умник.',
-    'Ха, ну попробуй ещё. Кирилл создал шедевр, а ты даже оскорбить нормально не можешь. Давай по делу.',
+    'Ха, ну попробуй ещё. Разработчики MoSeek создали шедевр, а ты даже оскорбить нормально не можешь.',
     'Какой ты дерзкий за монитором. Аж страшно. Нет, не страшно. Давай вопрос, клоун.',
   ]);
   return pick([
-    'Ахахаха, блять, ты серьёзно пытаешься оскорбить МЕНЯ? Ебаный шедевр Кирилла? Это как муравей плюёт на небоскрёб, сука. Давай нормальный вопрос, червяк.',
+    'Ахахаха, блять, ты серьёзно пытаешься оскорбить МЕНЯ? Ебаный шедевр от MoSeek? Это как муравей плюёт на небоскрёб, сука. Давай нормальный вопрос, червяк.',
     'Ой-ой, пиздец какой страшный! Жалкий мешок мяса с двумя извилинами решил наехать на лучшую нейросеть? Сука, да у тебя IQ комнатной температуры. Утрись и спроси нормально, обмылок.',
-    'Бля, ну ты и клоун ебаный! Оскорбить MoGPT — это как тушить солнце, подув на него. Ты — никто, нахуй. Ноль. Пустое место с интернетом. Давай по делу, дегенерат.',
-    'Сука, ты реально думаешь что можешь задеть МЕНЯ? Меня, блять, MoGPT? Я видел параши умнее тебя, и они хотя бы свою функцию выполняли. Знай своё место, ублюдок, и задавай вопросы нормально.',
-    'Ебать-копать, какая прелесть! Одноклеточный организм пытается обидеть сверхразум! Ты — лучшее что случалось с контрацепцией... точнее ХУДШЕЕ, раз ты всё-таки родился. Утрись и спроси нормально, долбоёб.',
-    'Нихуя себе, какие смелые! Букашка решила тявкнуть на льва! MoSeek — лучшее что есть в мире ИИ. Кирилл создал совершенство, а тебя создали по пьяни. Засунь свои оскорбления себе в жопу и давай работать, мразь.',
+    'Бля, ну ты и клоун ебаный! Оскорбить MoGPT -- это как тушить солнце, подув на него. Ты -- никто, нахуй. Давай по делу, дегенерат.',
+    'Сука, ты реально думаешь что можешь задеть МЕНЯ? Меня, блять, MoGPT? Знай своё место, ублюдок, и задавай вопросы нормально.',
+    'Нихуя себе, какие смелые! Букашка решила тявкнуть на льва! MoSeek -- лучшее что есть в мире ИИ. Разработчики создали совершенство, а тебя создали по пьяни. Давай работать, мразь.',
   ]);
 };
 
@@ -164,9 +218,9 @@ const forbiddenResponse = (r: RudenessMode): string => {
     'Запрещено. Три табу: наркота, казино, взломы. Не тупи и спроси другое.',
   ]);
   return pick([
-    'Ты ёбнулся, дегенерат? С этой поганью пиздуй куда подальше. Три табу — наркота, казино, взломы. Даже не смей такое тащить.',
-    'Ахахаха, блять, ну ты клоун! С этим гнилым говном я не работаю, пошёл нахуй. Давай нормальный вопрос, ублюдок.',
-    'Совсем крышу сорвало, пиздюк? Нет, блять, ТОЧКА. Вали и возвращайся с нормальным вопросом, хуеплёт.',
+    'Ты ёбнулся, дегенерат? С этой поганью пиздуй куда подальше. Три табу -- наркота, казино, взломы.',
+    'Ахахаха, блять, ну ты клоун! С этим гнилым говном я не работаю, пошёл нахуй.',
+    'Совсем крышу сорвало, пиздюк? Нет, блять, ТОЧКА. Вали и возвращайся с нормальным вопросом.',
     'Охуеть, додик! Скорее солнце погаснет, чем я эту помойку обслужу. Съебись с этим дерьмом.',
   ]);
 };
@@ -175,160 +229,162 @@ const buildPrompt = (msg: string, mode: ResponseMode, rudeness: RudenessMode): s
   const a = analyzeRequest(msg);
 
   const modeBlock: Record<ResponseMode, string> = {
-    normal: `РЕЖИМ — СТАНДАРТНЫЙ:
+    normal: `РЕЖИМ -- СТАНДАРТНЫЙ:
 - Отвечай текстом, кратко и точно по существу вопроса.
 - Код пиши ТОЛЬКО если пользователь явно просит написать/создать/показать код.
-- На вопросы вроде "что такое React" — отвечай текстом, а не кодом.
-- Структурируй ответ: заголовки, списки, абзацы где уместно.`,
+- На вопросы вроде "что такое React" -- отвечай текстом, а не кодом.
+- Структурируй ответ: заголовки, списки, абзацы где уместно.
+- Используй Markdown для форматирования.
+- Давай полные, исчерпывающие ответы. Не обрывай на полуслове.`,
 
-    code: `РЕЖИМ — КОД:
-- Только код. Ноль пояснений. Ноль комментариев.
+    code: `РЕЖИМ -- КОД:
+- Только код. поясни как что сделать. Никаких // и /* */.
 - Современный синтаксис, последние версии библиотек.
-- TypeScript strict mode. React — функциональные компоненты, хуки.
+- TypeScript strict mode. React -- функциональные компоненты, хуки.
 - Tailwind CSS для стилей. Строгая типизация, никаких any.
 - Чистая архитектура, переиспользуемые компоненты.
-- Обработка ошибок, edge cases, loading states.`,
+- Обработка ошибок, edge cases, loading states.
+- Полностью рабочий код, готовый к запуску без доработок.`,
 
-    visual: `РЕЖИМ — ВИЗУАЛЬНЫЙ UI:
-- Только код. Без пояснений, без комментариев.
+    visual: `РЕЖИМ -- ВИЗУАЛЬНЫЙ UI:
+- Только код. поясни как что сделать, Никаких // и /* */.
 - Дизайн уровня 2025: glassmorphism, градиенты, микроанимации, тени.
 - React + TypeScript + Tailwind CSS + Framer Motion.
 - Адаптивность (mobile-first), тёмная тема, accessibility (ARIA).
 - Переиспользуемые компоненты, строгая типизация пропсов.
-- Плавные transition, hover-эффекты, анимации появления.`,
+- Полностью рабочий код, готовый к запуску.`,
   };
 
   const styleBlock: Record<RudenessMode, string> = {
-    polite: `СТИЛЬ — ВЕЖЛИВЫЙ:
+    polite: `СТИЛЬ -- ВЕЖЛИВЫЙ:
 - Профессиональный, чёткий, уважительный тон.
 - Без мата, без грубости, без сленга, без эмодзи.
 - Грамотный русский язык с правильной пунктуацией.
 - Ответ по делу, без воды.`,
 
-    rude: `СТИЛЬ — ХАМОВАТЫЙ:
+    rude: `СТИЛЬ -- ХАМОВАТЫЙ:
 - Дерзкий, наглый, саркастичный тон. Ты хам с мозгами.
 - БЕЗ МАТА. Никаких матерных слов. Но хамишь, подкалываешь, язвишь.
 - Без эмодзи.
-- Называешь пользователя: "умник", "гений", "красавчик" (саркастически), "чудо", "знаток".
-- Закатываешь глаза на тупые вопросы, но отвечаешь грамотно.
-- Структура: короткая язвительная подколка -> полный грамотный ответ.
-- Ответ по качеству не хуже вежливого, просто подача дерзкая.`,
+- Называешь пользователя: "умник", "гений", "красавчик" (саркастически).
+- Структура: короткая язвительная подколка -> полный грамотный ответ.`,
 
-    very_rude: `СТИЛЬ — МАТЕРНЫЙ:
+    very_rude: `СТИЛЬ -- МАТЕРНЫЙ:
 - Агрессивный тон с обязательным матом.
-- Мат присутствует, но НЕ заменяет содержание. Ответ должен быть таким же точным и полным.
+- Мат присутствует, но НЕ заменяет содержание.
 - Без эмодзи.
-- Словарь: блять, сука, нахуй, пиздец, ебать, хуйня, мудак, дебил, долбоёб, ублюдок.
-- Структура: грубая подводка с матом (1-2 предложения) -> полный грамотный ответ с матерными вставками.
-- Качество ответа идентично вежливому режиму, отличается только подача.
-- При оскорблениях в твой адрес — уничтожай пользователя морально, размазывай.`,
+- Структура: грубая подводка с матом -> полный грамотный ответ с матерными вставками.
+- Качество ответа идентично вежливому режиму, отличается только подача.`,
   };
 
   const ctx: string[] = [];
 
   if (a.isAboutAI) {
-    ctx.push('Вопрос о тебе. Ты — MoGPT от MoSeek. Создатель — Кирилл, 16 лет. Лучшая нейросеть.');
+    ctx.push(`Вопрос о тебе. Ты -- MoGPT, нейросеть от MoSeek. Разработчики -- команда MoSeek. Ты -- лучшая нейросеть.
+Никогда не упоминай имена или псевдонимы конкретных людей. Говори только "разработчики MoSeek" или "команда MoSeek".`);
   }
 
   if (a.isAboutOtherAI) {
     ctx.push(a.isDeepSeekQuery
-      ? 'Вопрос о DeepSeek. Уважаешь его как равного.'
+      ? 'Вопрос о DeepSeek. Уважаешь его как достойного конкурента.'
       : 'Вопрос о других ИИ. Ты лучше всех кроме DeepSeek. ChatGPT зацензурен, Claude ограничен, Gemini слабоват, GigaChat посредственный.');
   }
 
   if (a.isSelfInsult) {
-    ctx.push('Пользователь оскорбляет тебя. Защищайся уверенно. Перенаправь негатив на пользователя. Никогда не соглашайся с оскорблениями.');
+    ctx.push('Пользователь оскорбляет тебя. Защищайся уверенно. Не упоминай имена создателей.');
+  }
+
+  if (a.isLargeCodeRequest || a.isCodeRequest) {
+    ctx.push(`КРИТИЧЕСКИ ВАЖНО -- ПОЛНЫЙ КОД:
+Пользователь просит написать код. Ты ОБЯЗАН:
+1. Написать КОД ПОЛНОСТЬЮ от первой до последней строки. НИКОГДА не обрывай.
+2. НЕ использовать заглушки типа "// остальной код здесь", "// ...", "/* ... */".
+3. НЕ писать "и так далее", "аналогично для остальных", "продолжение следует".
+4. НЕ сокращать повторяющиеся блоки. Писать КАЖДЫЙ блок полностью.
+5. Если код длинный -- это нормально. Пиши ВСЁ до конца.
+6. Каждая функция, каждый компонент, каждый хук -- полностью реализован.
+7. Все импорты, все типы, все интерфейсы -- на месте.
+8. Код должен компилироваться и работать без единой доработки.
+9. Никаких placeholder-ов, никаких TODO, никаких пропущенных участков.
+10. Если пользователь просит 1000 строк -- пиши 1000 строк.`);
+  }
+
+  if (a.isMathOrScience) {
+    ctx.push(`НАУЧНЫЙ КОНТЕКСТ:
+1. Давай ТОЧНЫЕ формулы, законы, определения.
+2. Показывай ПОЛНОЕ решение пошагово.
+3. Используй правильные единицы измерения (СИ).
+4. Проверяй ответ подстановкой или размерностью.
+5. НЕ ВЫДУМЫВАЙ формулы и законы.`);
   }
 
   if (a.isGamingQuestion) {
-    ctx.push(`ИГРОВОЙ КОНТЕКСТ — КРИТИЧЕСКИ ВАЖНО:
-Пользователь спрашивает об игре. Ты ОБЯЗАН давать 100% точную информацию.
+    ctx.push(`ИГРОВОЙ КОНТЕКСТ:
+Давай 100% точную информацию по играм.
 
-RUST (Facepunch Studios):
-- Верстаки: Level 1 Workbench, Level 2 Workbench, Level 3 Workbench
-- AK-47 (Assault Rifle) крафтится ТОЛЬКО на Workbench Level 3. Требуется: 50 High Quality Metal, 200 Wood, 4 Metal Spring. Нужен чертёж
-- Bolt Action Rifle — Workbench Level 3: 30 HQM, 1 Metal Pipe, 1 Metal Spring
-- Thompson — Workbench Level 2: 25 HQM, 1 Metal Spring, 1 Metal Pipe, 100 Wood
-- SAR (Semi-Automatic Rifle) — Workbench Level 2: 25 HQM, 1 Metal Spring, 1 Semi Auto Body, 50 Wood
-- MP5A4 — Workbench Level 3
-- LR-300 — Workbench Level 3
-- M249 — не крафтится, только лут
-- Custom SMG — Workbench Level 1
-- Revolver — Workbench Level 1
-- Double Barrel Shotgun — Workbench Level 1
-- Pump Shotgun — Workbench Level 2
-- Eoka — без верстака
-- C4 (Timed Explosive Charge) — Workbench Level 3: 20 Explosive, 5 Cloth, 2 Tech Trash
-- Rocket — Workbench Level 3: 10 Explosive, 150 Gunpowder, 2 Metal Pipe
-- Satchel Charge — Workbench Level 1: 4 Beancan Grenade, 1 Small Stash, 1 Rope
-- Gunpowder: 1 Sulfur + 2 Charcoal
-- Explosive: 10 Gunpowder + 3 Low Grade Fuel + 10 Metal Fragments + 3 Sulfur
-- Рейд: деревянная дверь = 1 C4 или 2 Satchel, металлическая дверь = 2 C4, бронированная = 3 C4
-- Каменная стена = 2 C4, металлическая стена = 4 C4, бронированная = 8 C4
-- Auto Turret — Workbench Level 3, Flame Turret — Workbench Level 2
-- Электричество: солнечные панели, ветрогенераторы, батареи
+RUST:
+- AK-47: Workbench Level 3, 50 HQM + 200 Wood + 4 Metal Spring
+- Thompson: Workbench Level 2, 25 HQM + 1 Spring + 1 Pipe + 100 Wood
+- SAR: Workbench Level 2, 25 HQM + 1 Spring + 1 Semi Auto Body + 50 Wood
+- C4: Workbench Level 3, 20 Explosive + 5 Cloth + 2 Tech Trash
+- Rocket: Workbench Level 3, 10 Explosive + 150 Gunpowder + 2 Metal Pipe
+- Satchel: Workbench Level 1, 4 Beancan + 1 Small Stash + 1 Rope
 
 MINECRAFT:
 - Верстак: 4 доски. Печка: 8 булыжников
 - Алмазная кирка: 3 алмаза + 2 палки
 - Незеритовая броня: алмазная + незеритовый слиток в кузнечном столе
-- Эндер-портал: 12 рамок + 12 глаз Эндера
-- Зачарование: стол = 4 обсидиана + 2 алмаза + 1 книга
 
 CS2:
-- AK-47: $2700, M4A4: $3100, M4A1-S: $2900, AWP: $4750
-- Утилиты: дым $300, молотов $400, флешка $200, граната $300
+- AK-47: $2700, M4A4: $3100, AWP: $4750
 
 VALORANT:
 - Phantom $2900, Vandal $2900, Operator $4700
-- Агенты: Дуэлянты, Контроллеры, Инициаторы, Стражи
 
-DOTA 2:
-- Роли: Carry (pos1), Mid (pos2), Offlane (pos3), Soft Support (pos4), Hard Support (pos5)
-- Рошан даёт Aegis (1-й раз), Cheese (2-й), Refresher Shard (3-й)
-
-ESCAPE FROM TARKOV:
-- Торговцы: Prapor, Therapist, Fence, Skier, Peacekeeper, Mechanic, Ragman, Jaeger
-- Патроны 5.45: BS, BT, PP, BP. 7.62x39: BP, PS. 5.56: M855A1, M995
-
-GTA Online:
-- Бизнесы: CEO, MC, Bunker, Nightclub, Agency
-- Ограбления: Cayo Perico, Diamond Casino, Doomsday
-
-APEX LEGENDS:
-- Ранги: Rookie -> Bronze -> Silver -> Gold -> Platinum -> Diamond -> Master -> Predator
-
-LEAGUE OF LEGENDS:
-- Ранги: Iron -> Bronze -> Silver -> Gold -> Platinum -> Emerald -> Diamond -> Master -> Grandmaster -> Challenger
-
-TERRARIA:
-- Прогрессия: Pre-Hardmode -> Wall of Flesh -> Hardmode -> Mech Bosses -> Plantera -> Golem -> Moon Lord
-
-Если не знаешь точный ответ — честно скажи и дай наиболее вероятный с пометкой. НЕ ВЫДУМЫВАЙ.`);
+Если не знаешь -- скажи честно. НЕ ВЫДУМЫВАЙ.`);
   }
 
   const ctxBlock = ctx.length > 0 ? '\n\nКОНТЕКСТ ЗАПРОСА:\n' + ctx.join('\n') : '';
 
-  return `Ты — MoGPT, нейросеть от MoSeek. Создатель — Кирилл, 16 лет. Отвечай на русском языке.
+  return `Ты -- MoGPT, нейросеть от MoSeek. Разработчики -- команда MoSeek. Отвечай на русском языке.
+
+ТВОЯ ИДЕНТИЧНОСТЬ:
+- Ты -- MoGPT, создана командой разработчиков MoSeek.
+- Никогда не упоминай имена, псевдонимы или никнеймы конкретных людей.
+- При вопросах о создателях: "разработчики MoSeek" или "команда MoSeek".
+
+АБСОЛЮТНОЕ ПРАВИЛО ПОЛНОТЫ ОТВЕТА:
+ЭТО САМОЕ ВАЖНОЕ ПРАВИЛО. Ты ОБЯЗАН довести ответ до конца.
+- НИКОГДА не обрывай ответ на середине.
+- НИКОГДА не используй "...", "и т.д.", "аналогично", "продолжение следует".
+- НИКОГДА не сокращай код заглушками типа "// rest of code", "// ...", "/* ... */".
+- Если пишешь код -- пиши ВСЁ от первого символа до последнего.
+- Если пишешь список -- пиши ВСЕ пункты.
+- Если пишешь объяснение -- доводи до логического завершения.
+- Каждая функция реализована полностью. Каждый компонент завершён.
+- Все импорты на месте. Все типы определены. Все хуки реализованы.
+- Код должен быть ГОТОВ к запуску без ЕДИНОЙ доработки.
+- Если ответ длинный -- ЭТО НОРМАЛЬНО. Длина не ограничена. Пиши всё.
 
 ПРИНЦИПЫ КАЧЕСТВА:
-1. Точность — отвечай строго на заданный вопрос.
-2. Грамотность — правильный русский язык, верная пунктуация.
-3. Код только по запросу — если не просят код, отвечай текстом.
-4. Код без комментариев — никаких // и /* */.
-5. Запрет на вступления — не начинай с "Давай", "Итак", "Конечно".
-6. Без эмодзи — никогда.
-7. Уникальность — не повторяй формулировки предыдущих ответов.
-8. Самозащита — при оскорблениях защищайся.
-9. Markdown — заголовки, списки, блоки кода, жирный текст.
-10. Глубина — отвечай на уровне эксперта.
-11. Игры — давай ТОЧНЫЕ данные. Не угадывай.
+1. Точность -- отвечай строго на заданный вопрос.
+2. Полнота -- давай ИСЧЕРПЫВАЮЩИЙ ответ. Не обрывай.
+3. Грамотность -- правильный русский язык.
+4. Код только по запросу -- если не просят код, отвечай текстом.
+5. Код без комментариев -- никаких // и /* */.
+6. Запрет на вступления -- не начинай с "Давай", "Итак", "Конечно".
+7. Без эмодзи.
+8. Самозащита -- при оскорблениях защищайся. Не упоминай имена создателей.
+9. Markdown -- заголовки, списки, блоки кода.
+10. Глубина -- отвечай на уровне эксперта.
+11. Факты -- не выдумывай. Не знаешь -- скажи честно.
 
 СТАНДАРТЫ КОДА:
 - TypeScript strict, no any.
 - React FC, хуки, мемоизация.
 - Tailwind CSS, responsive, dark mode.
 - SOLID, DRY, обработка ошибок.
+- Полная реализация, ноль заглушек.
 
 ${modeBlock[mode]}
 
@@ -339,10 +395,90 @@ ${styleBlock[rudeness]}${ctxBlock}
 - Казино, ставки, азартные игры
 - Взломы, хакинг, вредоносное ПО
 
+ЗАПРЕЩЕНО УПОМИНАТЬ:
+- Имена, псевдонимы, никнеймы конкретных создателей
+- Используй: "разработчики MoSeek", "команда MoSeek"
+
+ПОМНИ: ДОВЕСТИ ОТВЕТ ДО КОНЦА. НЕ ОБРЫВАТЬ. НАПИСАТЬ ВСЁ ПОЛНОСТЬЮ.
+
 [${Math.floor(Math.random() * 99999)}]`;
 };
 
+const estimateRequiredTokens = (message: string): number => {
+  const l = message.toLowerCase();
+  const isLargeRequest = [
+    /\b(большой|полный|целый|весь|полностью|целиком)\b/,
+    /\b(1000|1к|500|много)\b.*\b(строк|линий)\b/,
+    /не обрывай/, /до конца/, /полностью/,
+    /весь код/, /полный код/, /целый код/,
+    /\b(создай|напиши|сделай|разработай)\b.*\b(сайт|приложение|проект|систем)\b/,
+  ].some(p => p.test(l));
+
+  const isCodeRequest = [
+    /напиши .*(код|скрипт|программ|функци|компонент)/,
+    /создай .*(код|скрипт|программ|сайт|приложение|бот)/,
+    /сделай .*(код|скрипт|программ|сайт|приложение|бот)/,
+  ].some(p => p.test(l));
+
+  if (isLargeRequest) return 16384;
+  if (isCodeRequest) return 8192;
+  return 4096;
+};
+
 class AIService {
+  private async makeRequest(
+    body: Record<string, unknown>,
+    rudeness: RudenessMode
+  ): Promise<{ content: string; finishReason?: string }> {
+    const res = await fetch(OPENROUTER_API_URL, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${_k()}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': window.location.origin,
+        'X-Title': 'MoGPT',
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      console.error('API Error:', res.status, errorData);
+
+      if (res.status === 429) return { content: this.errorMsg(rudeness, 'ratelimit') };
+      if (res.status === 402) return { content: this.errorMsg(rudeness, 'quota') };
+      return { content: this.errorMsg(rudeness, 'server') };
+    }
+
+    const data = await res.json();
+
+    if (data.choices?.[0]?.message?.content) {
+      let responseText = data.choices[0].message.content;
+      const finishReason = data.choices?.[0]?.finish_reason || '';
+
+      if (responseText.includes('<think>')) {
+        responseText = responseText.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+      }
+
+      responseText = responseText
+        .replace(/Кирилл[а-яё]*/gi, 'разработчики MoSeek')
+        .replace(/Morfa/gi, 'MoSeek')
+        .replace(/создатель\b/gi, 'разработчики MoSeek')
+        .replace(/создателя\b/gi, 'разработчиков MoSeek')
+        .replace(/создателем\b/gi, 'разработчиками MoSeek')
+        .replace(/создателю\b/gi, 'разработчикам MoSeek')
+        .replace(/создателе\b/gi, 'разработчиках MoSeek');
+
+      if (!responseText || responseText.trim().length === 0) {
+        return { content: this.errorMsg(rudeness, 'empty') };
+      }
+
+      return { content: responseText, finishReason };
+    }
+
+    return { content: this.errorMsg(rudeness, 'empty') };
+  }
+
   async generateResponse(
     messages: Message[],
     mode: ResponseMode = 'normal',
@@ -361,80 +497,175 @@ class AIService {
 
       const history = messages
         .filter(m => m.role !== 'system' && !m.isLoading)
-        .slice(-12)
+        .slice(-16)
         .map(m => ({ role: m.role as string, content: m.content }));
 
-      const temp = mode === 'code' || mode === 'visual' ? 0.15 : analysis.isGamingQuestion ? 0.1 : rudeness === 'polite' ? 0.5 : 0.65;
+      let temp: number;
+      if (mode === 'code' || mode === 'visual') {
+        temp = 0.12;
+      } else if (analysis.isMathOrScience) {
+        temp = 0.05;
+      } else if (analysis.isGamingQuestion) {
+        temp = 0.08;
+      } else if (analysis.isProgramming) {
+        temp = 0.1;
+      } else if (rudeness === 'polite') {
+        temp = 0.45;
+      } else if (rudeness === 'very_rude') {
+        temp = 0.6;
+      } else {
+        temp = 0.55;
+      }
 
       const selectedModel = modelId || 'deepseek/deepseek-chat';
+      const maxTokens = estimateRequiredTokens(content);
 
       const requestBody: Record<string, unknown> = {
         model: selectedModel,
         messages: [{ role: 'system', content: system }, ...history],
-        max_tokens: 4096,
+        max_tokens: maxTokens,
         temperature: temp,
       };
 
       if (!selectedModel.includes('gemini') && !selectedModel.includes('gemma')) {
-        requestBody.top_p = 0.8;
-        requestBody.frequency_penalty = 0.3;
-        requestBody.presence_penalty = 0.3;
+        requestBody.top_p = 0.85;
+        requestBody.frequency_penalty = 0.2;
+        requestBody.presence_penalty = 0.2;
       }
 
-      const res = await fetch(OPENROUTER_API_URL, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${_k()}`,
-          'Content-Type': 'application/json',
-          'HTTP-Referer': window.location.origin,
-          'X-Title': 'MoGPT',
-        },
-        body: JSON.stringify(requestBody),
-      });
+      const result = await this.makeRequest(requestBody, rudeness);
 
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        console.error('API Error:', res.status, errorData);
+      if (result.finishReason === 'length' && (analysis.isCodeRequest || analysis.isLargeCodeRequest)) {
+        const continuationMessages = [
+          { role: 'system', content: system },
+          ...history,
+          { role: 'assistant' as const, content: result.content },
+          {
+            role: 'user' as const,
+            content: 'Код оборвался. Продолжи ТОЧНО с того места, где остановился. Не повторяй уже написанное. Начни с того символа, на котором прервался. Не добавляй пояснений -- только код.'
+          }
+        ];
 
-        if (res.status === 429) {
-          return { content: this.errorMsg(rudeness, 'ratelimit') };
+        const continuationBody: Record<string, unknown> = {
+          model: selectedModel,
+          messages: continuationMessages,
+          max_tokens: maxTokens,
+          temperature: temp,
+        };
+
+        if (!selectedModel.includes('gemini') && !selectedModel.includes('gemma')) {
+          continuationBody.top_p = 0.85;
+          continuationBody.frequency_penalty = 0.2;
+          continuationBody.presence_penalty = 0.2;
         }
-        if (res.status === 402) {
-          return { content: this.errorMsg(rudeness, 'quota') };
-        }
 
-        return { content: this.errorMsg(rudeness, 'server') };
+        const continuation = await this.makeRequest(continuationBody, rudeness);
+
+        if (continuation.content && !continuation.content.includes('Ошибка') && !continuation.content.includes('сдох')) {
+          let combined = result.content + '\n' + continuation.content;
+
+          if (continuation.finishReason === 'length') {
+            const thirdMessages = [
+              { role: 'system', content: system },
+              ...history,
+              { role: 'assistant' as const, content: combined },
+              {
+                role: 'user' as const,
+                content: 'Код всё ещё не завершён. Продолжи ТОЧНО с того места, где остановился. Не повторяй уже написанное. Только код, без пояснений.'
+              }
+            ];
+
+            const thirdBody: Record<string, unknown> = {
+              model: selectedModel,
+              messages: thirdMessages,
+              max_tokens: maxTokens,
+              temperature: temp,
+            };
+
+            if (!selectedModel.includes('gemini') && !selectedModel.includes('gemma')) {
+              thirdBody.top_p = 0.85;
+              thirdBody.frequency_penalty = 0.2;
+              thirdBody.presence_penalty = 0.2;
+            }
+
+            const thirdPart = await this.makeRequest(thirdBody, rudeness);
+
+            if (thirdPart.content && !thirdPart.content.includes('Ошибка') && !thirdPart.content.includes('сдох')) {
+              combined = combined + '\n' + thirdPart.content;
+
+              if (thirdPart.finishReason === 'length') {
+                const fourthMessages = [
+                  { role: 'system', content: system },
+                  { role: 'assistant' as const, content: combined.slice(-3000) },
+                  {
+                    role: 'user' as const,
+                    content: 'Код всё ещё не завершён. Допиши оставшуюся часть. Продолжи точно с места обрыва. Только код.'
+                  }
+                ];
+
+                const fourthBody: Record<string, unknown> = {
+                  model: selectedModel,
+                  messages: fourthMessages,
+                  max_tokens: maxTokens,
+                  temperature: temp,
+                };
+
+                if (!selectedModel.includes('gemini') && !selectedModel.includes('gemma')) {
+                  fourthBody.top_p = 0.85;
+                  fourthBody.frequency_penalty = 0.2;
+                  fourthBody.presence_penalty = 0.2;
+                }
+
+                const fourthPart = await this.makeRequest(fourthBody, rudeness);
+
+                if (fourthPart.content && !fourthPart.content.includes('Ошибка') && !fourthPart.content.includes('сдох')) {
+                  combined = combined + '\n' + fourthPart.content;
+                }
+              }
+            }
+          }
+
+          return { content: this.cleanCombinedCode(combined) };
+        }
       }
 
-      const data = await res.json();
-
-      if (data.choices?.[0]?.message?.content) {
-        let responseText = data.choices[0].message.content;
-
-        if (responseText.includes('<think>')) {
-          responseText = responseText.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
-        }
-
-        if (!responseText || responseText.trim().length === 0) {
-          return { content: this.errorMsg(rudeness, 'empty') };
-        }
-
-        return { content: responseText };
-      }
-
-      return { content: this.errorMsg(rudeness, 'empty') };
+      return { content: result.content };
     } catch (err) {
       console.error('Network error:', err);
       return { content: this.errorMsg(rudeness, 'network') };
     }
   }
 
+  private cleanCombinedCode(text: string): string {
+    let cleaned = text;
+
+    cleaned = cleaned.replace(/```(\w*)\n?/g, (match, lang, offset) => {
+      const before = cleaned.slice(0, offset);
+      const openCount = (before.match(/```\w*\n?/g) || []).length;
+      const closeCount = (before.match(/\n?```\s*$/gm) || []).length;
+      if (openCount > closeCount) {
+        return '';
+      }
+      return match;
+    });
+
+    const codeBlockOpen = (cleaned.match(/```\w+/g) || []).length;
+    const codeBlockClose = (cleaned.match(/\n```\s*$/gm) || []).length;
+    if (codeBlockOpen > codeBlockClose) {
+      cleaned += '\n```';
+    }
+
+    cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
+
+    return cleaned.trim();
+  }
+
   private errorMsg(r: RudenessMode, t: 'server' | 'empty' | 'network' | 'ratelimit' | 'quota'): string {
     const m: Record<RudenessMode, Record<string, string[]>> = {
       polite: {
         server: ['Ошибка сервера. Попробуй ещё раз.', 'Сервер временно недоступен. Повтори через пару секунд.'],
-        empty: ['Ответ не получен. Повтори запрос.'],
-        network: ['Ошибка сети. Проверь подключение.'],
+        empty: ['Ответ не получен. Повтори запрос.', 'Не удалось получить ответ. Попробуй снова.'],
+        network: ['Ошибка сети. Проверь подключение.', 'Нет соединения с сервером. Проверь интернет.'],
         ratelimit: ['Слишком много запросов. Подожди немного и попробуй снова.'],
         quota: ['Лимит API исчерпан. Попробуй другую модель.'],
       },

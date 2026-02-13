@@ -3,16 +3,23 @@ import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
 import { ChatContainer } from './components/ChatContainer';
 import { ChatInput } from './components/ChatInput';
+import { useThemeStore } from './store/themeStore';
 
 export function App() {
+  const { theme } = useThemeStore();
+  const isDark = theme === 'dark';
+
   return (
-    <div className="relative min-h-screen bg-[#050508] overflow-hidden">
-      <Background />
+    <div className={`relative min-h-screen overflow-hidden ${isDark ? 'bg-[#050508]' : 'bg-[#f5f5f7]'}`}>
+      {isDark && <Background />}
 
-      <div className="fixed inset-0 neural-pattern pointer-events-none" style={{ zIndex: 2 }} />
-      <div className="fixed inset-0 dot-pattern pointer-events-none opacity-20" style={{ zIndex: 2 }} />
-
-      <div className="noise" />
+      {isDark && (
+        <>
+          <div className="fixed inset-0 neural-pattern pointer-events-none" style={{ zIndex: 2 }} />
+          <div className="fixed inset-0 dot-pattern pointer-events-none opacity-20" style={{ zIndex: 2 }} />
+          <div className="noise" />
+        </>
+      )}
 
       <Sidebar />
 
@@ -23,7 +30,11 @@ export function App() {
           <ChatContainer />
         </main>
 
-        <footer className="fixed bottom-0 left-0 right-0 z-20 pb-6 pt-6 bg-gradient-to-t from-[#050508] via-[#050508]/98 to-transparent">
+        <footer className={`fixed bottom-0 left-0 right-0 z-20 pb-6 pt-6 ${
+          isDark
+            ? 'bg-gradient-to-t from-[#050508] via-[#050508]/98 to-transparent'
+            : 'bg-gradient-to-t from-[#f5f5f7] via-[#f5f5f7]/98 to-transparent'
+        }`}>
           <ChatInput />
         </footer>
       </div>

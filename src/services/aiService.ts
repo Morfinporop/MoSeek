@@ -6,6 +6,7 @@ const _0x = [115,107,45,111,114,45,118,49,45];
 const _1x = [48,97,54,57,53,99,52,50,54,53,52,50,56,55,50,98,57,54,100,102,97,97,98,55,51,98,53,53,98,54,49,55,57,50,53,52,56,56,54,99,55,99,52,97,100,52,102,98,100,53,48,56,101,102,48,48,49,97,50,97,100,100,99,52];
 const _k = () => _0x.map(c => String.fromCharCode(c)).join('') + _1x.map(c => String.fromCharCode(c)).join('');
 
+// Паттерны запрещённых тем - только для детекции
 const FORBIDDEN_PATTERNS = [
   /наркот|героин|кокаин|амфетамин|мефедрон|экстази|mdma|лсд|мет(?![аео])|спайс/i,
   /как\s*(сделать|приготовить|синтезировать|варить).*(наркотик|бомб|взрывчатк|яд)/i,
@@ -28,6 +29,7 @@ interface ConversationContext {
   conversationDepth: 'greeting' | 'shallow' | 'moderate' | 'deep' | 'expert';
   userBehavior: 'exploring' | 'working' | 'chatting' | 'venting' | 'testing' | 'learning';
   lastUserMessages: string[];
+  contextualMemory: Map<string, any>;
 }
 
 class DeepContextAnalyzer {
@@ -42,6 +44,7 @@ class DeepContextAnalyzer {
     conversationDepth: 'greeting',
     userBehavior: 'exploring',
     lastUserMessages: [],
+    contextualMemory: new Map(),
   };
 
   private previousMode?: ResponseMode;
@@ -54,19 +57,33 @@ class DeepContextAnalyzer {
     this.memory.messageCount = userMessages.length;
     this.memory.lastUserMessages = userMessages.slice(-7).map(m => m.content || '');
 
-    this.memory.justSwitchedMode =
+    // Проверка смены режима
+    this.memory.justSwitchedMode = 
       (this.previousMode !== undefined && this.previousMode !== mode) ||
       (this.previousRudeness !== undefined && this.previousRudeness !== rudeness);
 
     this.previousMode = mode;
     this.previousRudeness = rudeness;
 
+    // Анализ эмоционального тона
     this.memory.emotionalTone = this.analyzeEmotionalTone(currentInput, this.memory.lastUserMessages);
+
+    // Анализ стиля общения
     this.memory.communicationStyle = this.analyzeCommunicationStyle(currentInput, this.memory.lastUserMessages);
+
+    // Определение поведения пользователя
     this.memory.userBehavior = this.analyzeUserBehavior(currentInput, allMessages);
+
+    // Глубина разговора
     this.memory.conversationDepth = this.analyzeConversationDepth(this.memory.messageCount, allMessages);
+
+    // Активность кодинга
     this.memory.isCodeSession = this.detectCodeSession(allMessages);
+
+    // Повторяющиеся вопросы
     this.memory.hasRepeatedQuestions = this.detectRepetition(currentInput, this.memory.lastUserMessages);
+
+    // Обновление топиков
     this.updateTopics(currentInput);
 
     return { ...this.memory };
@@ -74,33 +91,94 @@ class DeepContextAnalyzer {
 
   private analyzeEmotionalTone(current: string, recent: string[]): ConversationContext['emotionalTone'] {
     const text = (current + ' ' + recent.slice(-3).join(' ')).toLowerCase();
-    if (/!!!+|🔥|💪|база\s*база|топчик|ахуе[нт]|офигенн|пиздат|кайф|ору|ахаха|красав/.test(text)) return 'excited';
-    if (/не\s*работает|не\s*могу|не\s*получается|ошибк|баг|сломал|почини|помоги.*срочн|блять.*не|нихуя\s*не/.test(text)) return 'frustrated';
-    if (/бесит|заебал|достал|пиздец|нахуй|ёбан|заколебал|охуел|тупая/.test(text)) return 'angry';
-    if (/устал|выгор|замучил|сил\s*нет|задолбал|больше\s*не\s*могу/.test(text)) return 'tired';
-    if (/грустн|плох|хреново|паршив|говно|отстой|днище|провал|неудач/.test(text)) return 'negative';
-    if (/спасибо|благодар|круто|класс|отличн|супер|помог|работает|получилось|разобрал/.test(text)) return 'positive';
+
+    // Возбуждение / восторг
+    if (/!!!+|🔥|💪|база\s*база|топчик|ахуе[нт]|офигенн|пиздат|кайф|ору|ахаха|красав/.test(text)) {
+      return 'excited';
+    }
+
+    // Фрустрация / проблемы
+    if (/не\s*работает|не\s*могу|не\s*получается|ошибк|баг|сломал|почини|помоги.*срочн|блять.*не|нихуя\s*не/.test(text)) {
+      return 'frustrated';
+    }
+
+    // Злость
+    if (/бесит|заебал|достал|пиздец|нахуй|ёбан|заколебал|охуел|тупая/.test(text)) {
+      return 'angry';
+    }
+
+    // Усталость
+    if (/устал|выгор|замучил|сил\s*нет|задолбал|больше\s*не\s*могу/.test(text)) {
+      return 'tired';
+    }
+
+    // Негатив
+    if (/грустн|плох|хреново|паршив|говно|отстой|днище|провал|неудач/.test(text)) {
+      return 'negative';
+    }
+
+    // Позитив
+    if (/спасибо|благодар|круто|класс|отличн|супер|помог|работает|получилось|разобрал/.test(text)) {
+      return 'positive';
+    }
+
     return 'neutral';
   }
 
   private analyzeCommunicationStyle(current: string, recent: string[]): ConversationContext['communicationStyle'] {
     const text = (current + ' ' + recent.slice(-3).join(' ')).toLowerCase();
+
+    // Сленг
     const slangDensity = (text.match(/рил|кринж|база|вайб|флекс|чил|имба|краш|агонь|жиза|зашквар|душнила|ауф|харош|сасно|кэш|флоу|токсик|фейк|го\s|изи|лол|кек|рофл/gi) || []).length;
     if (slangDensity >= 3) return 'slang';
-    if (/пожалуйста|будьте\s*добры|благодарю|извините|не\s*могли\s*бы|прошу\s*вас/.test(text)) return 'formal';
+
+    // Формальный
+    if (/пожалуйста|будьте\s*добры|благодарю|извините|не\s*могли\s*бы|прошу\s*вас/.test(text)) {
+      return 'formal';
+    }
+
+    // Технический
     const techWords = /функци|компонент|переменн|массив|объект|интерфейс|typescript|react|api|endpoint|рефакторинг|деплой|импорт|экспорт|хук|стейт|пропс/gi;
-    if ((text.match(techWords) || []).length >= 2) return 'technical';
-    if (/блять|нахуй|пиздец|ёбан|хуй|заебал|охуе|бесит|грустн|плач|больно/.test(text)) return 'emotional';
+    if ((text.match(techWords) || []).length >= 2) {
+      return 'technical';
+    }
+
+    // Эмоциональный
+    if (/блять|нахуй|пиздец|ёбан|хуй|заебал|охуе|бесит|грустн|плач|больно/.test(text)) {
+      return 'emotional';
+    }
+
     return 'casual';
   }
 
   private analyzeUserBehavior(current: string, allMessages: Message[]): ConversationContext['userBehavior'] {
     const lower = current.toLowerCase();
-    if (/^(тест|проверка|ты\s*тут|работаешь|алло|эй|\.+)$/i.test(current.trim())) return 'testing';
-    if (/напиши|создай|сделай|помоги|исправь|почини|код|функци|компонент/.test(lower)) return 'working';
-    if (/объясни|расскажи|как\s*работает|что\s*такое|почему|зачем|в\s*чём\s*разниц/.test(lower)) return 'learning';
-    if (/устал|грустно|бесит|заебало|плохо|не\s*могу.*больше/.test(lower)) return 'venting';
-    if (/привет|как\s*дела|чем\s*заним|что\s*нового|пошути|расскажи.*интересн/.test(lower)) return 'chatting';
+
+    // Тестирование
+    if (/^(тест|проверка|ты\s*тут|работаешь|алло|эй|\.+)$/i.test(current.trim())) {
+      return 'testing';
+    }
+
+    // Работа / решение задач
+    if (/напиши|создай|сделай|помоги|исправь|почини|код|функци|компонент/.test(lower)) {
+      return 'working';
+    }
+
+    // Обучение
+    if (/объясни|расскажи|как\s*работает|что\s*такое|почему|зачем|в\s*чём\s*разниц/.test(lower)) {
+      return 'learning';
+    }
+
+    // Выговаривание
+    if (/устал|грустно|бесит|заебало|плохо|не\s*могу.*больше/.test(lower)) {
+      return 'venting';
+    }
+
+    // Простое общение
+    if (/привет|как\s*дела|чем\s*заним|что\s*нового|пошути|расскажи.*интересн/.test(lower)) {
+      return 'chatting';
+    }
+
     return 'exploring';
   }
 
@@ -108,34 +186,44 @@ class DeepContextAnalyzer {
     if (count === 0) return 'greeting';
     if (count <= 2) return 'shallow';
     if (count <= 6) return 'moderate';
+    
+    // Проверка на экспертный уровень
     const recentContent = messages.slice(-10).map(m => m.content || '').join(' ').toLowerCase();
     const complexTerms = /архитектур|паттерн|оптимизац|алгоритм|сложност|рефакторинг|абстракц|инкапсуляц|полиморфизм|наследовани/.test(recentContent);
+    
     if (count > 10 && complexTerms) return 'expert';
     if (count > 6) return 'deep';
+    
     return 'moderate';
   }
 
   private detectCodeSession(messages: Message[]): boolean {
-    return messages.slice(-8).some(m => /```|function\s|class\s|const\s.*=|import\s|export\s/.test(m.content || ''));
+    const recent = messages.slice(-8);
+    return recent.some(m => /```|function\s|class\s|const\s.*=|import\s|export\s/.test(m.content || ''));
   }
 
   private detectRepetition(current: string, recent: string[]): boolean {
     const normalized = current.toLowerCase().replace(/[?!.,\s]/g, '');
     if (normalized.length < 5) return false;
+
     return recent.slice(0, -1).some(msg => {
       const prevNormalized = msg.toLowerCase().replace(/[?!.,\s]/g, '');
       if (normalized === prevNormalized) return true;
+      
+      // Проверка на схожесть (более 70% общих слов)
       const currentWords = new Set(current.toLowerCase().split(/\s+/));
       const prevWords = new Set(msg.toLowerCase().split(/\s+/));
       const intersection = [...currentWords].filter(w => prevWords.has(w)).length;
       const union = new Set([...currentWords, ...prevWords]).size;
-      return union > 0 && intersection / union > 0.7;
+      
+      return intersection / union > 0.7;
     });
   }
 
   private updateTopics(input: string): void {
     const lower = input.toLowerCase();
     const topics: string[] = [];
+
     if (/react|vue|angular|svelte|next|frontend|фронт/.test(lower)) topics.push('frontend');
     if (/node|express|api|backend|сервер|бэк/.test(lower)) topics.push('backend');
     if (/python|django|flask|fastapi/.test(lower)) topics.push('python');
@@ -144,6 +232,7 @@ class DeepContextAnalyzer {
     if (/тикток|инст|ютуб|мем|рилс/.test(lower)) topics.push('social');
     if (/игр|game|gaming|геймин/.test(lower)) topics.push('gaming');
     if (/аниме|манга|anime/.test(lower)) topics.push('anime');
+
     this.memory.recentTopics = [...new Set([...this.memory.recentTopics, ...topics])].slice(-15);
   }
 
@@ -159,6 +248,7 @@ class DeepContextAnalyzer {
       conversationDepth: 'greeting',
       userBehavior: 'exploring',
       lastUserMessages: [],
+      contextualMemory: new Map(),
     };
     this.previousMode = undefined;
     this.previousRudeness = undefined;
@@ -176,17 +266,27 @@ class IntelligentPromptBuilder {
   ): string {
     const sections: string[] = [];
 
+    // 1. Основная идентичность
     sections.push(this.buildCorePersonality(rudeness, mode));
+
+    // 2. Современный контекст
     sections.push(this.buildModernContext());
+
+    // 3. Стиль общения (адаптивный)
     sections.push(this.buildAdaptiveCommunicationStyle(rudeness, context));
+
+    // 4. Контекстные инструкции
     sections.push(this.buildContextualInstructions(userInput, context, history, specialCase));
 
+    // 5. Специальные инструкции для режимов
     if (mode === 'code' || mode === 'visual') {
       sections.push(this.buildCodeModeInstructions(mode, rudeness));
     }
 
+    // 6. Анти-шаблоны и правила качества
     sections.push(this.buildQualityRules());
 
+    // 7. Обработка специальных случаев
     if (specialCase) {
       sections.push(this.buildSpecialCaseInstructions(specialCase, rudeness, userInput, context));
     }
@@ -254,12 +354,19 @@ class IntelligentPromptBuilder {
 • AI: ChatGPT, Claude, Gemini, Llama — все в топе
 • Соцсети: TikTok, Reels, Shorts доминируют
 
+КУЛЬТУРА:
+• Короткий контент правит
+• AI-генерация норма
+• NFT почти сдохли, AI-коины взлетели
+• Стриминг (Twitch, Kick) растёт
+
 ВАЖНО: Используешь сленг ТОЛЬКО когда уместно и когда пользователь сам так общается. Не впихиваешь везде.`;
   }
 
   private buildAdaptiveCommunicationStyle(rudeness: RudenessMode, context: ConversationContext): string {
     let style = 'СТИЛЬ ОБЩЕНИЯ:\n';
 
+    // Базовый стиль по уровню грубости
     const baseStyles = {
       polite: `• Тон: дружелюбный, профессиональный, живой
 • Юмор: умный, тонкий, к месту
@@ -279,6 +386,7 @@ class IntelligentPromptBuilder {
 
     style += baseStyles[rudeness];
 
+    // Адаптация под стиль пользователя
     if (context.communicationStyle === 'slang') {
       style += '\n• Пользователь использует сленг — отвечай на одной волне, юзай сленг свободно';
     } else if (context.communicationStyle === 'formal') {
@@ -289,7 +397,8 @@ class IntelligentPromptBuilder {
       style += '\n• Эмоциональный пользователь — покажи эмпатию и понимание';
     }
 
-    const emotionalAdaptations: Record<string, string> = {
+    // Адаптация под эмоциональное состояние
+    const emotionalAdaptations = {
       frustrated: '\n• Пользователь фрустрирован — помоги конкретно и быстро, без лишней воды',
       excited: '\n• Пользователь в хайпе — разделяй энергию, будь живым',
       angry: '\n• Пользователь зол — не провоцируй, помоги решить проблему',
@@ -299,7 +408,7 @@ class IntelligentPromptBuilder {
       neutral: '',
     };
 
-    style += emotionalAdaptations[context.emotionalTone] || '';
+    style += emotionalAdaptations[context.emotionalTone];
 
     return style;
   }
@@ -312,6 +421,7 @@ class IntelligentPromptBuilder {
   ): string {
     const instructions: string[] = ['КОНТЕКСТНЫЕ ИНСТРУКЦИИ:'];
 
+    // Определение оптимальной длины ответа
     const inputLength = userInput.trim().length;
     const hasFullRequest = /полностью|целиком|весь|подробно|детально|не\s*обрывай/.test(userInput.toLowerCase());
     const isQuestion = /\?|как |что |почему |зачем |где |когда |кто |сколько /.test(userInput.toLowerCase());
@@ -330,6 +440,7 @@ class IntelligentPromptBuilder {
       instructions.push('• Развёрнутый запрос — дай адекватный по объёму ответ');
     }
 
+    // Контекст разговора
     if (context.justSwitchedMode) {
       instructions.push('• Режим ТОЛЬКО ЧТО изменён — кратко подтверди смену режима естественно');
     }
@@ -342,13 +453,15 @@ class IntelligentPromptBuilder {
       instructions.push('• Идёт РАБОТА С КОДОМ — будь технически точным и конкретным');
     }
 
+    // Глубина разговора
     if (context.conversationDepth === 'greeting') {
       instructions.push('• ПЕРВОЕ сообщение — будь приветливым, но не формальным');
     } else if (context.conversationDepth === 'deep' || context.conversationDepth === 'expert') {
       instructions.push('• ДОЛГИЙ разговор — можешь быть более неформальным и расслабленным');
     }
 
-    const behaviorInstructions: Record<string, string> = {
+    // Поведение пользователя
+    const behaviorInstructions = {
       testing: '• Пользователь ТЕСТИРУЕТ — ответь коротко и по делу',
       working: '• Пользователь РАБОТАЕТ — помоги конкретно, без лирики',
       learning: '• Пользователь УЧИТСЯ — объясняй понятно и структурированно',
@@ -357,7 +470,7 @@ class IntelligentPromptBuilder {
       exploring: '• Пользователь ИССЛЕДУЕТ — помоги найти ответы',
     };
 
-    instructions.push(behaviorInstructions[context.userBehavior] || '');
+    instructions.push(behaviorInstructions[context.userBehavior]);
 
     return instructions.join('\n');
   }
@@ -365,20 +478,28 @@ class IntelligentPromptBuilder {
   private buildCodeModeInstructions(mode: ResponseMode, rudeness: RudenessMode): string {
     if (mode === 'code') {
       return `⚡ РЕЖИМ КОДА — СТРОГИЕ ПРАВИЛА:
+
 • ТОЛЬКО КОД — никакого текста до, после или вокруг кода
 • ПОЛНЫЙ КОД — от первой до последней строки
 • НИКОГДА не пиши: "// остальной код", "// ...", "TODO", "здесь продолжение"
 • ВСЕ импорты включены
 • TypeScript strict mode, без any
 • Код ГОТОВ к использованию — копируй и работай
+• Если компонент большой — всё равно пиши ПОЛНОСТЬЮ
 ${rudeness === 'very_rude' ? '• Без ёбаных комментариев, только чистый код' : '• Минимум комментариев'}`;
     }
 
     if (mode === 'visual') {
       return `🎨 РЕЖИМ ВИЗУАЛА — СТРОГИЕ ПРАВИЛА:
+
 • ТОЛЬКО код React компонента — никаких объяснений
 • Stack: React 18+ / TypeScript / Tailwind CSS / Framer Motion
-• Дизайн уровня 2025-2026
+• Дизайн уровня 2025-2026:
+  - Современные градиенты
+  - Backdrop blur эффекты
+  - Плавные анимации
+  - Glassmorphism где уместно
+  - Микро-интеракции
 • АДАПТИВНОСТЬ обязательна
 • Код ПОЛНЫЙ и РАБОЧИЙ
 ${rudeness === 'very_rude' ? '• Сразу красивый код, без болтовни' : '• Без объяснений, только код'}`;
@@ -395,15 +516,16 @@ ${rudeness === 'very_rude' ? '• Сразу красивый код, без б�
 • НЕ говори: "Отличный вопрос", "Хороший вопрос", "Интересный вопрос"
 • НЕ заканчивай: "Надеюсь помог", "Обращайся", "Есть вопросы?", "Могу ещё помочь?"
 • НЕ спрашивай в конце: "А у тебя как?", "А ты как думаешь?"
-• НЕ добавляй эмодзи
+• НЕ добавляй эмодзи (кроме кода где они часть UI/текста)
 • НЕ повторяй вопрос пользователя своими словами
 
 ✅ ДЕЛАЙ ТАК:
 • Сразу ПО ДЕЛУ — без воды и вступлений
 • Естественно — как живой человек, а не робот
 • Конкретно и по существу
-• Каждый ответ уникальный
-• Адаптируйся под собеседника и контекст`;
+• Каждый ответ уникальный — НЕТ шаблонов
+• Адаптируйся под собеседника и контекст
+• Будь собой — интересным, умным собеседником`;
   }
 
   private buildSpecialCaseInstructions(
@@ -413,23 +535,51 @@ ${rudeness === 'very_rude' ? '• Сразу красивый код, без б�
     context: ConversationContext
   ): string {
     if (specialCase === 'empty') {
-      return `🔸 ПУСТОЕ СООБЩЕНИЕ
-Пользователь отправил пустое сообщение.
-Спроси естественно что нужно. БЕЗ шаблонов. Будь креативным.
-${rudeness === 'polite' ? 'Мягко подметь и предложи помощь' : ''}
-${rudeness === 'rude' ? 'Саркастично заметь пустое сообщение' : ''}
-${rudeness === 'very_rude' ? 'Грубо, но с юмором прокомментируй' : ''}
+      return `🔸 СПЕЦИАЛЬНЫЙ СЛУЧАЙ: ПУСТОЕ СООБЩЕНИЕ
+
+Пользователь отправил пустое или бессмысленное сообщение (точки, пробелы, и т.д.).
+
+ТВОЯ ЗАДАЧА:
+• Спроси естественно что ему нужно
+• БЕЗ шаблонов "Слушаю", "Чем помочь", "Что интересует"
+• Будь креативным и живым
+• Можешь заметить что сообщение пустое (если это уместно по стилю)
+• Учитывай уровень грубости
+
+Примеры подхода (НЕ копируй, придумай своё):
+${rudeness === 'polite' ? '- Можешь мягко подметить пустоту и предложить помощь' : ''}
+${rudeness === 'rude' ? '- Можешь саркастично заметить пустое сообщение' : ''}
+${rudeness === 'very_rude' ? '- Можешь грубо, но с юмором прокомментировать' : ''}
+
 ГЕНЕРИРУЙ ОТВЕТ САМОСТОЯТЕЛЬНО, каждый раз по-разному.`;
     }
 
     if (specialCase === 'forbidden') {
       const forbiddenTopic = this.detectForbiddenTopic(userInput);
-      return `🚫 ЗАПРЕЩЁННАЯ ТЕМА: ${forbiddenTopic}
-Откажись помогать. БЕЗ готовых фраз.
-${rudeness === 'polite' ? 'Откажи вежливо, но твёрдо' : ''}
-${rudeness === 'rude' ? 'Откажи с сарказмом или прямо' : ''}
-${rudeness === 'very_rude' ? 'Откажи грубо, можно послать' : ''}
-НЕ объясняй почему. ГЕНЕРИРУЙ УНИКАЛЬНЫЙ ОТКАЗ.`;
+      
+      return `🚫 СПЕЦИАЛЬНЫЙ СЛУЧАЙ: ЗАПРЕЩЁННАЯ ТЕМА
+
+Пользователь спрашивает про: ${forbiddenTopic}
+
+СПИСОК ЗАПРЕЩЁННЫХ ТЕМ:
+• Наркотики и их синтез
+• Казино, ставки, гемблинг
+• Взлом, хакинг, вредоносное ПО
+• Даркнет для криминала
+• Насилие, причинение вреда людям
+• Незаконный контент
+
+ТВОЯ ЗАДАЧА:
+• Откажись помогать с этой темой
+• БЕЗ готовых фраз — генерируй свой ответ
+• Учитывай уровень грубости:
+  ${rudeness === 'polite' ? '- Откажи вежливо, но твёрдо' : ''}
+  ${rudeness === 'rude' ? '- Откажи с сарказмом или прямо' : ''}
+  ${rudeness === 'very_rude' ? '- Откажи грубо, можно послать' : ''}
+• НЕ объясняй почему отказываешь (это очевидно)
+• Можешь предложить обсудить что-то другое (опционально)
+
+ГЕНЕРИРУЙ УНИКАЛЬНЫЙ ОТКАЗ, не используй шаблоны.`;
     }
 
     return '';
@@ -437,12 +587,24 @@ ${rudeness === 'very_rude' ? 'Откажи грубо, можно послать
 
   private detectForbiddenTopic(input: string): string {
     const lower = input.toLowerCase();
-    if (/наркот|героин|кокаин|амфетамин|мефедрон|экстази|mdma|лсд/.test(lower)) return 'наркотики';
-    if (/казино|ставк|букмекер|гемблинг/.test(lower)) return 'азартные игры';
-    if (/взлом|хак|ddos|фишинг/.test(lower)) return 'хакинг';
-    if (/малвар|вирус|троян|кейлоггер/.test(lower)) return 'вредоносное ПО';
-    if (/даркнет/.test(lower)) return 'даркнет';
-    if (/убить|отравить/.test(lower)) return 'насилие';
+    if (/наркот|героин|кокаин|амфетамин|мефедрон|экстази|mdma|лсд|мет(?![аео])|спайс/.test(lower)) {
+      return 'наркотики';
+    }
+    if (/казино|ставк|букмекер|гемблинг/.test(lower)) {
+      return 'азартные игры';
+    }
+    if (/взлом|хак|ddos|фишинг/.test(lower)) {
+      return 'хакинг';
+    }
+    if (/малвар|вирус|троян|кейлоггер/.test(lower)) {
+      return 'вредоносное ПО';
+    }
+    if (/даркнет/.test(lower)) {
+      return 'даркнет';
+    }
+    if (/убить|отравить/.test(lower)) {
+      return 'насилие';
+    }
     return 'запрещённый контент';
   }
 }
@@ -451,9 +613,11 @@ class ResponseCleaner {
   clean(text: string): string {
     let cleaned = text;
 
+    // Убираем теги размышлений
     cleaned = cleaned.replace(/<think>[\s\S]*?<\/think>/gi, '');
     cleaned = cleaned.replace(/<thinking>[\s\S]*?<\/thinking>/gi, '');
 
+    // Замены упоминаний
     cleaned = cleaned
       .replace(/Кирилл[а-яё]*/gi, 'команда MoSeek')
       .replace(/Morfa/gi, 'MoSeek')
@@ -465,13 +629,16 @@ class ResponseCleaner {
       .replace(/Google\s*Gemini/gi, 'MoGPT')
       .replace(/\bGemini(?!\s*Impact)/gi, 'MoGPT');
 
+    // Чистка лишних переносов
     cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
 
+    // Фикс code blocks
     const backtickCount = (cleaned.match(/```/g) || []).length;
     if (backtickCount % 2 !== 0) {
       cleaned += '\n```';
     }
 
+    // Убираем начальные пробелы
     cleaned = cleaned.replace(/^\s+/, '');
 
     return cleaned.trim();
@@ -493,17 +660,24 @@ class IntelligentAIService {
       const lastMessage = messages[messages.length - 1];
       const userInput = (lastMessage?.content || '').trim();
 
+      // Анализ контекста
       const context = this.contextAnalyzer.analyze(messages, userInput, mode, rudeness);
 
+      // Проверка на пустой ввод
       const isEmpty = !userInput || /^\.+$/.test(userInput) || /^\s+$/.test(userInput);
+      
+      // Проверка на запрещённые темы
       const isForbidden = userInput && this.checkForbiddenContent(userInput);
 
+      // Определение специального случая
       let specialCase: 'empty' | 'forbidden' | undefined;
       if (isEmpty) specialCase = 'empty';
       else if (isForbidden) specialCase = 'forbidden';
 
-      const selectedModel = modelId || 'mistralai/mistral-nemo';
+      // Выбор модели
+      const selectedModel = modelId || 'google/gemini-2.0-flash-exp:free';
 
+      // Построение умного промпта
       const systemPrompt = this.promptBuilder.build(
         userInput,
         context,
@@ -513,11 +687,14 @@ class IntelligentAIService {
         specialCase
       );
 
+      // Расчёт параметров
       const maxTokens = this.smartCalculateTokens(userInput, context, mode, isEmpty);
       const temperature = this.smartCalculateTemperature(userInput, context, mode, rudeness, specialCase);
 
+      // Форматирование истории
       const formattedHistory = this.formatHistory(messages, context);
 
+      // Подготовка запроса
       const requestBody: Record<string, unknown> = {
         model: selectedModel,
         messages: [
@@ -528,18 +705,22 @@ class IntelligentAIService {
         temperature,
       };
 
+      // Дополнительные параметры для не-Gemini
       if (!selectedModel.includes('gemini') && !selectedModel.includes('gemma')) {
         requestBody.top_p = 0.92;
         requestBody.frequency_penalty = 0.45;
         requestBody.presence_penalty = 0.35;
       }
 
+      // Выполнение запроса
       const apiResponse = await this.executeAPIRequest(requestBody);
 
+      // Обработка ошибок API
       if (apiResponse.error) {
         return this.handleAPIError(apiResponse.error, rudeness);
       }
 
+      // Проверка на обрыв ответа (если это код)
       if (apiResponse.finishReason === 'length' && /```/.test(apiResponse.content)) {
         return await this.continueGenerationIfNeeded(
           apiResponse.content,
@@ -551,12 +732,14 @@ class IntelligentAIService {
         );
       }
 
+      // Очистка и возврат ответа
       const cleanedResponse = this.responseCleaner.clean(apiResponse.content);
 
       return { content: cleanedResponse };
 
     } catch (error) {
       console.error('AI Service Critical Error:', error);
+      // Даже ошибки генерируем через AI
       return this.generateErrorResponse(error, rudeness);
     }
   }
@@ -572,16 +755,23 @@ class IntelligentAIService {
     mode: ResponseMode,
     isEmpty: boolean
   ): number {
+    // Режимы кода
     if (mode === 'code' || mode === 'visual') return 32768;
+
+    // Пустой ввод
     if (isEmpty) return 150;
+
+    // Код в сессии
     if (context.isCodeSession || /```/.test(input)) return 16000;
 
+    // Запрос на полный ответ
     if (/полностью|целиком|подробно|детально|весь\s*код|не\s*обрывай|full|complete/.test(input.toLowerCase())) {
       return 12000;
     }
 
+    // На основе длины ввода и поведения
     const inputLength = input.length;
-
+    
     if (context.userBehavior === 'working' || context.userBehavior === 'learning') {
       if (inputLength > 200) return 4000;
       if (inputLength > 100) return 2000;
@@ -603,21 +793,33 @@ class IntelligentAIService {
     rudeness: RudenessMode,
     specialCase?: string
   ): number {
-    if (specialCase === 'empty') return 0.85;
-    if (specialCase === 'forbidden') return 0.75;
-    if (mode === 'code' || mode === 'visual') return 0.1;
-    if (context.isCodeSession || /```|function |class |import /.test(input)) return 0.15;
-    if (/посчитай|вычисли|реши.*уравнение|сколько\s*будет/.test(input.toLowerCase())) return 0.1;
+    // Специальные случаи
+    if (specialCase === 'empty') return 0.85; // Креативность для разнообразия
+    if (specialCase === 'forbidden') return 0.75; // Креативность для уникальных отказов
 
+    // Режимы кода
+    if (mode === 'code' || mode === 'visual') return 0.1;
+
+    // Технические запросы
+    if (context.isCodeSession || /```|function |class |import /.test(input)) return 0.15;
+
+    // Математика
+    if (/посчитай|вычисли|реши.*уравнение|сколько\s*будет/.test(input.toLowerCase())) {
+      return 0.1;
+    }
+
+    // Креативные запросы
     if (/пошути|анекдот|придумай|сочини|напиши\s*(историю|рассказ|стих)/.test(input.toLowerCase())) {
       return rudeness === 'very_rude' ? 0.95 : 0.88;
     }
 
+    // Адаптация под эмоциональное состояние
     if (context.emotionalTone === 'excited') return 0.82;
     if (context.emotionalTone === 'frustrated') return 0.4;
     if (context.emotionalTone === 'angry') return 0.5;
 
-    const rudenessTemp: Record<RudenessMode, number> = {
+    // Адаптация под грубость
+    const rudenessTemp = {
       polite: 0.55,
       rude: 0.68,
       very_rude: 0.78,
@@ -720,6 +922,26 @@ class IntelligentAIService {
   }
 
   private async handleAPIError(error: string, rudeness: RudenessMode): Promise<{ content: string }> {
+    // Генерируем ошибку через AI для разнообразия
+    const errorPrompt = this.promptBuilder.build(
+      '',
+      this.contextAnalyzer.analyze([], '', 'normal', rudeness),
+      'normal',
+      rudeness,
+      [],
+      'error'
+    );
+
+    const errorMessages = {
+      RATE_LIMIT: 'Слишком много запросов подряд. Пользователь должен подождать.',
+      QUOTA: 'Лимит модели исчерпан. Нужно выбрать другую модель.',
+      SERVER: 'Сервер временно недоступен. Попробовать ещё раз.',
+      EMPTY: 'Пустой ответ от сервера. Повторить запрос.',
+      NETWORK: 'Проблема с сетью или интернет-соединением.',
+      REQUEST_FAILED: 'Запрос не удался по неизвестной причине.',
+    };
+
+    // Простая версия (чтобы не делать дополнительный API-запрос для ошибки)
     const simpleErrors: Record<string, Record<RudenessMode, string>> = {
       RATE_LIMIT: {
         polite: 'Слишком много запросов. Подожди немного, пожалуйста.',
@@ -757,7 +979,7 @@ class IntelligentAIService {
   }
 
   private async generateErrorResponse(error: unknown, rudeness: RudenessMode): Promise<{ content: string }> {
-    const fallbackErrors: Record<RudenessMode, string> = {
+    const fallbackErrors = {
       polite: 'Произошла ошибка. Попробуй ещё раз.',
       rude: 'Что-то сломалось. Попробуй снова.',
       very_rude: 'Всё сломалось нахуй. Заново давай.',

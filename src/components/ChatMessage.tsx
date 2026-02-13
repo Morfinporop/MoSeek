@@ -1,10 +1,11 @@
 import { motion } from 'framer-motion';
 import { Copy, Check, ChevronDown, ChevronUp } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { marked } from 'marked';
 import type { Message } from '../types';
 import { MODEL_ICON } from '../config/models';
 import { useThemeStore } from '../store/themeStore';
+import { useAuthStore } from '../store/authStore';
 
 interface ChatMessageProps {
   message: Message;
@@ -17,18 +18,30 @@ marked.setOptions({
   gfm: true,
 });
 
-const MAX_LENGTH = 500;
+const MAX_LENGTH = 1500;
 
 export function ChatMessage({ message, compact, hideModelLabel }: ChatMessageProps) {
   const [copied, setCopied] = useState(false);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
+  const [typingTime, setTypingTime] = useState(0);
+  const [startTime] = useState(Date.now());
   const isAssistant = message.role === 'assistant';
   const { theme } = useThemeStore();
+  const { user } = useAuthStore();
   const isLight = theme === 'light';
 
   const isLong = message.content.length > MAX_LENGTH && !message.isLoading;
-  const displayContent = isLong && !expanded ? message.content.slice(0, MAX_LENGTH) + '...' : message.content;
+  const displayContent = isLong && !expanded ? message.content.slice(0, MAX_LENGTH) : message.content;
+
+  useEffect(() => {
+    if (message.isLoading && isAssistant) {
+      const interval = setInterval(() => {
+        setTypingTime(Math.floor((Date.now() - startTime) / 1000));
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [message.isLoading, isAssistant, startTime]);
 
   const copyToClipboard = async () => {
     await navigator.clipboard.writeText(message.content);
@@ -59,10 +72,10 @@ export function ChatMessage({ message, compact, hideModelLabel }: ChatMessagePro
           .replace(/&#39;/g, "'");
 
         return `
-          <div class="code-block-wrapper relative group/code my-3">
+          <div class="code-block-wrapper relative my-3">
             <pre class="!bg-black/50 !border !border-violet-500/20 rounded-xl overflow-hidden"><code${attrs}>${code}</code></pre>
             <button 
-              class="copy-code-btn absolute top-3 right-3 px-3 py-1.5 rounded-lg bg-violet-500/20 hover:bg-violet-500/40 flex items-center gap-2 opacity-0 group-hover/code:opacity-100 transition-all border border-violet-500/30"
+              class="copy-code-btn absolute top-3 right-3 px-3 py-1.5 rounded-lg bg-violet-500/20 hover:bg-violet-500/40 flex items-center gap-2 transition-all border border-violet-500/30"
               data-code="${encodeURIComponent(decodedCode)}"
             >
               <svg class="w-4 h-4 text-violet-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -157,21 +170,26 @@ export function ChatMessage({ message, compact, hideModelLabel }: ChatMessagePro
           />
         ) : (
           <img
-            src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png"
+            src={user?.avatar || "https://cdn-icons-png.flaticon.com/512/1077/1077114.png"}
             alt="User"
-            className={`w-11 h-11 object-contain ${isLight ? 'filter brightness-0' : 'filter brightness-0 invert'}`}
+            className={`w-11 h-11 ${user?.avatar ? 'rounded-full object-cover' : `object-contain ${isLight ? 'filter brightness-0' : 'filter brightness-0 invert'}`}`}
           />
         )}
       </div>
 
-      <div className={`group relative ${compact ? 'max-w-full flex-1' : 'max-w-[85%]'} min-w-0 overflow-hidden`}>
+      <div className={`group/message relative ${compact ? 'max-w-full flex-1' : 'max-w-[85%]'} min-w-0 overflow-hidden`}>
         {isAssistant && message.model && !hideModelLabel && (
-          <div className="mb-1.5 px-1">
+          <div className="mb-1.5 px-1 flex items-center gap-3">
             <span className={`text-[11px] font-medium tracking-wide ${
               isLight ? 'text-zinc-900' : 'text-white'
             }`}>
               {message.model}
             </span>
+            {message.isLoading && (
+              <span className={`text-[10px] ${isLight ? 'text-zinc-500' : 'text-zinc-400'}`}>
+                {typingTime}s
+              </span>
+            )}
           </div>
         )}
 
@@ -192,9 +210,10 @@ export function ChatMessage({ message, compact, hideModelLabel }: ChatMessagePro
           {!message.isLoading && (
             <motion.button
               initial={{ opacity: 0 }}
-              whileHover={{ scale: 1.1 }}
+              whileHover={{ opacity: 1, scale: 1.1 }}
+              transition={{ duration: 0.2 }}
               onClick={copyToClipboard}
-              className={`absolute -right-2 -top-2 p-1.5 rounded-lg transition-all opacity-0 group-hover:opacity-100 ${
+              className={`absolute -right-2 -top-2 p-1.5 rounded-lg transition-colors ${
                 isAssistant
                   ? isLight
                     ? 'bg-white shadow-md hover:bg-zinc-50 border border-zinc-200'
@@ -229,7 +248,7 @@ export function ChatMessage({ message, compact, hideModelLabel }: ChatMessagePro
 
 function TypingIndicator() {
   return (
-    <div className="flex items-center gap-2 py-1">
+    <div className="flex items-center gap-1.5">
       <div className="flex items-center gap-1">
         {[0, 1, 2].map((i) => (
           <motion.div
@@ -239,7 +258,7 @@ function TypingIndicator() {
           />
         ))}
       </div>
-      <span className="text-sm text-zinc-500 ml-1">Печатаю...</span>
+      <span className="text-sm text-zinc-500">Печатаю...</span>
     </div>
   );
 }

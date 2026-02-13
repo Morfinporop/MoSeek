@@ -1,13 +1,11 @@
 import { motion } from 'framer-motion';
 import { Copy, Check, ChevronDown, ChevronUp } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { marked } from 'marked';
 import type { Message } from '../types';
 import { MODEL_ICON } from '../config/models';
-
-interface ChatMessageProps {
-  message: Message;
-}
+import { useCompareMode } from './Header';
+import { useChatStore } from '../store/chatStore';
 
 marked.setOptions({
   breaks: true,
@@ -16,7 +14,12 @@ marked.setOptions({
 
 const MAX_LENGTH = 500;
 
-export function ChatMessage({ message }: ChatMessageProps) {
+interface SingleMessageProps {
+  message: Message;
+  compact?: boolean;
+}
+
+function SingleMessage({ message, compact }: SingleMessageProps) {
   const [copied, setCopied] = useState(false);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
@@ -164,7 +167,17 @@ export function ChatMessage({ message }: ChatMessageProps) {
         )}
       </motion.div>
 
-      <div className="group relative max-w-[85%] min-w-0 overflow-hidden">
+      <div className={`group relative ${compact ? 'max-w-full' : 'max-w-[85%]'} min-w-0 overflow-hidden`}>
+        {/* Подпись модели над ответом */}
+        {isAssistant && message.model && (
+          <div className="flex items-center gap-1.5 mb-1.5 px-1">
+            <div className="w-2 h-2 rounded-full bg-violet-500/60 animate-pulse" />
+            <span className="text-[11px] text-violet-400/80 font-medium tracking-wide">
+              {message.model}
+            </span>
+          </div>
+        )}
+
         <motion.div
           whileHover={{ scale: 1.005 }}
           className={`relative px-4 py-3 rounded-2xl overflow-hidden ${
@@ -225,5 +238,135 @@ function TypingIndicator() {
       </div>
       <span className="text-sm text-zinc-500 ml-1">Печатаю...</span>
     </div>
+  );
+}
+
+interface DualMessagePairProps {
+  leftMessage: Message;
+  rightMessage: Message;
+}
+
+function DualMessagePair({ leftMessage, rightMessage }: DualMessagePairProps) {
+  return (
+    <div className="w-full">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="min-w-0">
+          <SingleMessage message={leftMessage} compact />
+        </div>
+        <div className="min-w-0">
+          <SingleMessage message={rightMessage} compact />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+interface ChatMessageProps {
+  message: Message;
+}
+
+export function ChatMessage({ message }: ChatMessageProps) {
+  return <SingleMessage message={message} />;
+}
+
+export function ChatMessageList() {
+  const { getCurrentMessages } = useChatStore();
+  const messages = getCurrentMessages();
+
+  let isDual = false;
+  try {
+    const compareMode = useCompareMode();
+    isDual = compareMode.isDual;
+  } catch {
+    isDual = false;
+  }
+
+  const renderedItems = useMemo(() => {
+    if (!isDual) {
+      return messages.map((msg) => ({
+        type: 'single' as const,
+        message: msg,
+        leftMessage: null as Message | null,
+        rightMessage: null as Message | null,
+        key: msg.id,
+      }));
+    }
+
+    const result: {
+      type: 'single' | 'dual';
+      message: Message | null;
+      leftMessage: Message | null;
+      rightMessage: Message | null;
+      key: string;
+    }[] = [];
+
+    const processedIds = new Set<string>();
+
+    for (let i = 0; i < messages.length; i++) {
+      const msg = messages[i];
+      if (processedIds.has(msg.id)) continue;
+
+      if (msg.dualPairId && msg.dualPosition === 'left') {
+        const pair = messages.find(
+          (m) => m.dualPairId === msg.dualPairId && m.dualPosition === 'right' && m.id !== msg.id
+        );
+        if (pair) {
+          processedIds.add(msg.id);
+          processedIds.add(pair.id);
+          result.push({
+            type: 'dual',
+            message: null,
+            leftMessage: msg,
+            rightMessage: pair,
+            key: `dual-${msg.dualPairId}`,
+          });
+          continue;
+        }
+      }
+
+      if (msg.dualPairId && msg.dualPosition === 'right') {
+        const leftExists = messages.find(
+          (m) => m.dualPairId === msg.dualPairId && m.dualPosition === 'left'
+        );
+        if (leftExists && !processedIds.has(leftExists.id)) {
+          continue;
+        }
+      }
+
+      processedIds.add(msg.id);
+      result.push({
+        type: 'single',
+        message: msg,
+        leftMessage: null,
+        rightMessage: null,
+        key: msg.id,
+      });
+    }
+
+    return result;
+  }, [messages, isDual]);
+
+  if (messages.length === 0) {
+    return null;
+  }
+
+  return (
+    <>
+      {renderedItems.map((item) => {
+        if (item.type === 'dual' && item.leftMessage && item.rightMessage) {
+          return (
+            <DualMessagePair
+              key={item.key}
+              leftMessage={item.leftMessage}
+              rightMessage={item.rightMessage}
+            />
+          );
+        }
+        if (item.message) {
+          return <ChatMessage key={item.key} message={item.message} />;
+        }
+        return null;
+      })}
+    </>
   );
 }

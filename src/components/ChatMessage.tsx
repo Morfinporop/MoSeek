@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { marked } from 'marked';
 import type { Message } from '../types';
 import { MODEL_ICON } from '../config/models';
+import { useThemeStore } from '../store/themeStore';
 
 interface ChatMessageProps {
   message: Message;
@@ -23,6 +24,8 @@ export function ChatMessage({ message, compact, hideModelLabel }: ChatMessagePro
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
   const isAssistant = message.role === 'assistant';
+  const { theme } = useThemeStore();
+  const isLight = theme === 'light';
 
   const isLong = message.content.length > MAX_LENGTH && !message.isLoading;
   const displayContent = isLong && !expanded ? message.content.slice(0, MAX_LENGTH) + '...' : message.content;
@@ -74,7 +77,9 @@ export function ChatMessage({ message, compact, hideModelLabel }: ChatMessagePro
       return (
         <div>
           <div
-            className="prose prose-sm max-w-none text-zinc-200 break-words overflow-hidden"
+            className={`prose prose-sm max-w-none break-words overflow-hidden ${
+              isLight ? 'text-zinc-800' : 'text-zinc-200'
+            }`}
             style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}
             dangerouslySetInnerHTML={{ __html: html }}
             onClick={(e) => {
@@ -143,19 +148,19 @@ export function ChatMessage({ message, compact, hideModelLabel }: ChatMessagePro
       transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
       className={`flex gap-4 ${isAssistant ? '' : 'flex-row-reverse'}`}
     >
-      {/* Аватар — увеличенный, без фона */}
+      {/* Аватар — без фона */}
       <div className="flex-shrink-0 w-11 h-11 flex items-center justify-center">
         {isAssistant ? (
           <img
             src={MODEL_ICON}
             alt="MoGPT"
-            className="w-11 h-11 object-contain filter brightness-0 invert"
+            className={`w-11 h-11 object-contain ${isLight ? 'filter brightness-0' : 'filter brightness-0 invert'}`}
           />
         ) : (
           <img
-            src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
+            src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png"
             alt="User"
-            className="w-11 h-11 object-contain filter brightness-0 invert"
+            className={`w-11 h-11 object-contain ${isLight ? 'filter brightness-0' : 'filter brightness-0 invert'}`}
           />
         )}
       </div>
@@ -165,7 +170,9 @@ export function ChatMessage({ message, compact, hideModelLabel }: ChatMessagePro
         {isAssistant && message.model && !hideModelLabel && (
           <div className="flex items-center gap-1.5 mb-1.5 px-1">
             <div className="w-2 h-2 rounded-full bg-violet-500/60 animate-pulse" />
-            <span className="text-[11px] text-violet-400/80 font-medium tracking-wide">
+            <span className={`text-[11px] font-medium tracking-wide ${
+              isLight ? 'text-violet-600/80' : 'text-violet-400/80'
+            }`}>
               {message.model}
             </span>
           </div>
@@ -175,8 +182,12 @@ export function ChatMessage({ message, compact, hideModelLabel }: ChatMessagePro
           whileHover={{ scale: 1.005 }}
           className={`relative px-4 py-3 rounded-2xl overflow-hidden ${
             isAssistant
-              ? 'glass-light rounded-tl-md'
-              : 'bg-gradient-to-br from-violet-500 to-purple-600 rounded-tr-md shadow-lg shadow-violet-500/10'
+              ? isLight
+                ? 'bg-white border border-zinc-200 shadow-sm rounded-tl-md'
+                : 'glass-light rounded-tl-md'
+              : isLight
+                ? 'bg-gradient-to-br from-violet-500 to-purple-600 rounded-tr-md shadow-md'
+                : 'bg-gradient-to-br from-violet-500 to-purple-600 rounded-tr-md shadow-lg shadow-violet-500/10'
           }`}
         >
           {renderContent()}
@@ -188,21 +199,23 @@ export function ChatMessage({ message, compact, hideModelLabel }: ChatMessagePro
               onClick={copyToClipboard}
               className={`absolute -right-2 -top-2 p-1.5 rounded-lg transition-all opacity-0 group-hover:opacity-100 ${
                 isAssistant
-                  ? 'glass-strong hover:bg-white/10'
+                  ? isLight
+                    ? 'bg-white shadow-md hover:bg-zinc-50 border border-zinc-200'
+                    : 'glass-strong hover:bg-white/10'
                   : 'bg-white/20 hover:bg-white/30'
               }`}
             >
               {copied ? (
                 <Check className="w-3.5 h-3.5 text-green-400" />
               ) : (
-                <Copy className="w-3.5 h-3.5 text-zinc-400" />
+                <Copy className={`w-3.5 h-3.5 ${isLight && isAssistant ? 'text-zinc-500' : 'text-zinc-400'}`} />
               )}
             </motion.button>
           )}
         </motion.div>
 
         <div className={`flex items-center gap-2 mt-1.5 px-1 ${isAssistant ? '' : 'justify-end'}`}>
-          <span className="text-[10px] text-zinc-600">
+          <span className={`text-[10px] ${isLight ? 'text-zinc-400' : 'text-zinc-600'}`}>
             {new Date(message.timestamp).toLocaleTimeString('ru-RU', {
               hour: '2-digit',
               minute: '2-digit',

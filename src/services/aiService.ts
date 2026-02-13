@@ -2230,7 +2230,7 @@ class MasterAIOrchestrator {
       if (isEmpty) specialCase = 'empty';
       else if (isForbidden) specialCase = 'forbidden';
 
-      const selectedModel = modelId || 'google/gemini-2.0-flash-exp:free';
+      const selectedModel = modelId || DEFAULT_MODEL;
 
       const systemPrompt = this.promptArchitect.build(
         userInput,

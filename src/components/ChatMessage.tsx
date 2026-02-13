@@ -18,7 +18,7 @@ marked.setOptions({
   gfm: true,
 });
 
-const MAX_LENGTH = 1500;
+const MAX_LENGTH = 10000;
 
 export const ChatMessage = memo(function ChatMessage({ message, compact, hideModelLabel }: ChatMessageProps) {
   const [copied, setCopied] = useState(false);

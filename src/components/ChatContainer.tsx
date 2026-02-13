@@ -1,18 +1,10 @@
-import { useEffect, useRef, useMemo } from 'react';
+import { useEffect, useRef, useMemo, useState, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useChatStore } from '../store/chatStore';
 import { ChatMessage } from './ChatMessage';
 import { WelcomeScreen } from './WelcomeScreen';
+import { useCompareMode } from './Header';
 import type { Message } from '../types';
-
-function useCompareModeState(): { isDual: boolean } {
-  try {
-    const { useCompareMode } = require('./Header');
-    return useCompareMode();
-  } catch {
-    return { isDual: false };
-  }
-}
 
 interface DualMessagePairProps {
   leftMessage: Message;
@@ -29,8 +21,7 @@ function DualMessagePair({ leftMessage, rightMessage }: DualMessagePairProps) {
     >
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Левая колонка — первая нейросеть */}
-        <div className="min-w-0 border border-zinc-700/30 rounded-2xl p-3 bg-white/[0.02]">
-          {/* Название модели сверху */}
+        <div className="min-w-0 border border-violet-500/20 rounded-2xl p-3 bg-violet-500/[0.03]">
           {leftMessage.model && (
             <div className="flex items-center gap-1.5 mb-2 px-1">
               <div className="w-2 h-2 rounded-full bg-violet-500/60 animate-pulse" />
@@ -43,8 +34,7 @@ function DualMessagePair({ leftMessage, rightMessage }: DualMessagePairProps) {
         </div>
 
         {/* Правая колонка — вторая нейросеть */}
-        <div className="min-w-0 border border-zinc-700/30 rounded-2xl p-3 bg-white/[0.02]">
-          {/* Название модели сверху */}
+        <div className="min-w-0 border border-blue-500/20 rounded-2xl p-3 bg-blue-500/[0.03]">
           {rightMessage.model && (
             <div className="flex items-center gap-1.5 mb-2 px-1">
               <div className="w-2 h-2 rounded-full bg-blue-500/60 animate-pulse" />
@@ -66,7 +56,31 @@ export function ChatContainer() {
   const containerRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  const { isDual } = useCompareModeState();
+  // Читаем режим и подписываемся на изменения localStorage
+  const [dualState, setDualState] = useState(() => useCompareMode());
+
+  const refreshDualState = useCallback(() => {
+    setDualState(useCompareMode());
+  }, []);
+
+  useEffect(() => {
+    // Слушаем изменения localStorage из других компонентов
+    const handleStorage = () => {
+      refreshDualState();
+    };
+
+    window.addEventListener('storage', handleStorage);
+
+    // Также проверяем каждые 500мс (localStorage.setItem в том же окне не триггерит event)
+    const interval = setInterval(refreshDualState, 500);
+
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      clearInterval(interval);
+    };
+  }, [refreshDualState]);
+
+  const isDual = dualState.isDual;
 
   useEffect(() => {
     if (bottomRef.current) {
@@ -99,6 +113,7 @@ export function ChatContainer() {
       const msg = messages[i];
       if (processedIds.has(msg.id)) continue;
 
+      // Ищем пару: left + right с одинаковым dualPairId
       if (msg.dualPairId && msg.dualPosition === 'left') {
         const pair = messages.find(
           (m) => m.dualPairId === msg.dualPairId && m.dualPosition === 'right' && m.id !== msg.id
@@ -117,6 +132,7 @@ export function ChatContainer() {
         }
       }
 
+      // Если это right и его left ещё не обработан — пропускаем (обработается когда дойдём до left)
       if (msg.dualPairId && msg.dualPosition === 'right') {
         const leftExists = messages.find(
           (m) => m.dualPairId === msg.dualPairId && m.dualPosition === 'left'

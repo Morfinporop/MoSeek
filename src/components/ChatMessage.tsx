@@ -25,6 +25,7 @@ export function ChatMessage({ message, compact, hideModelLabel }: ChatMessagePro
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
   const [typingTime, setTypingTime] = useState(0);
+  const [finalTypingTime, setFinalTypingTime] = useState<number | null>(null);
   const [startTime] = useState(Date.now());
   const isAssistant = message.role === 'assistant';
   const { theme } = useThemeStore();
@@ -40,8 +41,10 @@ export function ChatMessage({ message, compact, hideModelLabel }: ChatMessagePro
         setTypingTime(Math.floor((Date.now() - startTime) / 1000));
       }, 1000);
       return () => clearInterval(interval);
+    } else if (!message.isLoading && isAssistant && typingTime > 0 && finalTypingTime === null) {
+      setFinalTypingTime(typingTime);
     }
-  }, [message.isLoading, isAssistant, startTime]);
+  }, [message.isLoading, isAssistant, startTime, typingTime, finalTypingTime]);
 
   const copyToClipboard = async () => {
     await navigator.clipboard.writeText(message.content);
@@ -185,9 +188,9 @@ export function ChatMessage({ message, compact, hideModelLabel }: ChatMessagePro
             }`}>
               {message.model}
             </span>
-            {message.isLoading && (
+            {(message.isLoading || finalTypingTime !== null) && (
               <span className={`text-[10px] ${isLight ? 'text-zinc-500' : 'text-zinc-400'}`}>
-                {typingTime}s
+                {message.isLoading ? typingTime : finalTypingTime}s
               </span>
             )}
           </div>
@@ -249,6 +252,7 @@ export function ChatMessage({ message, compact, hideModelLabel }: ChatMessagePro
 function TypingIndicator() {
   return (
     <div className="flex items-center gap-1.5">
+      <span className="text-sm text-zinc-500">Печатаю</span>
       <div className="flex items-center gap-1">
         {[0, 1, 2].map((i) => (
           <motion.div
@@ -258,7 +262,6 @@ function TypingIndicator() {
           />
         ))}
       </div>
-      <span className="text-sm text-zinc-500">Печатаю...</span>
     </div>
   );
 }

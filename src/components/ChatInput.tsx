@@ -106,7 +106,8 @@ export function ChatInput() {
     if (isDual) {
       const model2Data = AI_MODELS.find(m => m.id === secondModelId) || AI_MODELS[1] || AI_MODELS[0];
 
-      // Для двойного режима помечаем сообщения как dualLeft и dualRight
+      const pairId = `pair-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
       const assistantId1 = addMessage({
         role: 'assistant',
         content: '',
@@ -114,10 +115,8 @@ export function ChatInput() {
         model: model1Data.name,
         thinking: 'Печатаю...',
         dualPosition: 'left',
-        dualPairId: Date.now().toString(),
+        dualPairId: pairId,
       });
-
-      const pairId = (useChatStore.getState() as any).messages?.[chatId]?.find?.((m: any) => m.id === assistantId1)?.dualPairId || Date.now().toString();
 
       const assistantId2 = addMessage({
         role: 'assistant',

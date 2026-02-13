@@ -1,6 +1,7 @@
 import type { Message } from '../types';
 import type { ResponseMode, RudenessMode } from '../store/chatStore';
 import { OPENROUTER_API_URL } from '../config/models';
+import { DEFAULT_MODEL } from '../config/models';
 
 const _0x = [115,107,45,111,114,45,118,49,45];
 const _1x = [48,97,54,57,53,99,52,50,54,53,52,50,56,55,50,98,57,54,100,102,97,97,98,55,51,98,53,53,98,54,49,55,57,50,53,52,56,56,54,99,55,99,52,97,100,52,102,98,100,53,48,56,101,102,48,48,49,97,50,97,100,100,99,52];

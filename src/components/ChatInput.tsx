@@ -22,30 +22,6 @@ const RUDENESS_MODES: { id: RudenessMode; label: string; icon: typeof Flame; des
 const UNLIMITED_EMAILS = ['energoferon41@gmail.com'];
 const CHAR_LIMIT = 1500;
 
-const MODE_SWITCH_NOTIFICATIONS: Record<ResponseMode, Record<RudenessMode, string>> = {
-  normal: {
-    polite: '💬 Обычный режим — отвечаю текстом и кодом по необходимости.',
-    rude: '💬 Обычный режим. Болтаем и кодим.',
-    very_rude: '💬 Обычный режим. Давай.',
-  },
-  code: {
-    polite: '⌨️ Режим кода — только чистый рабочий код, без лишних слов.',
-    rude: '⌨️ Режим кода. Только код, никакой болтовни.',
-    very_rude: '⌨️ Режим кода. Заткнись и кодь.',
-  },
-  visual: {
-    polite: '🎨 Режим визуала — красивый UI на React + Tailwind + Framer Motion.',
-    rude: '🎨 Визуал. Делаю красоту, не мешай.',
-    very_rude: '🎨 Визуал. Красиво будет, не ссы.',
-  },
-};
-
-const RUDENESS_SWITCH_NOTIFICATIONS: Record<RudenessMode, string> = {
-  polite: '😊 Вежливый режим активирован. Буду корректным и профессиональным.',
-  rude: '😏 Дерзкий режим включён. Готовься к сарказму.',
-  very_rude: '🤬 Режим без цензуры. Можно материться.',
-};
-
 export function ChatInput() {
   const [input, setInput] = useState('');
   const [showModes, setShowModes] = useState(false);
@@ -55,8 +31,6 @@ export function ChatInput() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const modesRef = useRef<HTMLDivElement>(null);
   const rudenessRef = useRef<HTMLDivElement>(null);
-  const prevResponseModeRef = useRef<ResponseMode | null>(null);
-  const prevRudenessModeRef = useRef<RudenessMode | null>(null);
 
   const {
     addMessage,
@@ -90,8 +64,7 @@ export function ChatInput() {
     }
     setResponseMode(newMode);
     setShowModes(false);
-    showNotification(MODE_SWITCH_NOTIFICATIONS[newMode][rudenessMode]);
-  }, [responseMode, rudenessMode, setResponseMode, showNotification]);
+  }, [responseMode, setResponseMode]);
 
   const handleRudenessSwitch = useCallback((newRudeness: RudenessMode) => {
     if (newRudeness === rudenessMode) {
@@ -100,16 +73,7 @@ export function ChatInput() {
     }
     setRudenessMode(newRudeness);
     setShowRudeness(false);
-    showNotification(RUDENESS_SWITCH_NOTIFICATIONS[newRudeness]);
-  }, [rudenessMode, setRudenessMode, showNotification]);
-
-  useEffect(() => {
-    prevResponseModeRef.current = responseMode;
-  }, [responseMode]);
-
-  useEffect(() => {
-    prevRudenessModeRef.current = rudenessMode;
-  }, [rudenessMode]);
+  }, [rudenessMode, setRudenessMode]);
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -269,7 +233,6 @@ export function ChatInput() {
 
   const getModeIconColor = (): string => {
     switch (currentMode.color) {
-      case 'violet': return 'text-violet-400';
       case 'emerald': return 'text-emerald-400';
       case 'pink': return 'text-pink-400';
       default: return 'text-violet-400';
@@ -278,7 +241,6 @@ export function ChatInput() {
 
   const getModeHoverBorder = (): string => {
     switch (currentMode.color) {
-      case 'violet': return 'hover:border-violet-500/30';
       case 'emerald': return 'hover:border-emerald-500/30';
       case 'pink': return 'hover:border-pink-500/30';
       default: return 'hover:border-violet-500/30';
@@ -303,66 +265,8 @@ export function ChatInput() {
     }
   };
 
-  const getModeActiveBg = (modeId: ResponseMode): string => {
-    if (responseMode !== modeId) return '';
-    const mode = MODES.find(m => m.id === modeId);
-    switch (mode?.color) {
-      case 'violet': return 'bg-violet-500/10';
-      case 'emerald': return 'bg-emerald-500/10';
-      case 'pink': return 'bg-pink-500/10';
-      default: return 'bg-violet-500/10';
-    }
-  };
-
-  const getModeIconBg = (modeId: ResponseMode): string => {
-    if (responseMode !== modeId) return 'bg-white/5';
-    const mode = MODES.find(m => m.id === modeId);
-    switch (mode?.color) {
-      case 'violet': return 'bg-violet-500/20';
-      case 'emerald': return 'bg-emerald-500/20';
-      case 'pink': return 'bg-pink-500/20';
-      default: return 'bg-violet-500/20';
-    }
-  };
-
-  const getModeIconColorForItem = (modeId: ResponseMode): string => {
-    if (responseMode !== modeId) return 'text-zinc-500';
-    const mode = MODES.find(m => m.id === modeId);
-    switch (mode?.color) {
-      case 'violet': return 'text-violet-400';
-      case 'emerald': return 'text-emerald-400';
-      case 'pink': return 'text-pink-400';
-      default: return 'text-violet-400';
-    }
-  };
-
-  const getModeDotColor = (modeId: ResponseMode): string => {
-    const mode = MODES.find(m => m.id === modeId);
-    switch (mode?.color) {
-      case 'violet': return 'bg-violet-500';
-      case 'emerald': return 'bg-emerald-500';
-      case 'pink': return 'bg-pink-500';
-      default: return 'bg-violet-500';
-    }
-  };
-
   return (
     <div className="w-full max-w-3xl mx-auto px-4">
-      <AnimatePresence>
-        {switchNotification && (
-          <motion.div
-            initial={{ opacity: 0, y: 10, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 10, scale: 0.95 }}
-            transition={{ duration: 0.2 }}
-            className="flex items-center gap-2 px-4 py-2.5 mb-3 rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm"
-          >
-            <Zap className="w-4 h-4 text-yellow-400 flex-shrink-0" />
-            <p className="text-sm text-zinc-300">{switchNotification}</p>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       <AnimatePresence>
         {showCharLimitWarning && (
           <motion.div
@@ -395,34 +299,51 @@ export function ChatInput() {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 8, scale: 0.95 }}
                 transition={{ duration: 0.15 }}
-                className="absolute bottom-full left-0 mb-2 w-56 glass-strong rounded-xl border border-white/10 overflow-hidden z-50"
+                className="absolute bottom-full left-0 mb-2 w-52 glass-strong rounded-xl border border-white/10 overflow-hidden z-50"
               >
                 <div className="p-2 border-b border-white/5">
                   <p className="text-xs text-zinc-500 px-2">Режим ответа</p>
                 </div>
-                {MODES.map((mode) => (
-                  <button
-                    key={mode.id}
-                    type="button"
-                    onClick={() => handleModeSwitch(mode.id)}
-                    className={`w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-white/5 transition-all ${getModeActiveBg(mode.id)}`}
-                  >
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${getModeIconBg(mode.id)}`}>
-                      <mode.icon className={`w-4 h-4 ${getModeIconColorForItem(mode.id)}`} />
-                    </div>
-                    <div className="flex-1">
-                      <p className={`text-sm ${responseMode === mode.id ? 'text-white font-medium' : 'text-zinc-400'}`}>{mode.label}</p>
-                      <p className="text-[10px] text-zinc-600">{mode.desc}</p>
-                    </div>
-                    {responseMode === mode.id && (
-                      <motion.div
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        className={`w-2 h-2 rounded-full ${getModeDotColor(mode.id)}`}
-                      />
-                    )}
-                  </button>
-                ))}
+                {MODES.map((mode) => {
+                  const isActive = responseMode === mode.id;
+                  const iconColor = isActive
+                    ? mode.color === 'emerald' ? 'text-emerald-400'
+                    : mode.color === 'pink' ? 'text-pink-400'
+                    : 'text-violet-400'
+                    : 'text-zinc-500';
+                  const bgColor = isActive
+                    ? mode.color === 'emerald' ? 'bg-emerald-500/20'
+                    : mode.color === 'pink' ? 'bg-pink-500/20'
+                    : 'bg-violet-500/20'
+                    : 'bg-white/5';
+                  const dotColor = mode.color === 'emerald' ? 'bg-emerald-500'
+                    : mode.color === 'pink' ? 'bg-pink-500'
+                    : 'bg-violet-500';
+
+                  return (
+                    <button
+                      key={mode.id}
+                      type="button"
+                      onClick={() => handleModeSwitch(mode.id)}
+                      className={`w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-white/5 transition-all ${
+                        isActive
+                          ? mode.color === 'emerald' ? 'bg-emerald-500/10'
+                          : mode.color === 'pink' ? 'bg-pink-500/10'
+                          : 'bg-violet-500/10'
+                          : ''
+                      }`}
+                    >
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${bgColor}`}>
+                        <mode.icon className={`w-4 h-4 ${iconColor}`} />
+                      </div>
+                      <div className="flex-1">
+                        <p className={`text-sm ${isActive ? 'text-white font-medium' : 'text-zinc-400'}`}>{mode.label}</p>
+                        <p className="text-[10px] text-zinc-600">{mode.desc}</p>
+                      </div>
+                      {isActive && <div className={`w-2 h-2 rounded-full ${dotColor}`} />}
+                    </button>
+                  );
+                })}
               </motion.div>
             )}
           </AnimatePresence>
@@ -446,44 +367,38 @@ export function ChatInput() {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 8, scale: 0.95 }}
                 transition={{ duration: 0.15 }}
-                className="absolute bottom-full left-0 mb-2 w-56 glass-strong rounded-xl border border-white/10 overflow-hidden z-50"
+                className="absolute bottom-full left-0 mb-2 w-52 glass-strong rounded-xl border border-white/10 overflow-hidden z-50"
               >
                 <div className="p-2 border-b border-white/5">
                   <p className="text-xs text-zinc-500 px-2">Режим общения</p>
                 </div>
                 {RUDENESS_MODES.map((mode) => {
                   const isActive = rudenessMode === mode.id;
+                  const iconColor = isActive
+                    ? mode.color === 'red' ? 'text-red-400'
+                    : mode.color === 'orange' ? 'text-orange-400'
+                    : 'text-green-400'
+                    : 'text-zinc-500';
+
                   return (
                     <button
                       key={mode.id}
                       type="button"
                       onClick={() => handleRudenessSwitch(mode.id)}
                       className={`w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-white/5 transition-all ${
-                        isActive ? `${mode.activeColor}` : ''
+                        isActive ? mode.activeColor : ''
                       }`}
                     >
                       <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
                         isActive ? mode.activeColor : 'bg-white/5'
                       }`}>
-                        <mode.icon className={`w-4 h-4 ${
-                          isActive
-                            ? mode.color === 'red' ? 'text-red-400'
-                            : mode.color === 'orange' ? 'text-orange-400'
-                            : 'text-green-400'
-                            : 'text-zinc-500'
-                        }`} />
+                        <mode.icon className={`w-4 h-4 ${iconColor}`} />
                       </div>
                       <div className="flex-1">
                         <p className={`text-sm ${isActive ? 'text-white font-medium' : 'text-zinc-400'}`}>{mode.label}</p>
                         <p className="text-[10px] text-zinc-600">{mode.desc}</p>
                       </div>
-                      {isActive && (
-                        <motion.div
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          className={`w-2 h-2 rounded-full ${mode.dotColor}`}
-                        />
-                      )}
+                      {isActive && <div className={`w-2 h-2 rounded-full ${mode.dotColor}`} />}
                     </button>
                   );
                 })}
@@ -549,33 +464,9 @@ export function ChatInput() {
         </form>
       </div>
 
-      <div className="flex items-center justify-center gap-3 mt-3">
-        <div className="flex items-center gap-1.5">
-          <div className={`w-1.5 h-1.5 rounded-full ${
-            responseMode === 'code' ? 'bg-emerald-500'
-            : responseMode === 'visual' ? 'bg-pink-500'
-            : 'bg-violet-500'
-          }`} />
-          <span className="text-[11px] text-zinc-600">{currentMode.label}</span>
-        </div>
-
-        <span className="text-zinc-700">·</span>
-
-        <div className="flex items-center gap-1.5">
-          <div className={`w-1.5 h-1.5 rounded-full ${
-            rudenessMode === 'very_rude' ? 'bg-red-500'
-            : rudenessMode === 'rude' ? 'bg-orange-500'
-            : 'bg-green-500'
-          }`} />
-          <span className="text-[11px] text-zinc-600">{currentRudeness.label}</span>
-        </div>
-
-        <span className="text-zinc-700">·</span>
-
-        <span className="text-[11px] text-zinc-600">
-          MoSeek может ошибаться
-        </span>
-      </div>
+      <p className="text-center text-[11px] text-zinc-600 mt-3">
+        MoSeek может ошибаться
+      </p>
     </div>
   );
 }

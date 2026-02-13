@@ -1,35 +1,26 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Code, Sparkles, MessageCircle, Flame, Smile, Angry, Zap } from 'lucide-react';
-import { useChatStore, type ResponseMode, type RudenessMode } from '../store/chatStore';
+import { Send, Flame, Smile, Angry } from 'lucide-react';
+import { useChatStore, type RudenessMode } from '../store/chatStore';
 import { useAuthStore } from '../store/authStore';
 import { aiService } from '../services/aiService';
 import { AI_MODELS } from '../config/models';
 import { useCompareMode } from './Header';
 
-const MODES: { id: ResponseMode; label: string; icon: typeof Code; desc: string; color: string }[] = [
-  { id: 'normal', label: 'Обычный', icon: MessageCircle, desc: 'Текст и код', color: 'violet' },
-  { id: 'code', label: 'Код', icon: Code, desc: 'Только чистый код', color: 'emerald' },
-  { id: 'visual', label: 'Визуал', icon: Sparkles, desc: 'Красивый UI', color: 'pink' },
-];
-
-const RUDENESS_MODES: { id: RudenessMode; label: string; icon: typeof Flame; desc: string; color: string; activeColor: string; dotColor: string }[] = [
-  { id: 'very_rude', label: 'Очень грубый', icon: Angry, desc: 'Мат и прямота', color: 'red', activeColor: 'bg-red-500/20', dotColor: 'bg-red-500' },
-  { id: 'rude', label: 'Грубый', icon: Flame, desc: 'Дерзкий сарказм', color: 'orange', activeColor: 'bg-orange-500/20', dotColor: 'bg-orange-500' },
-  { id: 'polite', label: 'Вежливый', icon: Smile, desc: 'Без мата и грубости', color: 'green', activeColor: 'bg-green-500/20', dotColor: 'bg-green-500' },
+const RUDENESS_MODES: { id: RudenessMode; label: string; icon: typeof Flame; desc: string; activeColor: string; dotColor: string; iconActive: string; hoverBorder: string }[] = [
+  { id: 'very_rude', label: 'Очень грубый', icon: Angry, desc: 'Мат и прямота', activeColor: 'bg-red-500/20', dotColor: 'bg-red-500', iconActive: 'text-red-400', hoverBorder: 'hover:border-red-500/30' },
+  { id: 'rude', label: 'Грубый', icon: Flame, desc: 'Дерзкий сарказм', activeColor: 'bg-orange-500/20', dotColor: 'bg-orange-500', iconActive: 'text-orange-400', hoverBorder: 'hover:border-orange-500/30' },
+  { id: 'polite', label: 'Вежливый', icon: Smile, desc: 'Без мата и грубости', activeColor: 'bg-green-500/20', dotColor: 'bg-green-500', iconActive: 'text-green-400', hoverBorder: 'hover:border-green-500/30' },
 ];
 
 const UNLIMITED_EMAILS = ['energoferon41@gmail.com'];
-const CHAR_LIMIT = 1500;
+const CHAR_LIMIT = 5000;
 
 export function ChatInput() {
   const [input, setInput] = useState('');
-  const [showModes, setShowModes] = useState(false);
   const [showRudeness, setShowRudeness] = useState(false);
   const [showCharLimitWarning, setShowCharLimitWarning] = useState(false);
-  const [switchNotification, setSwitchNotification] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const modesRef = useRef<HTMLDivElement>(null);
   const rudenessRef = useRef<HTMLDivElement>(null);
 
   const {
@@ -37,7 +28,6 @@ export function ChatInput() {
     updateMessage,
     getCurrentMessages,
     responseMode,
-    setResponseMode,
     rudenessMode,
     setRudenessMode,
     selectedModel,
@@ -51,20 +41,6 @@ export function ChatInput() {
   const isUnlimitedUser = user?.email && UNLIMITED_EMAILS.includes(user.email);
   const charCount = input.length;
   const isOverLimit = !isUnlimitedUser && charCount > CHAR_LIMIT;
-
-  const showNotification = useCallback((text: string) => {
-    setSwitchNotification(text);
-    setTimeout(() => setSwitchNotification(null), 2500);
-  }, []);
-
-  const handleModeSwitch = useCallback((newMode: ResponseMode) => {
-    if (newMode === responseMode) {
-      setShowModes(false);
-      return;
-    }
-    setResponseMode(newMode);
-    setShowModes(false);
-  }, [responseMode, setResponseMode]);
 
   const handleRudenessSwitch = useCallback((newRudeness: RudenessMode) => {
     if (newRudeness === rudenessMode) {
@@ -88,7 +64,6 @@ export function ChatInput() {
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (modesRef.current && !modesRef.current.contains(e.target as Node)) setShowModes(false);
       if (rudenessRef.current && !rudenessRef.current.contains(e.target as Node)) setShowRudeness(false);
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -228,42 +203,7 @@ export function ChatInput() {
     }
   };
 
-  const currentMode = MODES.find(m => m.id === responseMode) || MODES[0];
   const currentRudeness = RUDENESS_MODES.find(m => m.id === rudenessMode) || RUDENESS_MODES[1];
-
-  const getModeIconColor = (): string => {
-    switch (currentMode.color) {
-      case 'emerald': return 'text-emerald-400';
-      case 'pink': return 'text-pink-400';
-      default: return 'text-violet-400';
-    }
-  };
-
-  const getModeHoverBorder = (): string => {
-    switch (currentMode.color) {
-      case 'emerald': return 'hover:border-emerald-500/30';
-      case 'pink': return 'hover:border-pink-500/30';
-      default: return 'hover:border-violet-500/30';
-    }
-  };
-
-  const getRudenessIconColor = (): string => {
-    switch (rudenessMode) {
-      case 'very_rude': return 'text-red-400';
-      case 'rude': return 'text-orange-400';
-      case 'polite': return 'text-green-400';
-      default: return 'text-orange-400';
-    }
-  };
-
-  const getRudenessHoverBorder = (): string => {
-    switch (rudenessMode) {
-      case 'very_rude': return 'hover:border-red-500/30';
-      case 'rude': return 'hover:border-orange-500/30';
-      case 'polite': return 'hover:border-green-500/30';
-      default: return 'hover:border-orange-500/30';
-    }
-  };
 
   return (
     <div className="w-full max-w-3xl mx-auto px-4">
@@ -281,83 +221,15 @@ export function ChatInput() {
       </AnimatePresence>
 
       <div className="flex items-end gap-2">
-        <div className="relative" ref={modesRef}>
-          <motion.button
-            type="button"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => { setShowModes(!showModes); setShowRudeness(false); }}
-            className={`flex items-center justify-center w-[52px] h-[52px] rounded-2xl glass-strong transition-all border border-white/5 hover:bg-white/10 ${getModeHoverBorder()}`}
-          >
-            <currentMode.icon className={`w-5 h-5 ${getModeIconColor()}`} />
-          </motion.button>
-
-          <AnimatePresence>
-            {showModes && (
-              <motion.div
-                initial={{ opacity: 0, y: 8, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 8, scale: 0.95 }}
-                transition={{ duration: 0.15 }}
-                className="absolute bottom-full left-0 mb-2 w-52 glass-strong rounded-xl border border-white/10 overflow-hidden z-50"
-              >
-                <div className="p-2 border-b border-white/5">
-                  <p className="text-xs text-zinc-500 px-2">Режим ответа</p>
-                </div>
-                {MODES.map((mode) => {
-                  const isActive = responseMode === mode.id;
-                  const iconColor = isActive
-                    ? mode.color === 'emerald' ? 'text-emerald-400'
-                    : mode.color === 'pink' ? 'text-pink-400'
-                    : 'text-violet-400'
-                    : 'text-zinc-500';
-                  const bgColor = isActive
-                    ? mode.color === 'emerald' ? 'bg-emerald-500/20'
-                    : mode.color === 'pink' ? 'bg-pink-500/20'
-                    : 'bg-violet-500/20'
-                    : 'bg-white/5';
-                  const dotColor = mode.color === 'emerald' ? 'bg-emerald-500'
-                    : mode.color === 'pink' ? 'bg-pink-500'
-                    : 'bg-violet-500';
-
-                  return (
-                    <button
-                      key={mode.id}
-                      type="button"
-                      onClick={() => handleModeSwitch(mode.id)}
-                      className={`w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-white/5 transition-all ${
-                        isActive
-                          ? mode.color === 'emerald' ? 'bg-emerald-500/10'
-                          : mode.color === 'pink' ? 'bg-pink-500/10'
-                          : 'bg-violet-500/10'
-                          : ''
-                      }`}
-                    >
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${bgColor}`}>
-                        <mode.icon className={`w-4 h-4 ${iconColor}`} />
-                      </div>
-                      <div className="flex-1">
-                        <p className={`text-sm ${isActive ? 'text-white font-medium' : 'text-zinc-400'}`}>{mode.label}</p>
-                        <p className="text-[10px] text-zinc-600">{mode.desc}</p>
-                      </div>
-                      {isActive && <div className={`w-2 h-2 rounded-full ${dotColor}`} />}
-                    </button>
-                  );
-                })}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
         <div className="relative" ref={rudenessRef}>
           <motion.button
             type="button"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            onClick={() => { setShowRudeness(!showRudeness); setShowModes(false); }}
-            className={`flex items-center justify-center w-[52px] h-[52px] rounded-2xl glass-strong transition-all border border-white/5 hover:bg-white/10 ${getRudenessHoverBorder()}`}
+            onClick={() => setShowRudeness(!showRudeness)}
+            className={`flex items-center justify-center w-[52px] h-[52px] rounded-2xl glass-strong transition-all border border-white/5 hover:bg-white/10 ${currentRudeness.hoverBorder}`}
           >
-            <currentRudeness.icon className={`w-5 h-5 ${getRudenessIconColor()}`} />
+            <currentRudeness.icon className={`w-5 h-5 ${currentRudeness.iconActive}`} />
           </motion.button>
 
           <AnimatePresence>
@@ -374,25 +246,15 @@ export function ChatInput() {
                 </div>
                 {RUDENESS_MODES.map((mode) => {
                   const isActive = rudenessMode === mode.id;
-                  const iconColor = isActive
-                    ? mode.color === 'red' ? 'text-red-400'
-                    : mode.color === 'orange' ? 'text-orange-400'
-                    : 'text-green-400'
-                    : 'text-zinc-500';
-
                   return (
                     <button
                       key={mode.id}
                       type="button"
                       onClick={() => handleRudenessSwitch(mode.id)}
-                      className={`w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-white/5 transition-all ${
-                        isActive ? mode.activeColor : ''
-                      }`}
+                      className={`w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-white/5 transition-all ${isActive ? mode.activeColor : ''}`}
                     >
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                        isActive ? mode.activeColor : 'bg-white/5'
-                      }`}>
-                        <mode.icon className={`w-4 h-4 ${iconColor}`} />
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isActive ? mode.activeColor : 'bg-white/5'}`}>
+                        <mode.icon className={`w-4 h-4 ${isActive ? mode.iconActive : 'text-zinc-500'}`} />
                       </div>
                       <div className="flex-1">
                         <p className={`text-sm ${isActive ? 'text-white font-medium' : 'text-zinc-400'}`}>{mode.label}</p>
@@ -409,9 +271,7 @@ export function ChatInput() {
 
         <form
           onSubmit={handleSubmit}
-          className={`flex-1 relative rounded-2xl glass-strong shadow-lg shadow-violet-500/5 border ${
-            isOverLimit ? 'border-red-500/50' : 'border-white/5'
-          }`}
+          className={`flex-1 relative rounded-2xl glass-strong shadow-lg shadow-violet-500/5 border ${isOverLimit ? 'border-red-500/50' : 'border-white/5'}`}
         >
           <div className="relative flex items-center min-h-[52px] pl-4 pr-2">
             <div className="flex-1 flex items-center">
@@ -420,13 +280,7 @@ export function ChatInput() {
                 value={input}
                 onChange={handleInputChange}
                 onKeyDown={handleKeyDown}
-                placeholder={
-                  responseMode === 'code'
-                    ? 'Опиши что нужно закодить...'
-                    : responseMode === 'visual'
-                    ? 'Опиши какой UI хочешь...'
-                    : 'Напиши что-нибудь...'
-                }
+                placeholder="Напиши что-нибудь..."
                 disabled={generating}
                 maxLength={isUnlimitedUser ? undefined : CHAR_LIMIT}
                 rows={1}
@@ -436,9 +290,7 @@ export function ChatInput() {
             </div>
 
             {!isUnlimitedUser && input.length > 0 && (
-              <span className={`text-[11px] mr-1 flex-shrink-0 ${
-                charCount >= CHAR_LIMIT ? 'text-red-400' : charCount > CHAR_LIMIT * 0.8 ? 'text-orange-400' : 'text-zinc-600'
-              }`}>
+              <span className={`text-[11px] mr-1 flex-shrink-0 ${charCount >= CHAR_LIMIT ? 'text-red-400' : charCount > CHAR_LIMIT * 0.8 ? 'text-orange-400' : 'text-zinc-600'}`}>
                 {charCount}/{CHAR_LIMIT}
               </span>
             )}
@@ -450,11 +302,7 @@ export function ChatInput() {
               whileTap={{ scale: 0.95 }}
               className={`flex-shrink-0 w-10 h-10 rounded-xl transition-all duration-200 ml-1 flex items-center justify-center ${
                 input.trim() && !generating && !isOverLimit
-                  ? responseMode === 'code'
-                    ? 'bg-gradient-to-r from-emerald-500 to-green-600 text-white shadow-lg shadow-emerald-500/25'
-                    : responseMode === 'visual'
-                    ? 'bg-gradient-to-r from-pink-500 to-rose-600 text-white shadow-lg shadow-pink-500/25'
-                    : 'bg-gradient-to-r from-violet-500 to-purple-600 text-white shadow-lg shadow-violet-500/25'
+                  ? 'bg-gradient-to-r from-violet-500 to-purple-600 text-white shadow-lg shadow-violet-500/25'
                   : 'bg-white/5 text-zinc-600 cursor-not-allowed'
               }`}
             >

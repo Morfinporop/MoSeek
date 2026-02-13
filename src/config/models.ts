@@ -6,15 +6,15 @@ export const AI_MODELS: AIModel[] = [
   {
     id: 'z-ai/glm-4.5-air:free',
     name: 'MoSeek GLM 4.5',
-    description: 'GLM 4.5 Думает',
+    description: 'GLM 4.5 Air',
     provider: 'MoGPT',
     icon: MODEL_ICON,
     color: 'from-blue-400 to-indigo-500',
   },
   {
     id: 'stepfun/step-3.5-flash:free',
-    name: 'MoSeek GLM 3.5',
-    description: 'GLM 3.5 Быстрый',
+    name: 'MoSeek Step 3.5',
+    description: 'Step 3.5 Flash',
     provider: 'MoGPT',
     icon: MODEL_ICON,
     color: 'from-cyan-400 to-blue-500',

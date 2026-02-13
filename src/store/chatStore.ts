@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { ChatState, Message, Chat } from '../types';
+import { DEFAULT_MODEL } from '../config/models';
 
 export type ResponseMode = 'normal' | 'code' | 'visual';
 export type RudenessMode = 'very_rude' | 'rude' | 'polite';
@@ -34,7 +35,7 @@ export const useChatStore = create<ExtendedChatState>()(
       sidebarOpen: false,
       responseMode: 'normal',
       rudenessMode: 'rude',
-      selectedModel: 'deepseek/deepseek-chat',
+      selectedModel: DEFAULT_MODEL,
       generatingChatIds: new Set<string>(),
 
       setResponseMode: (mode) => set({ responseMode: mode }),

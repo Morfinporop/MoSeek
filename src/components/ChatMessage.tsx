@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Copy, Check, ChevronDown, ChevronUp } from 'lucide-react';
+import { Copy, Check, ChevronDown, ChevronUp, Film } from 'lucide-react';
 import { useState } from 'react';
 import { marked } from 'marked';
 import type { Message } from '../types';
@@ -23,12 +23,14 @@ export function ChatMessage({ message, compact, hideModelLabel }: ChatMessagePro
   const [copied, setCopied] = useState(false);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
+  const [expandedMedia, setExpandedMedia] = useState<string | null>(null);
   const isAssistant = message.role === 'assistant';
   const { theme } = useThemeStore();
   const isLight = theme === 'light';
 
   const isLong = message.content.length > MAX_LENGTH && !message.isLoading;
   const displayContent = isLong && !expanded ? message.content.slice(0, MAX_LENGTH) + '...' : message.content;
+  const hasAttachments = message.attachments && message.attachments.length > 0;
 
   const copyToClipboard = async () => {
     await navigator.clipboard.writeText(message.content);
@@ -40,6 +42,64 @@ export function ChatMessage({ message, compact, hideModelLabel }: ChatMessagePro
     await navigator.clipboard.writeText(code);
     setCopiedCode(code);
     setTimeout(() => setCopiedCode(null), 2000);
+  };
+
+  const renderAttachments = () => {
+    if (!hasAttachments) return null;
+
+    return (
+      <div className="flex flex-wrap gap-2 mb-2">
+        {message.attachments!.map((attachment) => (
+          <div key={attachment.id} className="relative">
+            {attachment.type === 'image' ? (
+              <>
+                <motion.img
+                  src={attachment.url}
+                  alt={attachment.name}
+                  className="max-w-[280px] max-h-[200px] rounded-xl object-cover cursor-pointer border border-white/10 hover:border-violet-500/30 transition-all"
+                  whileHover={{ scale: 1.02 }}
+                  onClick={() => setExpandedMedia(expandedMedia === attachment.id ? null : attachment.id)}
+                />
+
+                {/* Полноразмерное превью */}
+                {expandedMedia === attachment.id && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 cursor-pointer"
+                    onClick={() => setExpandedMedia(null)}
+                  >
+                    <motion.img
+                      initial={{ scale: 0.8 }}
+                      animate={{ scale: 1 }}
+                      src={attachment.url}
+                      alt={attachment.name}
+                      className="max-w-full max-h-full object-contain rounded-2xl"
+                    />
+                  </motion.div>
+                )}
+              </>
+            ) : (
+              <div className="max-w-[280px] rounded-xl overflow-hidden border border-white/10">
+                <video
+                  src={attachment.url}
+                  controls
+                  className="max-w-full max-h-[200px] rounded-xl"
+                  preload="metadata"
+                >
+                  <track kind="captions" />
+                </video>
+                <div className="flex items-center gap-1.5 px-2 py-1 bg-black/30">
+                  <Film className="w-3 h-3 text-violet-400" />
+                  <span className="text-[10px] text-zinc-400 truncate">{attachment.name}</span>
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    );
   };
 
   const renderContent = () => {
@@ -114,12 +174,14 @@ export function ChatMessage({ message, compact, hideModelLabel }: ChatMessagePro
 
     return (
       <div>
-        <p
-          className="text-[15px] leading-relaxed text-white whitespace-pre-wrap break-words overflow-hidden"
-          style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}
-        >
-          {displayContent}
-        </p>
+        {displayContent && displayContent !== '(медиа файл)' && (
+          <p
+            className="text-[15px] leading-relaxed text-white whitespace-pre-wrap break-words overflow-hidden"
+            style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}
+          >
+            {displayContent}
+          </p>
+        )}
         {isLong && (
           <motion.button
             whileHover={{ scale: 1.02 }}
@@ -187,6 +249,9 @@ export function ChatMessage({ message, compact, hideModelLabel }: ChatMessagePro
                 : 'bg-gradient-to-br from-violet-500 to-purple-600 rounded-tr-md shadow-lg shadow-violet-500/10'
           }`}
         >
+          {/* Медиа-файлы пользователя */}
+          {!isAssistant && renderAttachments()}
+
           {renderContent()}
 
           {!message.isLoading && (

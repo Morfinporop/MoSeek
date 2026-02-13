@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Copy, Check, ChevronDown, ChevronUp } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, memo } from 'react';
 import { marked } from 'marked';
 import type { Message } from '../types';
 import { MODEL_ICON } from '../config/models';
@@ -20,13 +20,11 @@ marked.setOptions({
 
 const MAX_LENGTH = 1500;
 
-export function ChatMessage({ message, compact, hideModelLabel }: ChatMessageProps) {
+export const ChatMessage = memo(function ChatMessage({ message, compact, hideModelLabel }: ChatMessageProps) {
   const [copied, setCopied] = useState(false);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
-  const [typingTime, setTypingTime] = useState(0);
   const [finalTypingTime, setFinalTypingTime] = useState<number | null>(null);
-  const [startTime] = useState(Date.now());
   const isAssistant = message.role === 'assistant';
   const { theme } = useThemeStore();
   const { user } = useAuthStore();
@@ -36,15 +34,13 @@ export function ChatMessage({ message, compact, hideModelLabel }: ChatMessagePro
   const displayContent = isLong && !expanded ? message.content.slice(0, MAX_LENGTH) : message.content;
 
   useEffect(() => {
-    if (message.isLoading && isAssistant) {
-      const interval = setInterval(() => {
-        setTypingTime(Math.floor((Date.now() - startTime) / 1000));
-      }, 1000);
-      return () => clearInterval(interval);
-    } else if (!message.isLoading && isAssistant && typingTime > 0 && finalTypingTime === null) {
-      setFinalTypingTime(typingTime);
+    if (!message.isLoading && isAssistant && message.timestamp && finalTypingTime === null) {
+      const elapsed = Math.floor((Date.now() - message.timestamp) / 1000);
+      if (elapsed > 0 && elapsed < 300) {
+        setFinalTypingTime(elapsed);
+      }
     }
-  }, [message.isLoading, isAssistant, startTime, typingTime, finalTypingTime]);
+  }, [message.isLoading, isAssistant, message.timestamp, finalTypingTime]);
 
   const copyToClipboard = async () => {
     await navigator.clipboard.writeText(message.content);
@@ -58,7 +54,7 @@ export function ChatMessage({ message, compact, hideModelLabel }: ChatMessagePro
     setTimeout(() => setCopiedCode(null), 2000);
   };
 
-  const renderContent = () => {
+  const renderedContent = useMemo(() => {
     if (message.isLoading) {
       return <TypingIndicator />;
     }
@@ -96,16 +92,18 @@ export function ChatMessage({ message, compact, hideModelLabel }: ChatMessagePro
             className={`prose prose-sm max-w-none break-words overflow-hidden ${
               isLight ? 'text-zinc-800' : 'text-zinc-200'
             }`}
-            style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}
+            style={{ wordBreak: 'break-word', overflowWrap: 'anywhere', userSelect: 'text' }}
             dangerouslySetInnerHTML={{ __html: html }}
             onClick={(e) => {
               const target = e.target as HTMLElement;
               const btn = target.closest('.copy-code-btn') as HTMLButtonElement;
               if (btn) {
+                e.preventDefault();
                 const code = decodeURIComponent(btn.dataset.code || '');
                 copyCode(code);
               }
             }}
+            onMouseDown={(e) => e.stopPropagation()}
           />
           {isLong && (
             <motion.button
@@ -132,7 +130,8 @@ export function ChatMessage({ message, compact, hideModelLabel }: ChatMessagePro
       <div>
         <p
           className="text-[15px] leading-relaxed text-white whitespace-pre-wrap break-words overflow-hidden"
-          style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}
+          style={{ wordBreak: 'break-word', overflowWrap: 'anywhere', userSelect: 'text' }}
+          onMouseDown={(e) => e.stopPropagation()}
         >
           {displayContent}
         </p>
@@ -155,7 +154,7 @@ export function ChatMessage({ message, compact, hideModelLabel }: ChatMessagePro
         )}
       </div>
     );
-  };
+  }, [message.isLoading, displayContent, isAssistant, isLight, isLong, expanded]);
 
   return (
     <motion.div
@@ -188,16 +187,15 @@ export function ChatMessage({ message, compact, hideModelLabel }: ChatMessagePro
             }`}>
               {message.model}
             </span>
-            {(message.isLoading || finalTypingTime !== null) && (
+            {finalTypingTime !== null && (
               <span className={`text-[10px] ${isLight ? 'text-zinc-500' : 'text-zinc-400'}`}>
-                {message.isLoading ? typingTime : finalTypingTime}s
+                {finalTypingTime}s
               </span>
             )}
           </div>
         )}
 
         <motion.div
-          whileHover={{ scale: 1.005 }}
           className={`relative px-4 py-3 rounded-2xl overflow-hidden ${
             isAssistant
               ? isLight
@@ -208,29 +206,7 @@ export function ChatMessage({ message, compact, hideModelLabel }: ChatMessagePro
                 : 'bg-gradient-to-br from-violet-500 to-purple-600 rounded-tr-md shadow-lg shadow-violet-500/10'
           }`}
         >
-          {renderContent()}
-
-          {!message.isLoading && (
-            <motion.button
-              initial={{ opacity: 0 }}
-              whileHover={{ opacity: 1, scale: 1.1 }}
-              transition={{ duration: 0.2 }}
-              onClick={copyToClipboard}
-              className={`absolute -right-2 -top-2 p-1.5 rounded-lg transition-colors ${
-                isAssistant
-                  ? isLight
-                    ? 'bg-white shadow-md hover:bg-zinc-50 border border-zinc-200'
-                    : 'glass-strong hover:bg-white/10'
-                  : 'bg-white/20 hover:bg-white/30'
-              }`}
-            >
-              {copied ? (
-                <Check className="w-3.5 h-3.5 text-green-400" />
-              ) : (
-                <Copy className={`w-3.5 h-3.5 ${isLight && isAssistant ? 'text-zinc-500' : 'text-zinc-400'}`} />
-              )}
-            </motion.button>
-          )}
+          {renderedContent}
         </motion.div>
 
         <div className={`flex items-center gap-2 mt-1.5 px-1 ${isAssistant ? '' : 'justify-end'}`}>
@@ -240,16 +216,36 @@ export function ChatMessage({ message, compact, hideModelLabel }: ChatMessagePro
               minute: '2-digit',
             })}
           </span>
+          
+          {!message.isLoading && (
+            <button
+              onClick={copyToClipboard}
+              className={`p-1 rounded transition-colors ${
+                isAssistant
+                  ? isLight
+                    ? 'hover:bg-zinc-100'
+                    : 'hover:bg-white/10'
+                  : 'hover:bg-white/20'
+              }`}
+            >
+              {copied ? (
+                <Check className="w-3 h-3 text-green-400" />
+              ) : (
+                <Copy className={`w-3 h-3 ${isLight && isAssistant ? 'text-zinc-400' : 'text-zinc-500'}`} />
+              )}
+            </button>
+          )}
+
           {copiedCode && (
-            <span className="text-[10px] text-green-400">Код скопирован!</span>
+            <span className="text-[10px] text-green-400">Скопировано</span>
           )}
         </div>
       </div>
     </motion.div>
   );
-}
+});
 
-function TypingIndicator() {
+const TypingIndicator = memo(function TypingIndicator() {
   return (
     <div className="flex items-center gap-1.5">
       <span className="text-sm text-zinc-500">Печатаю</span>
@@ -264,4 +260,4 @@ function TypingIndicator() {
       </div>
     </div>
   );
-}
+});

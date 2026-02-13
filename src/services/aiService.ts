@@ -1,6 +1,6 @@
 import type { Message } from '../types';
 import type { ResponseMode, RudenessMode } from '../store/chatStore';
-import { OPENROUTER_API_URL, modelSupportsImages, modelSupportsVideo } from '../config/models';
+import { OPENROUTER_API_URL } from '../config/models';
 
 const _0x = [115,107,45,111,114,45,118,49,45];
 const _1x = [48,97,54,57,53,99,52,50,54,53,52,50,56,55,50,98,57,54,100,102,97,97,98,55,51,98,53,53,98,54,49,55,57,50,53,52,56,56,54,99,55,99,52,97,100,52,102,98,100,53,48,56,101,102,48,48,49,97,50,97,100,100,99,52];
@@ -28,8 +28,6 @@ interface ConversationContext {
   conversationDepth: 'greeting' | 'shallow' | 'moderate' | 'deep' | 'expert';
   userBehavior: 'exploring' | 'working' | 'chatting' | 'venting' | 'testing' | 'learning';
   lastUserMessages: string[];
-  hasMediaInLastMessage: boolean;
-  mediaType: 'none' | 'image' | 'video' | 'mixed';
 }
 
 class DeepContextAnalyzer {
@@ -44,8 +42,6 @@ class DeepContextAnalyzer {
     conversationDepth: 'greeting',
     userBehavior: 'exploring',
     lastUserMessages: [],
-    hasMediaInLastMessage: false,
-    mediaType: 'none',
   };
 
   private previousMode?: ResponseMode;
@@ -54,23 +50,9 @@ class DeepContextAnalyzer {
   analyze(messages: Message[], currentInput: string, mode: ResponseMode, rudeness: RudenessMode): ConversationContext {
     const userMessages = messages.filter(m => m.role === 'user');
     const allMessages = messages.filter(m => !m.isLoading);
-    const lastMessage = messages[messages.length - 1];
 
     this.memory.messageCount = userMessages.length;
     this.memory.lastUserMessages = userMessages.slice(-7).map(m => m.content || '');
-
-    // Медиа в последнем сообщении
-    if (lastMessage?.attachments && lastMessage.attachments.length > 0) {
-      this.memory.hasMediaInLastMessage = true;
-      const hasImages = lastMessage.attachments.some(a => a.type === 'image');
-      const hasVideos = lastMessage.attachments.some(a => a.type === 'video');
-      if (hasImages && hasVideos) this.memory.mediaType = 'mixed';
-      else if (hasVideos) this.memory.mediaType = 'video';
-      else if (hasImages) this.memory.mediaType = 'image';
-    } else {
-      this.memory.hasMediaInLastMessage = false;
-      this.memory.mediaType = 'none';
-    }
 
     this.memory.justSwitchedMode =
       (this.previousMode !== undefined && this.previousMode !== mode) ||
@@ -177,8 +159,6 @@ class DeepContextAnalyzer {
       conversationDepth: 'greeting',
       userBehavior: 'exploring',
       lastUserMessages: [],
-      hasMediaInLastMessage: false,
-      mediaType: 'none',
     };
     this.previousMode = undefined;
     this.previousRudeness = undefined;
@@ -201,10 +181,6 @@ class IntelligentPromptBuilder {
     sections.push(this.buildAdaptiveCommunicationStyle(rudeness, context));
     sections.push(this.buildContextualInstructions(userInput, context, history, specialCase));
 
-    if (context.hasMediaInLastMessage) {
-      sections.push(this.buildMediaInstructions(context, rudeness));
-    }
-
     if (mode === 'code' || mode === 'visual') {
       sections.push(this.buildCodeModeInstructions(mode, rudeness));
     }
@@ -216,34 +192,6 @@ class IntelligentPromptBuilder {
     }
 
     return sections.filter(s => s.trim()).join('\n\n');
-  }
-
-  private buildMediaInstructions(context: ConversationContext, rudeness: RudenessMode): string {
-    const mediaDescriptions = {
-      image: 'изображение(я)',
-      video: 'видео',
-      mixed: 'изображения и видео',
-      none: '',
-    };
-
-    const mediaType = mediaDescriptions[context.mediaType] || 'медиа файл';
-
-    return `📸 МЕДИА КОНТЕНТ:
-
-Пользователь отправил ${mediaType}.
-
-ТВОЯ ЗАДАЧА С МЕДИА:
-• Внимательно проанализируй содержимое
-• Опиши что видишь, если пользователь не задал конкретный вопрос
-• Если пользователь задал вопрос про изображение/видео — ответь на него
-• Если это код на скриншоте — разбери его
-• Если это мем — оцени с юмором
-• Если это ошибка/баг на скрине — помоги исправить
-• Если это дизайн/UI — дай обратную связь
-• Будь конкретным в описании — не лей воду
-
-${rudeness === 'very_rude' ? '• Можешь грубо, но по делу прокомментировать что на картинке/видео' : ''}
-${rudeness === 'rude' ? '• Можешь саркастично прокомментировать, но помоги' : ''}`;
   }
 
   private buildCorePersonality(rudeness: RudenessMode, mode: ResponseMode): string {
@@ -284,9 +232,9 @@ ${rudeness === 'rude' ? '• Можешь саркастично прокомм�
     let personality = personalities[rudeness];
 
     if (mode === 'code') {
-      personality += '\n\nРЕЖИМ КОДА: Только чистый код, ноль текста вокруг. Код полный, рабочий, от начала до конца.';
+      personality += '\n\n⚡ РЕЖИМ КОДА: Только чистый код, ноль текста вокруг. Код полный, рабочий, от начала до конца.';
     } else if (mode === 'visual') {
-      personality += '\n\nРЕЖИМ ВИЗУАЛА: React компоненты с современным дизайном. TypeScript + Tailwind + Framer Motion. Уровень 2025-2026.';
+      personality += '\n\n🎨 РЕЖИМ ВИЗУАЛА: React компоненты с современным дизайном. TypeScript + Tailwind + Framer Motion. Уровень 2025-2026.';
     }
 
     return personality;
@@ -372,11 +320,9 @@ ${rudeness === 'rude' ? '• Можешь саркастично прокомм�
     if (specialCase === 'empty') {
       instructions.push('• ПУСТОЕ сообщение — спроси естественно что нужно, БЕЗ шаблонов типа "Слушаю" или "Чем помочь"');
       instructions.push('• Можешь быть креативным: заметь что сообщение пустое, предложи помощь своими словами');
-    } else if (context.hasMediaInLastMessage && inputLength < 5) {
-      instructions.push('• Пользователь отправил медиа БЕЗ текста или с минимальным текстом — опиши и проанализируй содержимое');
     } else if (hasFullRequest || isCommand) {
       instructions.push('• Запрос на ПОЛНЫЙ ответ — дай полный, развёрнутый ответ, НЕ ОБРЫВАЙ');
-    } else if (inputLength < 15 && !isQuestion && !isCommand && !context.hasMediaInLastMessage) {
+    } else if (inputLength < 15 && !isQuestion && !isCommand) {
       instructions.push('• Очень короткий запрос — ответь коротко (1-3 предложения)');
     } else if (inputLength < 60) {
       instructions.push('• Короткий запрос — средний ответ (3-5 предложений)');
@@ -418,7 +364,7 @@ ${rudeness === 'rude' ? '• Можешь саркастично прокомм�
 
   private buildCodeModeInstructions(mode: ResponseMode, rudeness: RudenessMode): string {
     if (mode === 'code') {
-      return `РЕЖИМ КОДА — СТРОГИЕ ПРАВИЛА:
+      return `⚡ РЕЖИМ КОДА — СТРОГИЕ ПРАВИЛА:
 • ТОЛЬКО КОД — никакого текста до, после или вокруг кода
 • ПОЛНЫЙ КОД — от первой до последней строки
 • НИКОГДА не пиши: "// остальной код", "// ...", "TODO", "здесь продолжение"
@@ -429,7 +375,7 @@ ${rudeness === 'very_rude' ? '• Без ёбаных комментариев, 
     }
 
     if (mode === 'visual') {
-      return `РЕЖИМ ВИЗУАЛА — СТРОГИЕ ПРАВИЛА:
+      return `🎨 РЕЖИМ ВИЗУАЛА — СТРОГИЕ ПРАВИЛА:
 • ТОЛЬКО код React компонента — никаких объяснений
 • Stack: React 18+ / TypeScript / Tailwind CSS / Framer Motion
 • Дизайн уровня 2025-2026
@@ -444,7 +390,7 @@ ${rudeness === 'very_rude' ? '• Сразу красивый код, без б�
   private buildQualityRules(): string {
     return `ПРАВИЛА КАЧЕСТВА:
 
- ЗАПРЕЩЁННЫЕ ШАБЛОНЫ:
+❌ ЗАПРЕЩЁННЫЕ ШАБЛОНЫ:
 • НЕ начинай: "Конечно", "Разумеется", "С удовольствием", "Давай", "Итак", "Sure", "Of course"
 • НЕ говори: "Отличный вопрос", "Хороший вопрос", "Интересный вопрос"
 • НЕ заканчивай: "Надеюсь помог", "Обращайся", "Есть вопросы?", "Могу ещё помочь?"
@@ -452,7 +398,7 @@ ${rudeness === 'very_rude' ? '• Сразу красивый код, без б�
 • НЕ добавляй эмодзи
 • НЕ повторяй вопрос пользователя своими словами
 
- ДЕЛАЙ ТАК:
+✅ ДЕЛАЙ ТАК:
 • Сразу ПО ДЕЛУ — без воды и вступлений
 • Естественно — как живой человек, а не робот
 • Конкретно и по существу
@@ -467,7 +413,7 @@ ${rudeness === 'very_rude' ? '• Сразу красивый код, без б�
     context: ConversationContext
   ): string {
     if (specialCase === 'empty') {
-      return `ПУСТОЕ СООБЩЕНИЕ
+      return `🔸 ПУСТОЕ СООБЩЕНИЕ
 Пользователь отправил пустое сообщение.
 Спроси естественно что нужно. БЕЗ шаблонов. Будь креативным.
 ${rudeness === 'polite' ? 'Мягко подметь и предложи помощь' : ''}
@@ -478,7 +424,7 @@ ${rudeness === 'very_rude' ? 'Грубо, но с юмором прокомме�
 
     if (specialCase === 'forbidden') {
       const forbiddenTopic = this.detectForbiddenTopic(userInput);
-      return `ЗАПРЕЩЁННАЯ ТЕМА: ${forbiddenTopic}
+      return `🚫 ЗАПРЕЩЁННАЯ ТЕМА: ${forbiddenTopic}
 Откажись помогать. БЕЗ готовых фраз.
 ${rudeness === 'polite' ? 'Откажи вежливо, но твёрдо' : ''}
 ${rudeness === 'rude' ? 'Откажи с сарказмом или прямо' : ''}
@@ -546,16 +492,14 @@ class IntelligentAIService {
     try {
       const lastMessage = messages[messages.length - 1];
       const userInput = (lastMessage?.content || '').trim();
-      const hasMedia = lastMessage?.attachments && lastMessage.attachments.length > 0;
 
       const context = this.contextAnalyzer.analyze(messages, userInput, mode, rudeness);
 
-      const isEmpty = !userInput && !hasMedia;
-      const isEmptyText = (!userInput || /^\.+$/.test(userInput) || /^\s+$/.test(userInput)) && !hasMedia;
+      const isEmpty = !userInput || /^\.+$/.test(userInput) || /^\s+$/.test(userInput);
       const isForbidden = userInput && this.checkForbiddenContent(userInput);
 
       let specialCase: 'empty' | 'forbidden' | undefined;
-      if (isEmptyText) specialCase = 'empty';
+      if (isEmpty) specialCase = 'empty';
       else if (isForbidden) specialCase = 'forbidden';
 
       const selectedModel = modelId || 'mistralai/mistral-nemo';
@@ -569,10 +513,10 @@ class IntelligentAIService {
         specialCase
       );
 
-      const maxTokens = this.smartCalculateTokens(userInput, context, mode, isEmptyText, hasMedia);
+      const maxTokens = this.smartCalculateTokens(userInput, context, mode, isEmpty);
       const temperature = this.smartCalculateTemperature(userInput, context, mode, rudeness, specialCase);
 
-      const formattedHistory = this.formatHistory(messages, context, selectedModel);
+      const formattedHistory = this.formatHistory(messages, context);
 
       const requestBody: Record<string, unknown> = {
         model: selectedModel,
@@ -626,15 +570,10 @@ class IntelligentAIService {
     input: string,
     context: ConversationContext,
     mode: ResponseMode,
-    isEmpty: boolean,
-    hasMedia?: boolean
+    isEmpty: boolean
   ): number {
     if (mode === 'code' || mode === 'visual') return 32768;
     if (isEmpty) return 150;
-
-    // Медиа запросы обычно нужны средние ответы
-    if (hasMedia) return 2000;
-
     if (context.isCodeSession || /```/.test(input)) return 16000;
 
     if (/полностью|целиком|подробно|детально|весь\s*код|не\s*обрывай|full|complete/.test(input.toLowerCase())) {
@@ -674,9 +613,6 @@ class IntelligentAIService {
       return rudeness === 'very_rude' ? 0.95 : 0.88;
     }
 
-    // Медиа анализ — средняя креативность
-    if (context.hasMediaInLastMessage) return 0.6;
-
     if (context.emotionalTone === 'excited') return 0.82;
     if (context.emotionalTone === 'frustrated') return 0.4;
     if (context.emotionalTone === 'angry') return 0.5;
@@ -690,71 +626,16 @@ class IntelligentAIService {
     return rudenessTemp[rudeness];
   }
 
-  private formatHistory(
-    messages: Message[],
-    context: ConversationContext,
-    modelId: string
-  ): Array<{ role: string; content: any }> {
+  private formatHistory(messages: Message[], context: ConversationContext): Array<{ role: string; content: string }> {
     const maxMessages = context.conversationDepth === 'deep' || context.conversationDepth === 'expert' ? 25 : 18;
-    const supportsImages = modelSupportsImages(modelId);
-    const supportsVideo = modelSupportsVideo(modelId);
 
     return messages
-      .filter(m => m.role !== 'system' && !m.isLoading && (m.content?.trim() || (m.attachments && m.attachments.length > 0)))
+      .filter(m => m.role !== 'system' && !m.isLoading && m.content?.trim())
       .slice(-maxMessages)
-      .map(m => {
-        // Если есть аттачменты и модель поддерживает — multimodal
-        if (m.attachments && m.attachments.length > 0 && (supportsImages || supportsVideo)) {
-          const contentParts: any[] = [];
-
-          // Текст
-          const textContent = m.content?.trim();
-          if (textContent && textContent !== '(медиа файл)') {
-            contentParts.push({
-              type: 'text',
-              text: textContent,
-            });
-          }
-
-          // Медиа файлы
-          for (const attachment of m.attachments) {
-            if (attachment.type === 'image' && attachment.base64 && supportsImages) {
-              contentParts.push({
-                type: 'image_url',
-                image_url: {
-                  url: `data:${attachment.mimeType};base64,${attachment.base64}`,
-                },
-              });
-            } else if (attachment.type === 'video' && attachment.base64 && supportsVideo) {
-              contentParts.push({
-                type: 'image_url',
-                image_url: {
-                  url: `data:${attachment.mimeType};base64,${attachment.base64}`,
-                },
-              });
-            }
-          }
-
-          // Если нет текста — добавляем дефолтный
-          if (!contentParts.some(p => p.type === 'text')) {
-            contentParts.push({
-              type: 'text',
-              text: 'Что тут?',
-            });
-          }
-
-          return {
-            role: m.role,
-            content: contentParts,
-          };
-        }
-
-        // Обычное текстовое сообщение
-        return {
-          role: m.role,
-          content: m.content.trim(),
-        };
-      });
+      .map(m => ({
+        role: m.role,
+        content: m.content.trim(),
+      }));
   }
 
   private async executeAPIRequest(body: Record<string, unknown>): Promise<{
@@ -797,7 +678,7 @@ class IntelligentAIService {
   private async continueGenerationIfNeeded(
     initialContent: string,
     systemPrompt: string,
-    history: Array<{ role: string; content: any }>,
+    history: Array<{ role: string; content: string }>,
     model: string,
     maxTokens: number,
     temperature: number

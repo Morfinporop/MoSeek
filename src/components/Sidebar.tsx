@@ -140,13 +140,9 @@ export function Sidebar() {
             transition={{ type: 'spring', damping: 35, stiffness: 500 }}
             className="fixed left-0 top-0 bottom-0 w-72 glass-strong border-r border-white/5 z-50 flex flex-col"
           >
-            {/* Заголовок — MoSeek */}
             <div className="flex items-center justify-between p-4 border-b border-white/5">
-              <h2 className="text-lg font-bold bg-gradient-to-r from-violet-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-                MoSeek
-              </h2>
+              <h2 className="text-lg font-semibold text-white">Меню</h2>
               <div className="flex items-center gap-1">
-                {/* Кнопка Discord */}
                 <motion.a
                   href={DISCORD_URL}
                   target="_blank"
@@ -158,7 +154,6 @@ export function Sidebar() {
                   <DiscordIcon className="w-5 h-5 text-[#5865F2]" />
                 </motion.a>
 
-                {/* Кнопка темы */}
                 <motion.button
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
@@ -172,7 +167,6 @@ export function Sidebar() {
                   )}
                 </motion.button>
 
-                {/* Кнопка закрытия */}
                 <motion.button
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}

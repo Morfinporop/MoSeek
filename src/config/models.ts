@@ -21,4 +21,6 @@ export const AI_MODELS: AIModel[] = [
   },
 ];
 
+export const DEFAULT_MODEL = 'z-ai/glm-4.5-air:free';
+
 export const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';

@@ -19,9 +19,7 @@ const RUDENESS_MODES: { id: RudenessMode; label: string; icon: typeof Flame; des
 ];
 
 const VISION_MODELS = [
-  'google/gemini-2.5-flash-preview',
-  'google/gemini-2.5-pro-preview',
-  'openai/gpt-4.1-mini',
+  'google/gemini-2.0-flash-001',
   'meta-llama/llama-4-maverick',
   'google/gemma-3-27b-it',
 ];
@@ -45,7 +43,6 @@ export function ChatInput() {
     addMessage,
     updateMessage,
     getCurrentMessages,
-    currentChatId,
     responseMode,
     setResponseMode,
     rudenessMode,
@@ -154,24 +151,9 @@ export function ChatInput() {
       incrementGuestMessages();
     }
 
-    let userContent: string | Array<{ type: string; text?: string; image_url?: { url: string } }>;
-
-    if (images.length > 0 && supportsVision) {
-      const parts: Array<{ type: string; text?: string; image_url?: { url: string } }> = [];
-      if (trimmedInput) {
-        parts.push({ type: 'text', text: trimmedInput });
-      }
-      images.forEach(img => {
-        parts.push({ type: 'image_url', image_url: { url: img } });
-      });
-      userContent = parts;
-    } else {
-      userContent = trimmedInput;
-    }
-
     addMessage({
       role: 'user',
-      content: typeof userContent === 'string' ? userContent : trimmedInput || 'Изображение',
+      content: trimmedInput || 'Опиши это изображение',
       images: images.length > 0 ? images : undefined,
     });
 
@@ -190,14 +172,6 @@ export function ChatInput() {
 
     try {
       const allMessages = [...getCurrentMessages()];
-
-      if (images.length > 0 && supportsVision) {
-        const lastMsg = allMessages[allMessages.length - 1];
-        if (lastMsg) {
-          (lastMsg as Record<string, unknown>).content = userContent;
-        }
-      }
-
       const response = await aiService.generateResponse(allMessages, responseMode, rudenessMode, selectedModel);
 
       updateMessage(assistantId, '', 'Печатаю...');

@@ -7,6 +7,8 @@ export interface Message {
   model?: string;
   thinking?: string;
   isTyping?: boolean;
+  dualPosition?: 'left' | 'right';
+  dualPairId?: string;
 }
 
 export interface Chat {

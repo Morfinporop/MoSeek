@@ -60,17 +60,12 @@ export function WelcomeScreen() {
       style={{ minHeight: 'calc(100vh - 250px)' }}
     >
       <motion.h1
-        initial={{ opacity: 0, y: 20, filter: 'blur(10px)' }}
-        animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-        transition={{ duration: 0.8, ease: 'easeInOut' }}
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: 'easeOut' }}
         className={`text-3xl md:text-4xl lg:text-5xl font-bold text-center px-4 ${
-          isDark ? 'text-white' : 'text-zinc-900'
+          isDark ? 'text-white' : 'text-black'
         }`}
-        style={{
-          textShadow: isDark
-            ? '0 0 40px rgba(139, 92, 246, 0.3), 0 0 80px rgba(139, 92, 246, 0.1)'
-            : '0 2px 10px rgba(0, 0, 0, 0.08)',
-        }}
       >
         {text}
       </motion.h1>

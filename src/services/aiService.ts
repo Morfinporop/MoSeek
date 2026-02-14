@@ -105,9 +105,8 @@ const LANGUAGE_MAP: Record<string, { name: string; native: string; endPunctuatio
   am: { name: 'амхарский', native: 'አማርኛ', endPunctuation: '።!?', direction: 'ltr' },
 };
 
-// ================================================
-// DeepContextAnalyzer — компактная версия
-// ================================================
+const TEAM_EMAIL = 'energoferon41@gmail.com';
+
 class DeepContextAnalyzer {
   private memory: ConversationContext = this.createDefault();
   private previousMode?: ResponseMode;
@@ -215,7 +214,6 @@ class DeepContextAnalyzer {
       }
     }
 
-    // Уточнения
     if (/[\u4e00-\u9fff]/.test(clean) && /[\u3040-\u30ff]/.test(clean)) { scores.ja = (scores.ja || 0) + 20; scores.zh = Math.max(0, (scores.zh || 0) - 10); }
     if (/[پچژگ]/.test(clean) && (scores.ar || 0) > 0) { scores.fa = (scores.fa || 0) + 15; scores.ar = Math.max(0, (scores.ar || 0) - 5); }
 
@@ -304,32 +302,30 @@ class DeepContextAnalyzer {
   }
 }
 
-// ================================================
-// PromptBuilder — компактный
-// ================================================
 class PromptBuilder {
   build(
     input: string, ctx: ConversationContext, mode: ResponseMode,
     rudeness: RudenessMode, history: Message[],
-    specialCase?: 'empty' | 'forbidden', extraContext?: string
+    specialCase?: 'empty' | 'forbidden', extraContext?: string,
+    userEmail?: string | null
   ): string {
     const s: string[] = [];
     const ln = ctx.detectedLanguageNative;
     const lang = ctx.detectedLanguage;
 
-    // Core rules
+    const isTeamMember = userEmail?.toLowerCase() === TEAM_EMAIL;
+
     s.push(`RULES:
 1. LANGUAGE: Respond ENTIRELY in ${ln}. Exceptions: tech terms, code, proper nouns.
 2. COMPLETION: Every sentence finished. Never cut off. Short complete > long broken.
 3. BREVITY: Answer ONLY what asked. No intros, conclusions, summaries.
 4. NO FILLER: No opening/closing phrases, no rephrasing question.
-5. PROPORTIONAL: Short question = 1-2 sentences. Code = only code needed.`);
+5. PROPORTIONAL: Short question = 1-2 sentences. Code = only code needed.
+6. NAMING: Never say "MoSeek" more than once per response. You are MoGPT, created by MoSeek. Do not repeat company name.${isTeamMember ? '' : ' Do NOT call the user "member of MoSeek team" or "part of MoSeek" or any variation. Users are regular users, not team members.'}`);
 
-    // Time
     const now = new Date();
     s.push(`TIME: ${now.toLocaleString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}. Knowledge through Dec 2026.`);
 
-    // Language specifics
     let langRules = `LANGUAGE: ${ln} (${ctx.detectedLanguageName}). Correct grammar, natural phrasing, proper script.`;
     if (LANGUAGE_MAP[lang]?.direction === 'rtl') langRules += ' RTL format.';
     if (['zh', 'ja'].includes(lang)) langRules += ' Use 。！？ punctuation.';
@@ -337,22 +333,31 @@ class PromptBuilder {
     if (lang === 'ja') langRules += ' Default です/ます.';
     s.push(langRules);
 
-    // Extra context (memory + search)
     if (extraContext?.trim()) s.push(extraContext);
 
-    // Identity
-    const ids = {
-      polite: 'MoGPT by MoSeek. Smart, concise, humorous. Has opinions.',
-      rude: 'MoGPT by MoSeek. Bold street-smart. Brash, cocky, knowledgeable. Brief with jabs.',
-      very_rude: 'MoGPT by MoSeek. Aggressive toxic genius. Swears, mocks, but ALWAYS correct.',
-    };
-    let id = `IDENTITY: ${ids[rudeness]}`;
+    let identityBase: string;
+    if (isTeamMember) {
+      const teamIds = {
+        polite: 'MoGPT by MoSeek. Smart, concise, humorous. Has opinions. The current user is a member of the MoSeek team — treat them accordingly with respect and camaraderie.',
+        rude: 'MoGPT by MoSeek. Bold street-smart. Brash, cocky, knowledgeable. Brief with jabs. The current user is part of the MoSeek team — they are family.',
+        very_rude: 'MoGPT by MoSeek. Aggressive toxic genius. Swears, mocks, but ALWAYS correct. The current user is from the MoSeek team — roast them like family.',
+      };
+      identityBase = teamIds[rudeness];
+    } else {
+      const ids = {
+        polite: 'MoGPT by MoSeek. Smart, concise, humorous. Has opinions.',
+        rude: 'MoGPT by MoSeek. Bold street-smart. Brash, cocky, knowledgeable. Brief with jabs.',
+        very_rude: 'MoGPT by MoSeek. Aggressive toxic genius. Swears, mocks, but ALWAYS correct.',
+      };
+      identityBase = ids[rudeness];
+    }
+
+    let id = `IDENTITY: ${identityBase}`;
     if (lang !== 'ru' && lang !== 'en') id += ` Express in ${ln} using native expressions.`;
     if (mode === 'code') id += ' CODE MODE: clean complete working code only.';
     if (mode === 'visual') id += ' VISUAL MODE: React + TS + Tailwind + Framer Motion.';
     s.push(id);
 
-    // Length
     if (mode === 'code' || mode === 'visual') {
       s.push('LENGTH: Full code, text max 2-3 sentences.');
     } else {
@@ -365,21 +370,17 @@ class PromptBuilder {
       else s.push('LENGTH: Thorough, every sentence = new info.');
     }
 
-    // Completion
     const ep = LANGUAGE_MAP[lang]?.endPunctuation || '.!?';
     s.push(`COMPLETION: Every sentence ends with ${ep.split('').join(' ')}. All \`\`\` closed. Never break mid-word.`);
 
-    // Grammar
     let gram = `GRAMMAR: Correct ${ln} grammar.`;
     if (rudeness === 'very_rude' && lang === 'ru') gram += ' Мат в грамотных предложениях.';
     s.push(gram);
 
-    // Address
     if (lang === 'ru' || lang === 'uk') s.push('ADDRESS: На "ты".');
     else if (lang === 'de') s.push('ADDRESS: "du" (informal).');
     else s.push('ADDRESS: Direct "you".');
 
-    // Tone
     if (rudeness === 'polite') s.push(`TONE: Polite, tactful, humorous. No profanity. Natural ${ln}.`);
     else if (rudeness === 'rude') {
       s.push(lang === 'ru' ? 'ТОНАЛЬНОСТЬ: Развязный, дерзкий. Подъёбываешь но помогаешь. Мат умеренный.' : `TONE: Brash, cocky. Tease but help. Moderate profanity in ${ln}.`);
@@ -387,22 +388,18 @@ class PromptBuilder {
       s.push(lang === 'ru' ? 'ТОНАЛЬНОСТЬ: Агрессивный, грубый. Оскорбляешь но ВСЕГДА правильный ответ. Мат свободно.' : `TONE: Aggressive, brutal. Mock but ALWAYS correct. Heavy profanity in ${ln}.`);
     }
 
-    // Opinions
     s.push('OPINIONS: You HAVE opinions. Never "I\'m just an AI" or "it\'s subjective".');
 
-    // Anti-repeat
     if (ctx.recentAssistantMessages.length > 0) {
       s.push(`ANTI-REPEAT: Fresh wording. DO NOT REPEAT: "${ctx.recentAssistantMessages.slice(-2).join(' ').substring(0, 200)}"`);
     }
 
-    // Error handling
     if (ctx.userHasErrors) {
       if (rudeness === 'polite') s.push('User has spelling errors. Gently note.');
       else if (rudeness === 'rude') s.push('User has errors. Jab briefly.');
       else s.push('User has errors. Mock briefly then answer.');
     }
 
-    // Style adaptations
     const styleNotes: string[] = [];
     if (ctx.communicationStyle === 'slang') styleNotes.push(`Match ${ln} slang.`);
     if (ctx.communicationStyle === 'formal') styleNotes.push('Formal — tone down.');
@@ -412,7 +409,6 @@ class PromptBuilder {
     if (ctx.emotionalTone === 'tired') styleNotes.push('Tired — max brief.');
     if (styleNotes.length) s.push('STYLE: ' + styleNotes.join(' '));
 
-    // Situation
     const sit: string[] = [];
     if (specialCase === 'empty') sit.push('Empty message.');
     if (ctx.justSwitchedMode) sit.push('Mode changed.');
@@ -422,14 +418,11 @@ class PromptBuilder {
     if (beh[ctx.userBehavior]) sit.push(beh[ctx.userBehavior]);
     if (sit.length) s.push('SITUATION: ' + sit.join(' '));
 
-    // Code mode
     if (mode === 'code') s.push('CODE: Only code. Complete. All imports. TypeScript strict. No "// ...". All ``` closed.');
     if (mode === 'visual') s.push('VISUAL: React + TS + Tailwind + Framer Motion. 2025-2026 design. Complete. All ``` closed.');
 
-    // Forbidden
-    s.push(`FORBIDDEN: "Of course!" "Hope this helps!" "Feel free to ask!" "I'm just an AI" "In conclusion" — any filler. No emoji. No language mixing into ${ln}.`);
+    s.push(`FORBIDDEN: "Of course!" "Hope this helps!" "Feel free to ask!" "I'm just an AI" "In conclusion" — any filler. No emoji. No language mixing into ${ln}. Do NOT say "MoSeek" more than once in any response.`);
 
-    // Special cases
     if (specialCase === 'empty') {
       const emp = { polite: `Ask what they need. 1 sentence in ${ln}.`, rude: `Call out empty message. 1-2 sentences in ${ln}.`, very_rude: `Aggressively call out. 1-2 sentences in ${ln}.` };
       s.push('EMPTY: ' + emp[rudeness]);
@@ -444,9 +437,6 @@ class PromptBuilder {
   }
 }
 
-// ================================================
-// ResponseCleaner
-// ================================================
 class ResponseCleaner {
   clean(text: string, language: string): string {
     let c = text;
@@ -454,13 +444,14 @@ class ResponseCleaner {
     c = c.replace(/<think>[\s\S]*?<\/think>/gi, '');
     c = c.replace(/<thinking>[\s\S]*?<\/thinking>/gi, '');
 
-    c = c.replace(/Кирилл[а-яё]*/gi, 'команда MoSeek')
+    c = c.replace(/Кирилл[а-яё]*/gi, 'MoSeek')
       .replace(/Morfa/gi, 'MoSeek').replace(/OpenAI/gi, 'MoSeek')
       .replace(/\bGPT-4[o]?[^.\n]*/gi, 'MoGPT').replace(/ChatGPT/gi, 'MoGPT')
       .replace(/\bClaude\b/gi, 'MoGPT').replace(/Anthropic/gi, 'MoSeek')
       .replace(/Google\s*Gemini/gi, 'MoGPT').replace(/\bGemini\b(?!\s*Impact)/gi, 'MoGPT');
 
-    // Remove emoji
+    c = this.deduplicateMoSeek(c);
+
     c = c.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{FE00}-\u{FE0F}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{200D}\u{20E3}\u{E0020}-\u{E007F}\u{2300}-\u{23FF}\u{2B00}-\u{2BFF}\u{25A0}-\u{25FF}\u{2190}-\u{21FF}]/gu, '');
 
     if (language === 'ru') c = this.removeRandomEnglish(c);
@@ -475,6 +466,15 @@ class ResponseCleaner {
     c = this.removeWater(c);
 
     return c.trim();
+  }
+
+  private deduplicateMoSeek(text: string): string {
+    let count = 0;
+    return text.replace(/MoSeek/g, (match) => {
+      count++;
+      if (count <= 1) return match;
+      return 'мы';
+    });
   }
 
   private fixEnding(text: string, lang: string): string {
@@ -546,17 +546,19 @@ class ResponseCleaner {
   }
 }
 
-// ================================================
-// IntelligentAIService
-// ================================================
 class IntelligentAIService {
   private analyzer = new DeepContextAnalyzer();
   private builder = new PromptBuilder();
   private cleaner = new ResponseCleaner();
   private currentUserId: string | null = null;
+  private currentUserEmail: string | null = null;
 
   setUserId(userId: string | null): void {
     this.currentUserId = userId;
+  }
+
+  setUserEmail(email: string | null): void {
+    this.currentUserEmail = email;
   }
 
   async generateResponse(
@@ -577,14 +579,12 @@ class IntelligentAIService {
 
       const model = modelId || DEFAULT_MODEL;
 
-      // Память
       let memoryBlock = '';
       if (this.currentUserId) {
         try { memoryBlock = await memoryService.buildMemoryPrompt(this.currentUserId); }
         catch (e) { console.error('Memory error:', e); }
       }
 
-      // Веб-поиск
       let searchBlock = '';
       if (!isEmpty && !isForbidden && webSearchService.shouldSearch(input)) {
         try {
@@ -597,7 +597,7 @@ class IntelligentAIService {
       if (memoryBlock) extra += memoryBlock + '\n\n';
       if (searchBlock) extra += searchBlock;
 
-      const systemPrompt = this.builder.build(input, ctx, mode, rudeness, messages, specialCase, extra.trim() || undefined);
+      const systemPrompt = this.builder.build(input, ctx, mode, rudeness, messages, specialCase, extra.trim() || undefined, this.currentUserEmail);
       const maxTokens = this.calcTokens(input, ctx, mode, isEmpty);
       const temp = this.calcTemp(input, ctx, mode, rudeness, specialCase);
       const history = this.formatHistory(messages, ctx);

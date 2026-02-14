@@ -162,6 +162,12 @@ export function ChatInput() {
         updateMessage(assistantId2, 'Ошибка. Попробуй ещё раз.', '');
       } finally {
         setGeneratingChat(chatId, false);
+
+        // Сохраняем чат в облако
+        const authUser = useAuthStore.getState().user;
+        if (authUser) {
+          useChatStore.getState().syncToCloud(authUser.id).catch(() => {});
+        }
       }
     } else {
       const assistantId = addMessage({
@@ -192,6 +198,12 @@ export function ChatInput() {
         updateMessage(assistantId, 'Что-то пошло не так. Попробуй ещё раз.', '');
       } finally {
         setGeneratingChat(chatId, false);
+
+        // Сохраняем чат в облако
+        const authUser = useAuthStore.getState().user;
+        if (authUser) {
+          useChatStore.getState().syncToCloud(authUser.id).catch(() => {});
+        }
       }
     }
   };

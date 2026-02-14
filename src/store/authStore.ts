@@ -30,6 +30,9 @@ interface AuthState {
   sendVerificationCode: (email: string, turnstileToken: string) => Promise<{ success: boolean; error?: string }>;
   verifyCode: (email: string, code: string) => Promise<{ success: boolean; error?: string }>;
   updateAvatar: (avatar: string) => void;
+  updateName: (newName: string) => Promise<{ success: boolean; error?: string }>;
+  updateEmail: (newEmail: string) => Promise<{ success: boolean; error?: string }>;
+  deleteAccount: () => Promise<{ success: boolean; error?: string }>;
 }
 
 interface PendingCode {
@@ -119,11 +122,228 @@ export const useAuthStore = create<AuthState>()(
         });
       },
 
+      updateName: async (newName: string) => {
+        const state = get();
+        if (!state.user) {
+          return { success: false, error: 'Не авторизован' };
+        }
+
+        const trimmedName = newName.trim();
+
+        if (trimmedName.length < 2) {
+          return { success: false, error: 'Имя должно быть минимум 2 символа' };
+        }
+
+        if (trimmedName.length > 50) {
+          return { success: false, error: 'Имя слишком длинное (максимум 50 символов)' };
+        }
+
+        if (trimmedName.toLowerCase() === state.user.name.toLowerCase()) {
+          return { success: false, error: 'Новое имя совпадает с текущим' };
+        }
+
+        set({ isLoading: true });
+
+        try {
+          // Проверяем, не занято ли имя
+          const { data: existingName } = await supabase
+            .from('users')
+            .select('id')
+            .ilike('name', trimmedName)
+            .neq('id', state.user.id)
+            .maybeSingle();
+
+          if (existingName) {
+            return { success: false, error: 'Это имя уже занято' };
+          }
+
+          // Обновляем в Supabase
+          const { error: updateError } = await supabase
+            .from('users')
+            .update({ name: trimmedName })
+            .eq('id', state.user.id);
+
+          if (updateError) {
+            console.error('Update name error:', updateError);
+            return { success: false, error: 'Ошибка обновления. Попробуй ещё раз' };
+          }
+
+          // Обновляем аватар на основе нового имени
+          const newAvatar = state.user.avatar.includes('dicebear.com')
+            ? generateAvatar(trimmedName)
+            : state.user.avatar;
+
+          if (newAvatar !== state.user.avatar) {
+            await supabase
+              .from('users')
+              .update({ avatar: newAvatar })
+              .eq('id', state.user.id);
+          }
+
+          set((s) => ({
+            user: s.user ? { ...s.user, name: trimmedName, avatar: newAvatar } : null,
+            isLoading: false,
+          }));
+
+          return { success: true };
+        } catch (e) {
+          console.error('Update name error:', e);
+          return { success: false, error: 'Ошибка сети. Проверь интернет' };
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      updateEmail: async (newEmail: string) => {
+        const state = get();
+        if (!state.user) {
+          return { success: false, error: 'Не авторизован' };
+        }
+
+        const normalizedEmail = newEmail.toLowerCase().trim();
+
+        if (!normalizedEmail) {
+          return { success: false, error: 'Введи email' };
+        }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(normalizedEmail)) {
+          return { success: false, error: 'Некорректный email' };
+        }
+
+        if (!isValidEmailDomain(normalizedEmail)) {
+          return { success: false, error: 'Используй настоящий email' };
+        }
+
+        if (normalizedEmail === state.user.email.toLowerCase()) {
+          return { success: false, error: 'Новый email совпадает с текущим' };
+        }
+
+        set({ isLoading: true });
+
+        try {
+          // Проверяем, не занят ли email
+          const { data: existingEmail } = await supabase
+            .from('users')
+            .select('id')
+            .eq('email', normalizedEmail)
+            .neq('id', state.user.id)
+            .maybeSingle();
+
+          if (existingEmail) {
+            return { success: false, error: 'Этот email уже используется другим аккаунтом' };
+          }
+
+          // Обновляем в Supabase
+          const { error: updateError } = await supabase
+            .from('users')
+            .update({ email: normalizedEmail })
+            .eq('id', state.user.id);
+
+          if (updateError) {
+            console.error('Update email error:', updateError);
+            return { success: false, error: 'Ошибка обновления. Попробуй ещё раз' };
+          }
+
+          set((s) => ({
+            user: s.user ? { ...s.user, email: normalizedEmail } : null,
+            isLoading: false,
+          }));
+
+          return { success: true };
+        } catch (e) {
+          console.error('Update email error:', e);
+          return { success: false, error: 'Ошибка сети. Проверь интернет' };
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      deleteAccount: async () => {
+        const state = get();
+        if (!state.user) {
+          return { success: false, error: 'Не авторизован' };
+        }
+
+        set({ isLoading: true });
+
+        try {
+          const userId = state.user.id;
+
+          // Удаляем настройки пользователя
+          await supabase
+            .from('user_preferences')
+            .delete()
+            .eq('user_id', userId);
+
+          // Удаляем память/контекст пользователя (если есть таблица)
+          await supabase
+            .from('user_memory')
+            .delete()
+            .eq('user_id', userId)
+            .then(() => {})
+            .catch(() => {});
+
+          // Удаляем чаты пользователя (если есть таблица)
+          await supabase
+            .from('chat_messages')
+            .delete()
+            .eq('user_id', userId)
+            .then(() => {})
+            .catch(() => {});
+
+          await supabase
+            .from('chats')
+            .delete()
+            .eq('user_id', userId)
+            .then(() => {})
+            .catch(() => {});
+
+          // Удаляем самого пользователя
+          const { error: deleteError } = await supabase
+            .from('users')
+            .delete()
+            .eq('id', userId);
+
+          if (deleteError) {
+            console.error('Delete account error:', deleteError);
+            return { success: false, error: 'Ошибка удаления. Попробуй ещё раз' };
+          }
+
+          // Очищаем локальное состояние
+          aiService.setUserId(null);
+
+          set({
+            user: null,
+            isAuthenticated: false,
+            isLoading: false,
+            guestMessages: 0,
+          });
+
+          // Очищаем localStorage от данных пользователя
+          try {
+            localStorage.removeItem('moseek-auth-v2');
+            localStorage.removeItem('moseek-chats');
+            sessionStorage.removeItem('moseek_pending_codes');
+          } catch {
+            // игнорируем
+          }
+
+          return { success: true };
+        } catch (e) {
+          console.error('Delete account error:', e);
+          return { success: false, error: 'Ошибка сети. Проверь интернет' };
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
       sendVerificationCode: async (email, _turnstileToken) => {
         try {
           const normalizedEmail = email.toLowerCase().trim();
           const pendingCodes = getPendingCodes();
           const existing = pendingCodes.find(p => p.email === normalizedEmail);
+
           if (existing && existing.expiresAt > Date.now() && existing.attempts >= 5) {
             return { success: false, error: 'Слишком много попыток. Подожди немного' };
           }

@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Copy, Check, ChevronDown, ChevronUp } from 'lucide-react';
-import { useState, useEffect, useMemo, memo } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef, memo } from 'react';
 import { marked } from 'marked';
 import type { Message } from '../types';
 import { MODEL_ICON } from '../config/models';
@@ -20,9 +20,163 @@ marked.setOptions({
 
 const MAX_LENGTH = 10000;
 
+/* ─── Кнопка копирования кода ─── */
+const CodeCopyButton = memo(function CodeCopyButton({ code }: { code: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // fallback
+      const ta = document.createElement('textarea');
+      ta.value = code;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  }, [code]);
+
+  return (
+    <button
+      onClick={handleCopy}
+      className={`
+        absolute top-2 right-2 z-10
+        flex items-center gap-1.5
+        px-2.5 py-1.5 rounded-lg
+        text-xs font-medium
+        transition-all duration-200
+        ${copied
+          ? 'bg-green-500/20 border border-green-500/40 text-green-300'
+          : 'bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-zinc-400 hover:text-zinc-200'
+        }
+      `}
+    >
+      {copied ? (
+        <>
+          <Check className="w-3.5 h-3.5" />
+          <span>Скопировано</span>
+        </>
+      ) : (
+        <>
+          <Copy className="w-3.5 h-3.5" />
+          <span>Копировать</span>
+        </>
+      )}
+    </button>
+  );
+});
+
+/* ─── Блок кода ─── */
+const CodeBlock = memo(function CodeBlock({ code, language }: { code: string; language?: string }) {
+  return (
+    <div className="code-block-container relative my-4 rounded-xl overflow-hidden border border-white/[0.06] shadow-lg">
+      {/* Шапка блока кода */}
+      <div className="flex items-center justify-between px-4 py-2 bg-[#1a1a2e] border-b border-white/[0.06]">
+        <div className="flex items-center gap-2">
+          <div className="flex gap-1.5">
+            <div className="w-3 h-3 rounded-full bg-red-500/60" />
+            <div className="w-3 h-3 rounded-full bg-yellow-500/60" />
+            <div className="w-3 h-3 rounded-full bg-green-500/60" />
+          </div>
+          {language && (
+            <span className="text-[11px] font-mono text-zinc-500 ml-2 uppercase tracking-wider">
+              {language}
+            </span>
+          )}
+        </div>
+        <CodeCopyButton code={code} />
+      </div>
+
+      {/* Тело кода */}
+      <div className="relative bg-[#0d0d1a] overflow-x-auto">
+        <pre className="!m-0 !p-4 !bg-transparent !border-0">
+          <code className={`text-sm font-mono leading-relaxed text-zinc-200 ${language ? `language-${language}` : ''}`}>
+            {code}
+          </code>
+        </pre>
+      </div>
+    </div>
+  );
+});
+
+/* ─── Парсер контента: разделяет текст и код ─── */
+function parseContentBlocks(content: string): Array<{ type: 'text' | 'code'; content: string; language?: string }> {
+  const blocks: Array<{ type: 'text' | 'code'; content: string; language?: string }> = [];
+  const codeBlockRegex = /```(\w*)\n?([\s\S]*?)```/g;
+
+  let lastIndex = 0;
+  let match;
+
+  while ((match = codeBlockRegex.exec(content)) !== null) {
+    // Текст перед блоком кода
+    if (match.index > lastIndex) {
+      const textBefore = content.slice(lastIndex, match.index).trim();
+      if (textBefore) {
+        blocks.push({ type: 'text', content: textBefore });
+      }
+    }
+
+    // Блок кода
+    const language = match[1] || undefined;
+    const code = match[2].trim();
+    if (code) {
+      blocks.push({ type: 'code', content: code, language });
+    }
+
+    lastIndex = match.index + match[0].length;
+  }
+
+  // Текст после последнего блока кода
+  if (lastIndex < content.length) {
+    const remaining = content.slice(lastIndex).trim();
+    if (remaining) {
+      blocks.push({ type: 'text', content: remaining });
+    }
+  }
+
+  // Если блоков нет — весь контент текстовый
+  if (blocks.length === 0 && content.trim()) {
+    blocks.push({ type: 'text', content: content.trim() });
+  }
+
+  return blocks;
+}
+
+/* ─── Рендер текстового блока через marked ─── */
+const TextBlock = memo(function TextBlock({ content, isLight }: { content: string; isLight: boolean }) {
+  const html = useMemo(() => {
+    let result = marked.parse(content, { async: false }) as string;
+
+    // Инлайн-код стилизация
+    result = result.replace(
+      /<code(?!\s*class)(.*?)>([\s\S]*?)<\/code>/g,
+      '<code class="inline-code"$1>$2</code>'
+    );
+
+    return result;
+  }, [content]);
+
+  return (
+    <div
+      className={`prose prose-sm max-w-none break-words overflow-hidden ${
+        isLight ? 'text-zinc-800' : 'text-zinc-200'
+      }`}
+      style={{ wordBreak: 'break-word', overflowWrap: 'anywhere', userSelect: 'text' }}
+      dangerouslySetInnerHTML={{ __html: html }}
+      onMouseDown={(e) => e.stopPropagation()}
+    />
+  );
+});
+
+/* ─── Основной компонент сообщения ─── */
 export const ChatMessage = memo(function ChatMessage({ message, compact, hideModelLabel }: ChatMessageProps) {
   const [copied, setCopied] = useState(false);
-  const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
   const [finalTypingTime, setFinalTypingTime] = useState<number | null>(null);
   const [currentTypingTime, setCurrentTypingTime] = useState<number>(0);
@@ -59,63 +213,35 @@ export const ChatMessage = memo(function ChatMessage({ message, compact, hideMod
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const copyCode = async (code: string) => {
-    await navigator.clipboard.writeText(code);
-    setCopiedCode(code);
-    setTimeout(() => setCopiedCode(null), 2000);
-  };
-
   const renderedContent = useMemo(() => {
     if (message.isLoading) {
       return <TypingIndicator />;
     }
 
     if (isAssistant) {
-      let html = marked.parse(displayContent, { async: false }) as string;
-
-      html = html.replace(/<pre><code(.*?)>([\s\S]*?)<\/code><\/pre>/g, (_match, attrs, code) => {
-        const decodedCode = code
-          .replace(/&lt;/g, '<')
-          .replace(/&gt;/g, '>')
-          .replace(/&amp;/g, '&')
-          .replace(/&quot;/g, '"')
-          .replace(/&#39;/g, "'");
-
-        return `
-          <div class="code-block-wrapper relative my-3">
-            <pre class="!bg-black/50 !border !border-violet-500/20 rounded-xl overflow-hidden"><code${attrs}>${code}</code></pre>
-            <button 
-              class="copy-code-btn absolute top-3 right-3 px-3 py-1.5 rounded-lg bg-violet-500/20 hover:bg-violet-500/40 flex items-center gap-2 transition-all border border-violet-500/30"
-              data-code="${encodeURIComponent(decodedCode)}"
-            >
-              <svg class="w-4 h-4 text-violet-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
-              </svg>
-              <span class="text-xs text-violet-300">Копировать</span>
-            </button>
-          </div>
-        `;
-      });
+      const blocks = parseContentBlocks(displayContent);
 
       return (
         <div>
-          <div
-            className={`prose prose-sm max-w-none break-words overflow-hidden ${
-              isLight ? 'text-zinc-800' : 'text-zinc-200'
-            }`}
-            style={{ wordBreak: 'break-word', overflowWrap: 'anywhere', userSelect: 'text' }}
-            dangerouslySetInnerHTML={{ __html: html }}
-            onClick={(e) => {
-              const target = e.target as HTMLElement;
-              const btn = target.closest('.copy-code-btn') as HTMLButtonElement;
-              if (btn) {
-                e.preventDefault();
-                const code = decodeURIComponent(btn.dataset.code || '');
-                copyCode(code);
-              }
-            }}
-            onMouseDown={(e) => e.stopPropagation()}
-          />
+          {blocks.map((block, index) => {
+            if (block.type === 'code') {
+              return (
+                <CodeBlock
+                  key={`code-${index}`}
+                  code={block.content}
+                  language={block.language}
+                />
+              );
+            }
+            return (
+              <TextBlock
+                key={`text-${index}`}
+                content={block.content}
+                isLight={isLight}
+              />
+            );
+          })}
+
           {isLong && (
             <motion.button
               whileHover={{ scale: 1.02 }}
@@ -229,7 +355,7 @@ export const ChatMessage = memo(function ChatMessage({ message, compact, hideMod
               minute: '2-digit',
             })}
           </span>
-          
+
           {!message.isLoading && (
             <button
               onClick={copyToClipboard}
@@ -247,10 +373,6 @@ export const ChatMessage = memo(function ChatMessage({ message, compact, hideMod
                 <Copy className={`w-3 h-3 ${isLight && isAssistant ? 'text-zinc-400' : 'text-zinc-500'}`} />
               )}
             </button>
-          )}
-
-          {copiedCode && (
-            <span className="text-[10px] text-green-400">Скопировано</span>
           )}
         </div>
       </div>

@@ -719,7 +719,7 @@ class IntelligentAIService {
           { role: 'user', content: 'Continue.' },
         ],
         max_tokens: maxTokens,
-        temperature: temp * 0.8,
+        temperature: temp * 2,
       };
       if (!model.includes('gemini') && !model.includes('gemma')) {
         body.top_p = 0.88; body.frequency_penalty = 0.1; body.presence_penalty = 0.05;

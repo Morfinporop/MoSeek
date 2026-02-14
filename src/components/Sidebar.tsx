@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, MessageSquare, Plus, LogOut, Loader2, Camera, Sun, Moon, Trash2, ChevronDown, Pencil, Lock, AlertTriangle, Check, ArrowLeft, Shield, Eye, EyeOff } from 'lucide-react';
+import { X, MessageSquare, Plus, LogOut, Loader2, Camera, Sun, Moon, Trash2, ChevronDown, Pencil, Lock, AlertTriangle, Check, ArrowLeft, Shield, Eye, EyeOff, HelpCircle } from 'lucide-react';
 import { useChatStore } from '../store/chatStore';
 import { useAuthStore } from '../store/authStore';
 import { useThemeStore } from '../store/themeStore';
@@ -9,7 +9,7 @@ import { Turnstile } from '@marsidev/react-turnstile';
 const TURNSTILE_SITE_KEY = '0x4AAAAAACa5EobYKh_TrmuZ';
 const DISCORD_URL = 'https://discord.gg/qjnyAr7YXe';
 
-type ModalType = 'terms' | 'privacy' | 'cookies' | 'profile' | 'auth' | null;
+type ModalType = 'terms' | 'privacy' | 'cookies' | 'profile' | 'auth' | 'about' | null;
 type ProfileView = 'main' | 'changePassword' | 'deleteAccount' | 'deleteVerify';
 type AuthStep = 'form' | 'verify';
 
@@ -40,23 +40,38 @@ const MODAL_CONTENT: Record<'terms' | 'privacy' | 'cookies', { title: string; co
     title: 'Конфиденциальность',
     content: [
       { type: 'meta', text: 'Последнее обновление: январь 2026' },
-      { type: 'section', title: '1. Данные', text: 'Имя, email, пароль (SHA-256). Чаты синхронизируются в облаке между устройствами.' },
-      { type: 'important', text: 'Мы НЕ собираем: геолокацию, IP для слежки, биометрию, финансы.' },
-      { type: 'section', title: '2. Хранение', text: 'Данные в защищённой базе. Локальный кеш в браузере для быстродействия.' },
-      { type: 'section', title: '3. Права', text: 'Удаление данных, отзыв согласия, экспорт — по запросу.' },
-      { type: 'copyright', text: '© 2026 MoSeek. Все права защищены.' },
+      { type: 'section', title: '1. Какие данные мы храним', text: 'Имя пользователя, email-адрес и хеш пароля (SHA-256). Чаты синхронизируются в зашифрованном облачном хранилище между вашими устройствами.' },
+      { type: 'section', title: '2. Как мы защищаем данные', text: 'Все данные хранятся в защищённой базе данных с шифрованием на уровне сервера. Пароли никогда не хранятся в открытом виде — только криптографические хеши. Доступ к базе данных ограничен и защищён многоуровневой аутентификацией.' },
+      { type: 'important', text: 'Мы НЕ собираем: геолокацию, IP-адреса для слежки, биометрические данные, финансовую информацию. Мы НЕ продаём и НЕ передаём ваши данные третьим лицам.' },
+      { type: 'section', title: '3. Безопасность хранения', text: 'База данных размещена на защищённых серверах с SSL/TLS шифрованием. Все соединения зашифрованы. Резервные копии создаются автоматически и также зашифрованы. Несанкционированный доступ к данным пользователей невозможен без ключей шифрования.' },
+      { type: 'section', title: '4. Локальное хранение', text: 'На вашем устройстве в localStorage хранятся только: настройки темы, кеш текущей сессии и токен авторизации. Эти данные не содержат конфиденциальной информации.' },
+      { type: 'section', title: '5. Ваши права', text: 'Вы можете в любой момент: удалить свой аккаунт и все связанные данные, запросить экспорт данных, отозвать согласие на обработку. При удалении аккаунта все данные безвозвратно удаляются из базы данных.' },
+      { type: 'copyright', text: '© 2026 MoSeek. Ваши данные под надёжной защитой.' },
     ]
   },
   cookies: {
-    title: 'Политика Cookie',
+    title: 'Политика хранения данных',
     content: [
       { type: 'meta', text: 'Последнее обновление: январь 2026' },
-      { type: 'section', title: '1. Хранение', text: 'Настройки, кеш чатов, токен авторизации — в localStorage браузера.' },
-      { type: 'important', text: 'Без рекламных Cookie, трекеров, fingerprinting.' },
-      { type: 'section', title: '2. Контроль', text: 'Очистка localStorage удаляет локальный кеш. Данные в облаке сохраняются.' },
+      { type: 'section', title: '1. Что мы храним локально', text: 'Настройки интерфейса (тема, язык), кеш текущих чатов для быстрой загрузки и токен авторизации для автоматического входа.' },
+      { type: 'important', text: 'Мы не используем рекламные Cookie, трекеры, fingerprinting или любые другие технологии отслеживания. Никакие данные не передаются рекламным сетям.' },
+      { type: 'section', title: '2. Управление данными', text: 'Очистка localStorage в браузере удалит локальный кеш и настройки. Ваши чаты и данные аккаунта в облаке сохранятся и будут доступны после повторного входа.' },
+      { type: 'section', title: '3. Сторонние сервисы', text: 'Мы используем Cloudflare Turnstile для защиты от ботов — он не собирает персональные данные. EmailJS используется для отправки кодов подтверждения — передаётся только email-адрес.' },
       { type: 'copyright', text: '© 2026 MoSeek. Ваши данные — ваша собственность.' },
     ]
   }
+};
+
+const ABOUT_CONTENT = {
+  title: 'О MoGPT',
+  content: [
+    { type: 'section', title: 'Что такое MoGPT?', text: 'MoGPT — это нейросеть, разработанная командой MoSeek. Она способна генерировать текст, писать код, отвечать на вопросы, помогать с дизайном и решать творческие задачи.' },
+    { type: 'section', title: 'Возможности', text: '• Генерация текста на любую тему\n• Написание и отладка кода на 50+ языках\n• Ответы на вопросы с контекстом беседы\n• Помощь с переводами и редактированием\n• Дизайн интерфейсов и креативные задачи\n• Запоминание контекста диалога' },
+    { type: 'section', title: 'Как это работает?', text: 'MoGPT обрабатывает ваши сообщения, анализирует контекст беседы и генерирует релевантные ответы. Каждый чат — это отдельный диалог со своим контекстом. Нейросеть постоянно обучается и улучшается.' },
+    { type: 'important', text: 'MoGPT — это инструмент-помощник. Всегда проверяйте важную информацию из независимых источников. Нейросеть может ошибаться.' },
+    { type: 'section', title: 'Безлимитный доступ', text: 'MoGPT доступен бесплатно и без ограничений. Регистрация даёт дополнительные функции: синхронизацию чатов между устройствами и персональные настройки.' },
+    { type: 'copyright', text: '© 2026 MoSeek. Создано с ❤️' },
+  ]
 };
 
 function DiscordIcon({ className }: { className?: string }) {
@@ -206,7 +221,7 @@ export function Sidebar() {
                 </motion.button>
               </div>
 
-              {/* Скрытые кнопки — Discord + Тема (только иконки) */}
+              {/* Скрытые кнопки — Discord + Тема + О нейросети */}
               <AnimatePresence>
                 {showHeaderExtras && (
                   <motion.div
@@ -216,7 +231,7 @@ export function Sidebar() {
                     transition={{ duration: 0.2 }}
                     className="overflow-hidden"
                   >
-                    <div className={`flex items-center gap-2 px-4 pb-3`}>
+                    <div className="flex items-center gap-2 px-4 pb-3">
                       <motion.a
                         href={DISCORD_URL}
                         target="_blank"
@@ -228,6 +243,7 @@ export function Sidebar() {
                             ? 'bg-[#5865F2]/10 border border-[#5865F2]/20 hover:bg-[#5865F2]/20'
                             : 'bg-[#5865F2]/5 border border-[#5865F2]/15 hover:bg-[#5865F2]/10'
                         }`}
+                        title="Discord"
                       >
                         <DiscordIcon className="w-5 h-5 text-[#5865F2]" />
                       </motion.a>
@@ -241,8 +257,23 @@ export function Sidebar() {
                             ? 'bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/20'
                             : 'bg-violet-500/5 border border-violet-500/15 hover:bg-violet-500/10'
                         }`}
+                        title={isDark ? 'Светлая тема' : 'Тёмная тема'}
                       >
                         {isDark ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5 text-violet-500" />}
+                      </motion.button>
+
+                      <motion.button
+                        whileHover={{ scale: 1.08 }}
+                        whileTap={{ scale: 0.92 }}
+                        onClick={() => setActiveModal('about')}
+                        className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
+                          isDark
+                            ? 'bg-violet-500/10 border border-violet-500/20 hover:bg-violet-500/20'
+                            : 'bg-violet-500/5 border border-violet-500/15 hover:bg-violet-500/10'
+                        }`}
+                        title="О MoGPT"
+                      >
+                        <HelpCircle className={`w-5 h-5 ${isDark ? 'text-violet-400' : 'text-violet-500'}`} />
                       </motion.button>
                     </div>
                   </motion.div>
@@ -378,15 +409,15 @@ export function Sidebar() {
 
               <div className="flex items-center gap-3 text-[10px] pl-1">
                 <button onClick={() => setActiveModal('terms')} className={`transition-colors ${isDark ? 'text-zinc-500 hover:text-violet-400' : 'text-zinc-400 hover:text-violet-500'}`}>
-                  Terms of Use
+                  Условия
                 </button>
                 <span className={isDark ? 'text-zinc-700' : 'text-zinc-300'}>•</span>
                 <button onClick={() => setActiveModal('privacy')} className={`transition-colors ${isDark ? 'text-zinc-500 hover:text-violet-400' : 'text-zinc-400 hover:text-violet-500'}`}>
-                  Privacy Policy
+                  Конфиденциальность
                 </button>
                 <span className={isDark ? 'text-zinc-700' : 'text-zinc-300'}>•</span>
                 <button onClick={() => setActiveModal('cookies')} className={`transition-colors ${isDark ? 'text-zinc-500 hover:text-violet-400' : 'text-zinc-400 hover:text-violet-500'}`}>
-                  Cookies
+                  Данные
                 </button>
               </div>
             </div>
@@ -410,9 +441,60 @@ export function Sidebar() {
         )}
       </AnimatePresence>
 
-      {/* Документы */}
+      {/* О нейросети */}
       <AnimatePresence>
-        {activeModal && activeModal !== 'profile' && activeModal !== 'auth' && (
+        {activeModal === 'about' && (
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setActiveModal(null)} className="fixed inset-0 bg-black/80 backdrop-blur-md z-[60]" />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className={`fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[480px] max-w-[calc(100vw-32px)] max-h-[85vh] rounded-2xl z-[70] flex flex-col overflow-hidden border ${
+                isDark ? 'bg-[#0f0f15] border-white/10' : 'bg-white border-zinc-200'
+              }`}
+            >
+              <div className={`flex items-center justify-between px-6 py-4 border-b ${isDark ? 'border-white/5' : 'border-zinc-100'}`}>
+                <h2 className={`text-base font-bold ${isDark ? 'text-white' : 'text-zinc-900'}`}>{ABOUT_CONTENT.title}</h2>
+                <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => setActiveModal(null)} className={`p-1.5 rounded-md ${isDark ? 'hover:bg-white/10' : 'hover:bg-zinc-100'}`}>
+                  <X className={`w-4 h-4 ${isDark ? 'text-zinc-400' : 'text-zinc-500'}`} />
+                </motion.button>
+              </div>
+              <div className="flex-1 overflow-y-auto px-6 py-5">
+                <div className="space-y-4">
+                  {ABOUT_CONTENT.content.map((block, i) => {
+                    if (block.type === 'copyright') return <p key={i} className={`text-[11px] font-medium pt-3 mt-4 border-t ${isDark ? 'text-zinc-600 border-white/5' : 'text-zinc-400 border-zinc-100'}`}>{block.text}</p>;
+                    if (block.type === 'important') return (
+                      <div key={i} className={`px-4 py-3 rounded-xl ${isDark ? 'bg-violet-500/10 border border-violet-500/20' : 'bg-violet-50 border border-violet-200'}`}>
+                        <p className={`text-[12px] leading-relaxed font-medium ${isDark ? 'text-violet-300' : 'text-violet-700'}`}>{block.text}</p>
+                      </div>
+                    );
+                    return (
+                      <div key={i}>
+                        <h3 className={`text-[13px] font-semibold mb-1.5 ${isDark ? 'text-white' : 'text-zinc-900'}`}>{block.title}</h3>
+                        <p className={`text-[12px] leading-[1.7] whitespace-pre-line ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>{block.text}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className={`px-6 py-4 border-t ${isDark ? 'border-white/5' : 'border-zinc-100'}`}>
+                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setActiveModal(null)}
+                  className={`w-full py-3 rounded-xl text-sm font-medium transition-all ${
+                    isDark ? 'bg-violet-500/20 border border-violet-500/30 text-violet-300 hover:bg-violet-500/30' : 'bg-violet-50 border border-violet-200 text-violet-600 hover:bg-violet-100'
+                  }`}
+                >
+                  Понятно
+                </motion.button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Документы (terms, privacy, cookies) */}
+      <AnimatePresence>
+        {activeModal && activeModal !== 'profile' && activeModal !== 'auth' && activeModal !== 'about' && (
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setActiveModal(null)} className="fixed inset-0 bg-black/80 backdrop-blur-md z-[60]" />
             <motion.div
@@ -519,7 +601,6 @@ function ProfileModal({ onClose, isDark, fileInputRef, isTouchDevice }: { onClos
       : 'bg-zinc-50 border border-zinc-200 text-zinc-900 placeholder-zinc-400 focus:border-violet-400 focus:bg-white'
   }`;
 
-  /* ─── Инлайн смена имени ─── */
   const handleSaveName = async () => {
     setNameError('');
     const trimmed = editName.trim();
@@ -534,7 +615,6 @@ function ProfileModal({ onClose, isDark, fileInputRef, isTouchDevice }: { onClos
     setNameLoading(false);
   };
 
-  /* ─── Пароль ─── */
   const handleChangePassword = async () => {
     setError('');
     if (!oldPassword) { setError('Введи текущий пароль'); return; }
@@ -550,7 +630,6 @@ function ProfileModal({ onClose, isDark, fileInputRef, isTouchDevice }: { onClos
     setIsLoading(false);
   };
 
-  /* ─── Удаление ─── */
   const handleDeleteSendCode = async () => {
     setError('');
     if (deleteConfirmText !== 'УДАЛИТЬ') { setError('Напиши УДАЛИТЬ для подтверждения'); return; }
@@ -636,10 +715,10 @@ function ProfileModal({ onClose, isDark, fileInputRef, isTouchDevice }: { onClos
                     </button>
                   </div>
 
-                  {/* Имя с карандашом — инлайн редактирование */}
+                  {/* Имя с карандашом */}
                   {isEditingName ? (
-                    <div className="w-full max-w-[220px]">
-                      <div className="relative">
+                    <div className="w-full flex flex-col items-center">
+                      <div className="relative w-full max-w-[220px]">
                         <input
                           ref={nameInputRef}
                           type="text"
@@ -661,15 +740,17 @@ function ProfileModal({ onClose, isDark, fileInputRef, isTouchDevice }: { onClos
                       <p className={`text-[10px] text-center mt-1.5 ${isDark ? 'text-zinc-600' : 'text-zinc-400'}`}>Enter — сохранить · Esc — отмена</p>
                     </div>
                   ) : (
-                    <button
-                      onClick={() => { setIsEditingName(true); setEditName(user?.name || ''); setNameError(''); }}
-                      className="group/name flex items-center gap-2"
-                    >
-                      <span className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-zinc-900'}`}>{user?.name}</span>
-                      <Pencil className={`w-3.5 h-3.5 transition-opacity ${
-                        isDark ? 'text-zinc-500' : 'text-zinc-400'
-                      } ${isTouchDevice ? 'opacity-60' : 'opacity-0 group-hover/name:opacity-60'}`} />
-                    </button>
+                    <div className="flex items-center justify-center w-full">
+                      <button
+                        onClick={() => { setIsEditingName(true); setEditName(user?.name || ''); setNameError(''); }}
+                        className="group/name flex items-center gap-2"
+                      >
+                        <span className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-zinc-900'}`}>{user?.name}</span>
+                        <Pencil className={`w-3.5 h-3.5 transition-opacity ${
+                          isDark ? 'text-zinc-500' : 'text-zinc-400'
+                        } ${isTouchDevice ? 'opacity-60' : 'opacity-0 group-hover/name:opacity-60'}`} />
+                      </button>
+                    </div>
                   )}
 
                   <p className={`text-xs mt-1 ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>{user?.email}</p>
@@ -695,7 +776,6 @@ function ProfileModal({ onClose, isDark, fileInputRef, isTouchDevice }: { onClos
                   </button>
                 </div>
 
-                {/* Выход */}
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
@@ -706,7 +786,6 @@ function ProfileModal({ onClose, isDark, fileInputRef, isTouchDevice }: { onClos
                   <span className="text-sm text-red-400 font-medium">Выйти из аккаунта</span>
                 </motion.button>
 
-                {/* Удалить */}
                 <button
                   onClick={() => { resetState(); setView('deleteAccount'); }}
                   className={`w-full text-center text-xs py-2 transition-colors ${isDark ? 'text-zinc-600 hover:text-red-400' : 'text-zinc-400 hover:text-red-500'}`}

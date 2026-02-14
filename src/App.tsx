@@ -25,22 +25,23 @@ export function App() {
   }, [isAuthenticated, user?.id]);
 
   return (
-    <div className={`relative min-h-screen overflow-hidden ${isDark ? 'bg-[#000000]' : 'bg-[#ffffff]'}`}>
-      {isDark && <Background />}
+    <div className={`relative min-h-screen min-h-dvh overflow-hidden ${isDark ? 'bg-[#0a0a0a]' : 'bg-[#fafafa]'}`}>
+      <Background />
+      <div className="noise" />
 
       <Sidebar />
 
-      <div className="relative z-10 flex flex-col min-h-screen">
+      <div className="relative z-10 flex flex-col min-h-screen min-h-dvh">
         <Header />
 
-        <main className="flex-1 flex flex-col pt-[56px] pb-40">
+        <main className="flex-1 flex flex-col pt-[60px] pb-[140px]">
           <ChatContainer />
         </main>
 
-        <footer className={`fixed bottom-0 left-0 right-0 z-20 pb-5 pt-4 ${
+        <footer className={`fixed bottom-0 left-0 right-0 z-20 pb-4 sm:pb-6 pt-6 ${
           isDark
-            ? 'bg-gradient-to-t from-[#000000] via-[#000000]/95 to-transparent'
-            : 'bg-gradient-to-t from-[#ffffff] via-[#ffffff]/95 to-transparent'
+            ? 'bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/95 to-transparent'
+            : 'bg-gradient-to-t from-[#fafafa] via-[#fafafa]/95 to-transparent'
         }`}>
           <ChatInput />
         </footer>

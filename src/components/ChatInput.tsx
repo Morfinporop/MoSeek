@@ -8,149 +8,115 @@ import { aiService } from '../services/aiService';
 import { AI_MODELS } from '../config/models';
 import { useCompareMode } from './Header';
 
-const RUDENESS_MODES: { id: RudenessMode; label: string; icon: typeof Flame; desc: string; color: string }[] = [
-  { id: 'very_rude', label: 'Очень грубый', icon: Angry, desc: 'Мат и прямота', color: 'text-red-400' },
-  { id: 'rude', label: 'Грубый', icon: Flame, desc: 'Дерзкий сарказм', color: 'text-orange-400' },
-  { id: 'polite', label: 'Вежливый', icon: Smile, desc: 'Без мата', color: 'text-green-400' },
+const MODES: { id: RudenessMode; label: string; icon: typeof Flame; color: string }[] = [
+  { id: 'very_rude', label: 'Грубый+', icon: Angry, color: 'text-red-400' },
+  { id: 'rude', label: 'Грубый', icon: Flame, color: 'text-orange-400' },
+  { id: 'polite', label: 'Вежливый', icon: Smile, color: 'text-green-400' },
 ];
-
-const UNLIMITED_EMAILS = ['energoferon41@gmail.com'];
-const CHAR_LIMIT = 10000;
+const UNLIMITED = ['energoferon41@gmail.com'];
+const LIMIT = 10000;
 
 export function ChatInput() {
   const [input, setInput] = useState('');
-  const [showRudeness, setShowRudeness] = useState(false);
-  const [showCharLimitWarning, setShowCharLimitWarning] = useState(false);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const rudenessRef = useRef<HTMLDivElement>(null);
+  const [showR, setShowR] = useState(false);
+  const [warn, setWarn] = useState(false);
+  const ta = useRef<HTMLTextAreaElement>(null);
+  const rRef = useRef<HTMLDivElement>(null);
   const { theme } = useThemeStore();
   const isDark = theme === 'dark';
-
   const { addMessage, updateMessage, getCurrentMessages, responseMode, rudenessMode, setRudenessMode, selectedModel, setGeneratingChat, isCurrentChatGenerating } = useChatStore();
   const { user } = useAuthStore();
+  const gen = isCurrentChatGenerating();
+  const unlim = user?.email && UNLIMITED.includes(user.email);
+  const cnt = input.length;
+  const over = !unlim && cnt > LIMIT;
 
-  const generating = isCurrentChatGenerating();
-  const isUnlimitedUser = user?.email && UNLIMITED_EMAILS.includes(user.email);
-  const charCount = input.length;
-  const isOverLimit = !isUnlimitedUser && charCount > CHAR_LIMIT;
+  const switchR = useCallback((r: RudenessMode) => { if (r === rudenessMode) { setShowR(false); return; } setRudenessMode(r); setShowR(false); }, [rudenessMode, setRudenessMode]);
 
-  const handleRudenessSwitch = useCallback((r: RudenessMode) => {
-    if (r === rudenessMode) { setShowRudeness(false); return; }
-    setRudenessMode(r); setShowRudeness(false);
-  }, [rudenessMode, setRudenessMode]);
+  useEffect(() => { if (ta.current) { ta.current.style.height = '36px'; ta.current.style.height = ta.current.scrollHeight > 52 ? `${Math.min(ta.current.scrollHeight, 160)}px` : '36px'; } }, [input]);
+  useEffect(() => { const h = (e: MouseEvent) => { if (rRef.current && !rRef.current.contains(e.target as Node)) setShowR(false); }; document.addEventListener('mousedown', h); return () => document.removeEventListener('mousedown', h); }, []);
 
-  useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = '36px';
-      textareaRef.current.style.height = textareaRef.current.scrollHeight > 52
-        ? `${Math.min(textareaRef.current.scrollHeight, 160)}px` : '36px';
-    }
-  }, [input]);
-
-  useEffect(() => {
-    const h = (e: MouseEvent) => { if (rudenessRef.current && !rudenessRef.current.contains(e.target as Node)) setShowRudeness(false); };
-    document.addEventListener('mousedown', h);
-    return () => document.removeEventListener('mousedown', h);
-  }, []);
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const onChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const v = e.target.value;
-    if (!isUnlimitedUser && v.length > CHAR_LIMIT) {
-      setShowCharLimitWarning(true); setTimeout(() => setShowCharLimitWarning(false), 3000);
-      setInput(v.slice(0, CHAR_LIMIT)); return;
-    }
-    setShowCharLimitWarning(false); setInput(v);
+    if (!unlim && v.length > LIMIT) { setWarn(true); setTimeout(() => setWarn(false), 3000); setInput(v.slice(0, LIMIT)); return; }
+    setWarn(false); setInput(v);
   };
 
-  const handleSubmit = async (e?: React.FormEvent) => {
+  const submit = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    const trimmed = input.trim();
-    if (!trimmed || generating || isOverLimit) return;
+    const t = input.trim();
+    if (!t || gen || over) return;
     const { isDual, secondModelId } = useCompareMode();
-    setInput('');
-    if (textareaRef.current) textareaRef.current.style.height = '36px';
-    addMessage({ role: 'user', content: trimmed });
+    setInput(''); if (ta.current) ta.current.style.height = '36px';
+    addMessage({ role: 'user', content: t });
     const chatId = useChatStore.getState().currentChatId;
     if (!chatId) return;
     setGeneratingChat(chatId, true);
-    const model1 = AI_MODELS.find(m => m.id === selectedModel) || AI_MODELS[0];
-    const allMsgs = [...getCurrentMessages()];
+    const m1 = AI_MODELS.find(m => m.id === selectedModel) || AI_MODELS[0];
+    const msgs = [...getCurrentMessages()];
 
     if (isDual) {
-      const model2 = AI_MODELS.find(m => m.id === secondModelId) || AI_MODELS[1] || AI_MODELS[0];
-      const pairId = `pair-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-      const id1 = addMessage({ role: 'assistant', content: '', isLoading: true, model: model1.name, thinking: 'Печатаю...', dualPosition: 'left', dualPairId: pairId });
-      const id2 = addMessage({ role: 'assistant', content: '', isLoading: true, model: model2.name, thinking: 'Печатаю...', dualPosition: 'right', dualPairId: pairId });
+      const m2 = AI_MODELS.find(m => m.id === secondModelId) || AI_MODELS[1] || AI_MODELS[0];
+      const pid = `p-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
+      const a1 = addMessage({ role: 'assistant', content: '', isLoading: true, model: m1.name, thinking: '', dualPosition: 'left', dualPairId: pid });
+      const a2 = addMessage({ role: 'assistant', content: '', isLoading: true, model: m2.name, thinking: '', dualPosition: 'right', dualPairId: pid });
       try {
-        const [r1, r2] = await Promise.all([aiService.generateResponse(allMsgs, responseMode, rudenessMode, selectedModel), aiService.generateResponse(allMsgs, responseMode, rudenessMode, secondModelId)]);
-        updateMessage(id1, '', 'Печатаю...'); updateMessage(id2, '', 'Печатаю...');
-        const w1 = r1.content.split(' '), w2 = r2.content.split(' ');
-        let c1 = '', c2 = '';
+        const [r1, r2] = await Promise.all([aiService.generateResponse(msgs, responseMode, rudenessMode, selectedModel), aiService.generateResponse(msgs, responseMode, rudenessMode, secondModelId)]);
+        updateMessage(a1, '', ''); updateMessage(a2, '', '');
+        const w1 = r1.content.split(' '), w2 = r2.content.split(' '); let c1 = '', c2 = '';
         for (let i = 0; i < Math.max(w1.length, w2.length); i++) {
-          if (i < w1.length) { c1 += (i > 0 ? ' ' : '') + w1[i]; updateMessage(id1, c1, 'Печатаю...'); }
-          if (i < w2.length) { c2 += (i > 0 ? ' ' : '') + w2[i]; updateMessage(id2, c2, 'Печатаю...'); }
+          if (i < w1.length) { c1 += (i ? ' ' : '') + w1[i]; updateMessage(a1, c1, ''); }
+          if (i < w2.length) { c2 += (i ? ' ' : '') + w2[i]; updateMessage(a2, c2, ''); }
           await new Promise(r => setTimeout(r, 10));
         }
-        updateMessage(id1, c1, ''); updateMessage(id2, c2, '');
-      } catch { updateMessage(id1, 'Ошибка.', ''); updateMessage(id2, 'Ошибка.', ''); }
-      finally { setGeneratingChat(chatId, false); const au = useAuthStore.getState().user; if (au) useChatStore.getState().syncToCloud(au.id).catch(() => {}); }
+        updateMessage(a1, c1, ''); updateMessage(a2, c2, '');
+      } catch { updateMessage(a1, 'Ошибка.', ''); updateMessage(a2, 'Ошибка.', ''); }
+      finally { setGeneratingChat(chatId, false); const u = useAuthStore.getState().user; if (u) useChatStore.getState().syncToCloud(u.id).catch(() => {}); }
     } else {
-      const aId = addMessage({ role: 'assistant', content: '', isLoading: true, model: model1.name, thinking: 'Печатаю...' });
+      const a = addMessage({ role: 'assistant', content: '', isLoading: true, model: m1.name, thinking: '' });
       try {
-        const res = await aiService.generateResponse(allMsgs, responseMode, rudenessMode, selectedModel);
-        updateMessage(aId, '', 'Печатаю...');
-        let cur = ''; const words = res.content.split(' ');
-        for (let i = 0; i < words.length; i++) { cur += (i > 0 ? ' ' : '') + words[i]; updateMessage(aId, cur, 'Печатаю...'); await new Promise(r => setTimeout(r, 10)); }
-        updateMessage(aId, cur, '');
-      } catch { updateMessage(aId, 'Ошибка. Попробуй ещё раз.', ''); }
-      finally { setGeneratingChat(chatId, false); const au = useAuthStore.getState().user; if (au) useChatStore.getState().syncToCloud(au.id).catch(() => {}); }
+        const r = await aiService.generateResponse(msgs, responseMode, rudenessMode, selectedModel);
+        updateMessage(a, '', ''); let c = ''; const w = r.content.split(' ');
+        for (let i = 0; i < w.length; i++) { c += (i ? ' ' : '') + w[i]; updateMessage(a, c, ''); await new Promise(r => setTimeout(r, 10)); }
+        updateMessage(a, c, '');
+      } catch { updateMessage(a, 'Ошибка. Попробуй снова.', ''); }
+      finally { setGeneratingChat(chatId, false); const u = useAuthStore.getState().user; if (u) useChatStore.getState().syncToCloud(u.id).catch(() => {}); }
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(); } };
-  const currentRudeness = RUDENESS_MODES.find(m => m.id === rudenessMode) || RUDENESS_MODES[1];
+  const onKey = (e: React.KeyboardEvent) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(); } };
+  const cur = MODES.find(m => m.id === rudenessMode) || MODES[1];
 
   return (
     <div className="w-full max-w-3xl mx-auto px-4">
       <AnimatePresence>
-        {showCharLimitWarning && (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}
-            className={`flex items-center gap-2 px-4 py-3 mb-3 rounded-xl ${isDark ? 'bg-red-500/8 border border-red-500/10' : 'bg-red-50 border border-red-100'}`}
-          ><p className="text-[13px] text-red-400">Лимит {CHAR_LIMIT} символов достигнут.</p></motion.div>
+        {warn && (
+          <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }}
+            className={`px-3 py-2 mb-2 rounded-lg text-[12px] ${isDark ? 'bg-red-500/8 text-red-400 border border-red-500/10' : 'bg-red-50 text-red-500 border border-red-100'}`}
+          >Лимит {LIMIT} символов.</motion.div>
         )}
       </AnimatePresence>
 
       <div className="flex items-end gap-2">
-        {/* Rudeness button */}
-        <div className="relative" ref={rudenessRef}>
-          <motion.button type="button" whileTap={{ scale: 0.95 }} onClick={() => setShowRudeness(!showRudeness)}
-            className={`flex items-center justify-center w-[48px] h-[48px] rounded-2xl transition-all ${
-              isDark ? 'glass-card hover:bg-white/[0.06]' : 'bg-white border border-black/[0.06] hover:border-black/[0.1] shadow-sm'
-            }`}
-          ><currentRudeness.icon className={`w-5 h-5 ${currentRudeness.color}`} /></motion.button>
+        <div className="relative" ref={rRef}>
+          <button type="button" onClick={() => setShowR(!showR)}
+            className={`w-11 h-11 rounded-xl flex items-center justify-center transition-colors ${isDark ? 'glass-card hover:bg-white/[0.06]' : 'bg-[#f2f2f2] hover:bg-[#e8e8e8]'}`}
+          ><cur.icon className={`w-[18px] h-[18px] ${cur.color}`} /></button>
 
           <AnimatePresence>
-            {showRudeness && (
-              <motion.div initial={{ opacity: 0, y: 8, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 8, scale: 0.95 }} transition={{ duration: 0.12 }}
-                className={`absolute bottom-full left-0 mb-2 w-52 rounded-2xl overflow-hidden z-50 shadow-2xl ${
-                  isDark ? 'bg-[#161616]/95 backdrop-blur-xl border border-white/[0.08]' : 'bg-white/95 backdrop-blur-xl border border-black/[0.06] shadow-xl'
-                }`}
+            {showR && (
+              <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }} transition={{ duration: 0.1 }}
+                className={`absolute bottom-full left-0 mb-1.5 w-44 rounded-xl overflow-hidden z-50 ${isDark ? 'bg-[#111] border border-white/[0.06]' : 'bg-white border border-black/[0.06] shadow-lg'}`}
               >
-                <div className={`px-4 py-2.5 border-b ${isDark ? 'border-white/[0.05]' : 'border-black/[0.04]'}`}>
-                  <p className={`text-[11px] font-medium uppercase tracking-wider ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>Режим</p>
-                </div>
-                {RUDENESS_MODES.map((mode) => {
-                  const active = rudenessMode === mode.id;
+                {MODES.map(m => {
+                  const a = rudenessMode === m.id;
                   return (
-                    <button key={mode.id} type="button" onClick={() => handleRudenessSwitch(mode.id)}
-                      className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-all ${isDark ? 'hover:bg-white/[0.05]' : 'hover:bg-black/[0.02]'} ${active ? isDark ? 'bg-white/[0.04]' : 'bg-black/[0.02]' : ''}`}
+                    <button key={m.id} type="button" onClick={() => switchR(m.id)}
+                      className={`w-full flex items-center gap-2.5 px-3 py-2.5 text-left transition-colors ${a ? isDark ? 'bg-white/[0.05]' : 'bg-black/[0.03]' : isDark ? 'hover:bg-white/[0.04]' : 'hover:bg-black/[0.02]'}`}
                     >
-                      <mode.icon className={`w-4 h-4 ${active ? mode.color : isDark ? 'text-zinc-500' : 'text-zinc-400'}`} />
-                      <div className="flex-1">
-                        <p className={`text-[13px] ${active ? isDark ? 'text-white font-medium' : 'text-black font-medium' : isDark ? 'text-zinc-400' : 'text-zinc-500'}`}>{mode.label}</p>
-                        <p className={`text-[10px] ${isDark ? 'text-zinc-600' : 'text-zinc-400'}`}>{mode.desc}</p>
-                      </div>
-                      {active && <div className="w-2 h-2 rounded-full bg-[#3b82f6]" />}
+                      <m.icon className={`w-4 h-4 ${a ? m.color : isDark ? 'text-zinc-500' : 'text-zinc-400'}`} />
+                      <span className={`text-[13px] ${a ? isDark ? 'text-white' : 'text-black' : isDark ? 'text-zinc-400' : 'text-zinc-500'}`}>{m.label}</span>
+                      {a && <div className={`ml-auto w-1.5 h-1.5 rounded-full ${isDark ? 'bg-white' : 'bg-black'}`} />}
                     </button>
                   );
                 })}
@@ -159,39 +125,28 @@ export function ChatInput() {
           </AnimatePresence>
         </div>
 
-        {/* Input */}
-        <form onSubmit={handleSubmit}
-          className={`flex-1 relative rounded-2xl glass-input ${isOverLimit ? '!border-red-500/50' : ''}`}
-        >
-          <div className="relative flex items-center min-h-[48px] pl-4 pr-2">
-            <textarea
-              ref={textareaRef} value={input} onChange={handleInputChange} onKeyDown={handleKeyDown}
-              placeholder="Напиши что-нибудь..." disabled={generating}
-              maxLength={isUnlimitedUser ? undefined : CHAR_LIMIT} rows={1}
-              className={`flex-1 bg-transparent resize-none text-[14.5px] leading-9 max-h-[160px] focus:outline-none ${
-                isDark ? 'text-white placeholder-zinc-500' : 'text-black placeholder-zinc-400'
-              }`}
-              style={{ outline: 'none', border: 'none', boxShadow: 'none', height: '36px', minHeight: '36px' }}
+        <form onSubmit={submit} className={`flex-1 rounded-xl glass-input ${over ? '!border-red-500/40' : ''}`}>
+          <div className="flex items-center min-h-[44px] pl-3.5 pr-1.5">
+            <textarea ref={ta} value={input} onChange={onChange} onKeyDown={onKey} placeholder="Сообщение..." disabled={gen}
+              maxLength={unlim ? undefined : LIMIT} rows={1}
+              className={`flex-1 bg-transparent resize-none text-[14px] leading-[36px] max-h-[160px] ${isDark ? 'text-white placeholder-zinc-600' : 'text-black placeholder-zinc-400'}`}
+              style={{ outline:'none', border:'none', boxShadow:'none', height:'36px', minHeight:'36px' }}
             />
-
-            {!isUnlimitedUser && input.length > 0 && (
-              <span className={`text-[11px] mr-1 flex-shrink-0 ${charCount >= CHAR_LIMIT ? 'text-red-400' : charCount > CHAR_LIMIT * 0.8 ? 'text-orange-400' : isDark ? 'text-zinc-600' : 'text-zinc-400'}`}>
-                {charCount}/{CHAR_LIMIT}
-              </span>
+            {!unlim && cnt > 0 && (
+              <span className={`text-[10px] mr-1 ${cnt >= LIMIT ? 'text-red-400' : cnt > LIMIT*0.8 ? 'text-orange-400' : isDark ? 'text-zinc-600' : 'text-zinc-400'}`}>{cnt}/{LIMIT}</span>
             )}
-
-            <motion.button type="submit" disabled={!input.trim() || generating || isOverLimit} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-              className={`flex-shrink-0 w-9 h-9 rounded-xl transition-all ml-1 flex items-center justify-center ${
-                input.trim() && !generating && !isOverLimit
-                  ? 'bg-[#3b82f6] text-white glow-accent'
-                  : isDark ? 'bg-white/[0.04] text-zinc-600 cursor-not-allowed' : 'bg-black/[0.04] text-zinc-400 cursor-not-allowed'
+            <button type="submit" disabled={!input.trim() || gen || over}
+              className={`w-8 h-8 rounded-lg flex items-center justify-center ml-0.5 transition-colors ${
+                input.trim() && !gen && !over
+                  ? isDark ? 'bg-white text-black' : 'bg-black text-white'
+                  : isDark ? 'bg-white/[0.04] text-zinc-600' : 'bg-black/[0.04] text-zinc-400'
               }`}
-            ><Send className={`w-4 h-4 ${generating ? 'animate-pulse' : ''}`} /></motion.button>
+            ><Send className={`w-4 h-4 ${gen ? 'animate-pulse' : ''}`} /></button>
           </div>
         </form>
       </div>
 
-      <p className={`text-center text-[11px] mt-2.5 ${isDark ? 'text-zinc-600' : 'text-zinc-400'}`}>MoSeek может ошибаться</p>
+      <p className={`text-center text-[10px] mt-2 ${isDark ? 'text-zinc-700' : 'text-zinc-400'}`}>MoSeek может ошибаться</p>
     </div>
   );
 }

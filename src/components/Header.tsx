@@ -1,21 +1,26 @@
+// src/components/Header.tsx
+
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, ChevronDown } from 'lucide-react';
+import { Menu, ChevronDown, MoreVertical, Archive, Check } from 'lucide-react';
 import { useChatStore } from '../store/chatStore';
 import { AI_MODELS } from '../config/models';
 
 type CompareMode = 'single' | 'dual';
 
 export function Header() {
-  const { toggleSidebar, selectedModel, setSelectedModel, createNewChat, setCurrentChat } = useChatStore();
+  const { toggleSidebar, selectedModel, setSelectedModel, createNewChat, setCurrentChat, currentChatId, archiveChat } = useChatStore();
   const [showModelMenu, setShowModelMenu] = useState(false);
   const [showModelMenu2, setShowModelMenu2] = useState(false);
   const [showModeMenu, setShowModeMenu] = useState(false);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const [archiveSuccess, setArchiveSuccess] = useState(false);
   const [compareMode, setCompareMode] = useState<CompareMode>('single');
   const [secondModel, setSecondModel] = useState(AI_MODELS.length > 1 ? AI_MODELS[1].id : AI_MODELS[0].id);
   const menuRef = useRef<HTMLDivElement>(null);
   const menuRef2 = useRef<HTMLDivElement>(null);
   const modeRef = useRef<HTMLDivElement>(null);
+  const moreRef = useRef<HTMLDivElement>(null);
 
   const currentModel = AI_MODELS.find(m => m.id === selectedModel) || AI_MODELS[0];
   const currentModel2 = AI_MODELS.find(m => m.id === secondModel) || AI_MODELS[1] || AI_MODELS[0];
@@ -25,6 +30,7 @@ export function Header() {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) setShowModelMenu(false);
       if (menuRef2.current && !menuRef2.current.contains(e.target as Node)) setShowModelMenu2(false);
       if (modeRef.current && !modeRef.current.contains(e.target as Node)) setShowModeMenu(false);
+      if (moreRef.current && !moreRef.current.contains(e.target as Node)) setShowMoreMenu(false);
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -33,7 +39,6 @@ export function Header() {
   useEffect(() => {
     const stored = localStorage.getItem('moseek_compare_mode');
     if (stored === 'dual') setCompareMode('dual');
-
     const storedSecond = localStorage.getItem('moseek_second_model');
     if (storedSecond) setSecondModel(storedSecond);
   }, []);
@@ -71,14 +76,21 @@ export function Header() {
   const handleModeChange = (mode: CompareMode) => {
     setCompareMode(mode);
     setShowModeMenu(false);
-
     if (mode === 'dual' && secondModel === selectedModel) {
       const other = AI_MODELS.find(m => m.id !== selectedModel);
       if (other) setSecondModel(other.id);
     }
-
     const newChatId = createNewChat();
     if (newChatId) setCurrentChat(newChatId);
+  };
+
+  const handleArchiveChat = () => {
+    if (currentChatId) {
+      archiveChat(currentChatId);
+      setArchiveSuccess(true);
+      setShowMoreMenu(false);
+      setTimeout(() => setArchiveSuccess(false), 2000);
+    }
   };
 
   return (
@@ -102,7 +114,7 @@ export function Header() {
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              onClick={() => { setShowModeMenu(!showModeMenu); setShowModelMenu(false); setShowModelMenu2(false); }}
+              onClick={() => { setShowModeMenu(!showModeMenu); setShowModelMenu(false); setShowModelMenu2(false); setShowMoreMenu(false); }}
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl hover:bg-white/5 transition-all"
             >
               <span className={`text-sm font-semibold ${compareMode === 'dual' ? 'text-violet-400' : 'text-zinc-300'}`}>
@@ -152,7 +164,7 @@ export function Header() {
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              onClick={() => { setShowModelMenu(!showModelMenu); setShowModelMenu2(false); setShowModeMenu(false); }}
+              onClick={() => { setShowModelMenu(!showModelMenu); setShowModelMenu2(false); setShowModeMenu(false); setShowMoreMenu(false); }}
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl hover:bg-white/5 transition-all"
             >
               <span className="text-sm font-semibold text-zinc-300">{currentModel.name}</span>
@@ -206,7 +218,7 @@ export function Header() {
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  onClick={() => { setShowModelMenu2(!showModelMenu2); setShowModelMenu(false); setShowModeMenu(false); }}
+                  onClick={() => { setShowModelMenu2(!showModelMenu2); setShowModelMenu(false); setShowModeMenu(false); setShowMoreMenu(false); }}
                   className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl hover:bg-white/5 transition-all"
                 >
                   <span className="text-sm font-semibold text-zinc-300">{currentModel2.name}</span>
@@ -250,10 +262,52 @@ export function Header() {
 
           <div className="flex-1" />
 
-          <div className="pr-2 sm:pr-4">
+          <div className="flex items-center gap-1 pr-2 sm:pr-4">
             <h1 className="text-lg font-bold bg-gradient-to-r from-violet-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
               MoSeek
             </h1>
+
+            {/* Кнопка "ещё" (три точки) */}
+            <div className="relative" ref={moreRef}>
+              <motion.button
+                whileHover={{ scale: 1.08 }}
+                whileTap={{ scale: 0.92 }}
+                onClick={() => { setShowMoreMenu(!showMoreMenu); setShowModelMenu(false); setShowModelMenu2(false); setShowModeMenu(false); }}
+                className="p-2 rounded-xl hover:bg-white/5 transition-all"
+              >
+                {archiveSuccess ? (
+                  <Check className="w-4.5 h-4.5 text-green-400" />
+                ) : (
+                  <MoreVertical className="w-4.5 h-4.5 text-zinc-500" />
+                )}
+              </motion.button>
+
+              <AnimatePresence>
+                {showMoreMenu && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -8, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -8, scale: 0.95 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute top-full right-0 mt-2 w-52 glass-strong rounded-xl border border-white/10 overflow-hidden z-50"
+                  >
+                    <button
+                      onClick={handleArchiveChat}
+                      disabled={!currentChatId}
+                      className={`w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-white/5 transition-all ${
+                        !currentChatId ? 'opacity-30 cursor-not-allowed' : ''
+                      }`}
+                    >
+                      <Archive className="w-4 h-4 text-violet-400" />
+                      <div className="flex-1">
+                        <p className="text-sm text-zinc-300">В архив</p>
+                        <p className="text-[10px] text-zinc-600">Сохранить чат в архив</p>
+                      </div>
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
         </div>
       </div>

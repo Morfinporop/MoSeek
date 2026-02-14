@@ -7,42 +7,28 @@ import { WelcomeScreen } from './WelcomeScreen';
 import { useCompareMode } from './Header';
 import type { Message } from '../types';
 
-interface DualMessagePairProps {
-  leftMessage: Message;
-  rightMessage: Message;
-}
+interface DualMessagePairProps { leftMessage: Message; rightMessage: Message; }
 
 function DualMessagePair({ leftMessage, rightMessage }: DualMessagePairProps) {
   const { theme } = useThemeStore();
   const isDark = theme === 'dark';
-
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className="w-full"
-    >
+    <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="w-full">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="min-w-0">
           {leftMessage.model && (
             <div className="flex items-center gap-1.5 mb-2 px-1">
-              <div className="w-1.5 h-1.5 rounded-full bg-[#2196F3]/60 animate-pulse" />
-              <span className={`text-[11px] font-medium ${isDark ? 'text-zinc-400' : 'text-zinc-500'}`}>
-                {leftMessage.model}
-              </span>
+              <div className="w-1.5 h-1.5 rounded-full bg-[#3b82f6] animate-pulse" />
+              <span className={`text-[11px] font-medium ${isDark ? 'text-zinc-400' : 'text-zinc-500'}`}>{leftMessage.model}</span>
             </div>
           )}
           <ChatMessage message={leftMessage} compact hideModelLabel />
         </div>
-
         <div className="min-w-0">
           {rightMessage.model && (
             <div className="flex items-center gap-1.5 mb-2 px-1">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500/60 animate-pulse" />
-              <span className={`text-[11px] font-medium ${isDark ? 'text-zinc-400' : 'text-zinc-500'}`}>
-                {rightMessage.model}
-              </span>
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span className={`text-[11px] font-medium ${isDark ? 'text-zinc-400' : 'text-zinc-500'}`}>{rightMessage.model}</span>
             </div>
           )}
           <ChatMessage message={rightMessage} compact hideModelLabel />
@@ -57,83 +43,46 @@ export function ChatContainer() {
   const messages = getCurrentMessages();
   const containerRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
-
   const [dualState, setDualState] = useState(() => useCompareMode());
-
-  const refreshDualState = useCallback(() => {
-    setDualState(useCompareMode());
-  }, []);
+  const refreshDualState = useCallback(() => { setDualState(useCompareMode()); }, []);
 
   useEffect(() => {
-    const handleStorage = () => { refreshDualState(); };
-    window.addEventListener('storage', handleStorage);
-    const interval = setInterval(refreshDualState, 500);
-    return () => { window.removeEventListener('storage', handleStorage); clearInterval(interval); };
+    const h = () => refreshDualState();
+    window.addEventListener('storage', h);
+    const i = setInterval(refreshDualState, 500);
+    return () => { window.removeEventListener('storage', h); clearInterval(i); };
   }, [refreshDualState]);
 
   const isDual = dualState.isDual;
 
-  useEffect(() => {
-    if (bottomRef.current) {
-      bottomRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [messages]);
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
   const renderedItems = useMemo(() => {
-    if (!isDual) {
-      return messages.map((msg) => ({
-        type: 'single' as const, message: msg,
-        leftMessage: null as Message | null, rightMessage: null as Message | null, key: msg.id,
-      }));
-    }
-
-    const result: {
-      type: 'single' | 'dual'; message: Message | null;
-      leftMessage: Message | null; rightMessage: Message | null; key: string;
-    }[] = [];
-
-    const processedIds = new Set<string>();
-
-    for (let i = 0; i < messages.length; i++) {
-      const msg = messages[i];
-      if (processedIds.has(msg.id)) continue;
-
+    if (!isDual) return messages.map(msg => ({ type: 'single' as const, message: msg, leftMessage: null as Message | null, rightMessage: null as Message | null, key: msg.id }));
+    const result: { type: 'single' | 'dual'; message: Message | null; leftMessage: Message | null; rightMessage: Message | null; key: string }[] = [];
+    const processed = new Set<string>();
+    for (const msg of messages) {
+      if (processed.has(msg.id)) continue;
       if (msg.dualPairId && msg.dualPosition === 'left') {
         const pair = messages.find(m => m.dualPairId === msg.dualPairId && m.dualPosition === 'right' && m.id !== msg.id);
-        if (pair) {
-          processedIds.add(msg.id); processedIds.add(pair.id);
-          result.push({ type: 'dual', message: null, leftMessage: msg, rightMessage: pair, key: `dual-${msg.dualPairId}` });
-          continue;
-        }
+        if (pair) { processed.add(msg.id); processed.add(pair.id); result.push({ type: 'dual', message: null, leftMessage: msg, rightMessage: pair, key: `dual-${msg.dualPairId}` }); continue; }
       }
-
-      if (msg.dualPairId && msg.dualPosition === 'right') {
-        const leftExists = messages.find(m => m.dualPairId === msg.dualPairId && m.dualPosition === 'left');
-        if (leftExists && !processedIds.has(leftExists.id)) continue;
-      }
-
-      processedIds.add(msg.id);
+      if (msg.dualPairId && msg.dualPosition === 'right') { const left = messages.find(m => m.dualPairId === msg.dualPairId && m.dualPosition === 'left'); if (left && !processed.has(left.id)) continue; }
+      processed.add(msg.id);
       result.push({ type: 'single', message: msg, leftMessage: null, rightMessage: null, key: msg.id });
     }
-
     return result;
   }, [messages, isDual]);
 
-  if (messages.length === 0) {
-    return <WelcomeScreen />;
-  }
+  if (messages.length === 0) return <WelcomeScreen />;
 
   return (
     <div ref={containerRef} className="flex-1 overflow-y-auto px-4 py-6">
       <div className={`mx-auto space-y-5 ${isDual ? 'max-w-6xl' : 'max-w-3xl'}`}>
         <AnimatePresence mode="popLayout">
           {renderedItems.map((item) => {
-            if (item.type === 'dual' && item.leftMessage && item.rightMessage) {
-              return <DualMessagePair key={item.key} leftMessage={item.leftMessage} rightMessage={item.rightMessage} />;
-            }
-            if (item.message) {
-              return <ChatMessage key={item.key} message={item.message} />;
-            }
+            if (item.type === 'dual' && item.leftMessage && item.rightMessage) return <DualMessagePair key={item.key} leftMessage={item.leftMessage} rightMessage={item.rightMessage} />;
+            if (item.message) return <ChatMessage key={item.key} message={item.message} />;
             return null;
           })}
         </AnimatePresence>

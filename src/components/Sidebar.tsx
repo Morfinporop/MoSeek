@@ -8,6 +8,7 @@ import { Turnstile } from '@marsidev/react-turnstile';
 
 const TURNSTILE_SITE_KEY = '0x4AAAAAACa5EobYKh_TrmuZ';
 const DISCORD_URL = 'https://discord.gg/qjnyAr7YXe';
+const DEFAULT_AVATAR = 'https://media.forgecdn.net/avatars/260/481/637214772494979032.png';
 
 type ModalType = 'terms' | 'privacy' | 'cookies' | 'profile' | 'auth' | null;
 
@@ -101,6 +102,8 @@ export function Sidebar() {
     e.target.value = '';
   };
 
+  const getUserAvatar = () => user?.avatar || DEFAULT_AVATAR;
+
   return (
     <AnimatePresence>
       {sidebarOpen && (
@@ -111,26 +114,26 @@ export function Sidebar() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
             onClick={toggleSidebar}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40"
           />
 
           <motion.aside
             initial={{ x: -300, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: -300, opacity: 0 }}
-            transition={{ type: 'spring', damping: 30, stiffness: 400 }}
-            className={`fixed left-0 top-0 bottom-0 w-[280px] z-50 flex flex-col border-r ${
+            transition={{ type: 'spring', damping: 28, stiffness: 380 }}
+            className={`fixed left-0 top-0 bottom-0 w-[280px] z-50 flex flex-col ${
               isDark
-                ? 'bg-[#0a0a0a] border-white/[0.06]'
-                : 'bg-[#f2f2f7] border-black/[0.06]'
+                ? 'bg-[#0e0e0e]/95 backdrop-blur-2xl border-r border-white/[0.04]'
+                : 'bg-white/95 backdrop-blur-2xl border-r border-black/[0.06]'
             }`}
           >
             {/* Header */}
-            <div className={`border-b ${isDark ? 'border-white/[0.06]' : 'border-black/[0.06]'}`}>
-              <div className="flex items-center justify-between px-4 py-3.5">
+            <div className={`border-b ${isDark ? 'border-white/[0.04]' : 'border-black/[0.04]'}`}>
+              <div className="flex items-center justify-between px-4 py-4">
                 <button
                   onClick={() => setShowHeaderExtras(!showHeaderExtras)}
-                  className={`flex items-center gap-1.5 text-base font-semibold transition-colors ${
+                  className={`flex items-center gap-1.5 text-[15px] font-semibold transition-colors ${
                     isDark ? 'text-white hover:text-zinc-300' : 'text-black hover:text-zinc-600'
                   }`}
                 >
@@ -143,13 +146,12 @@ export function Sidebar() {
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
                   onClick={toggleSidebar}
-                  className={`p-1.5 rounded-lg transition-colors ${isDark ? 'hover:bg-white/[0.06]' : 'hover:bg-black/[0.04]'}`}
+                  className={`p-2 rounded-xl transition-colors ${isDark ? 'hover:bg-white/[0.06]' : 'hover:bg-black/[0.04]'}`}
                 >
                   <X className={`w-5 h-5 ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`} />
                 </motion.button>
               </div>
 
-              {/* Dropdown extras */}
               <AnimatePresence>
                 {showHeaderExtras && (
                   <motion.div
@@ -164,12 +166,12 @@ export function Sidebar() {
                         href={DISCORD_URL}
                         target="_blank"
                         rel="noopener noreferrer"
-                        whileHover={{ scale: 1.03 }}
-                        whileTap={{ scale: 0.97 }}
-                        className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition-all ${
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-xl text-[13px] transition-all ${
                           isDark
-                            ? 'bg-[#5865F2]/10 border border-[#5865F2]/20 text-[#5865F2] hover:bg-[#5865F2]/20'
-                            : 'bg-[#5865F2]/5 border border-[#5865F2]/15 text-[#5865F2] hover:bg-[#5865F2]/10'
+                            ? 'glass-card text-[#5865F2] hover:bg-white/[0.06]'
+                            : 'bg-[#5865F2]/5 border border-[#5865F2]/10 text-[#5865F2] hover:bg-[#5865F2]/10'
                         }`}
                       >
                         <DiscordIcon className="w-4 h-4" />
@@ -177,13 +179,13 @@ export function Sidebar() {
                       </motion.a>
 
                       <motion.button
-                        whileHover={{ scale: 1.03 }}
-                        whileTap={{ scale: 0.97 }}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
                         onClick={toggleTheme}
-                        className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition-all ${
+                        className={`flex items-center gap-2 px-3 py-2 rounded-xl text-[13px] transition-all ${
                           isDark
-                            ? 'bg-white/[0.06] border border-white/[0.08] text-zinc-300 hover:bg-white/[0.1]'
-                            : 'bg-black/[0.04] border border-black/[0.06] text-zinc-600 hover:bg-black/[0.06]'
+                            ? 'glass-card text-zinc-300 hover:bg-white/[0.06]'
+                            : 'bg-black/[0.03] border border-black/[0.06] text-zinc-600 hover:bg-black/[0.05]'
                         }`}
                       >
                         {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
@@ -203,22 +205,24 @@ export function Sidebar() {
                 onClick={handleNewChat}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
                   isDark
-                    ? 'bg-white/[0.06] border border-white/[0.08] hover:bg-white/[0.1] text-white'
-                    : 'bg-white border border-black/[0.06] hover:bg-black/[0.02] text-black shadow-sm'
+                    ? 'glass-card hover:bg-white/[0.06] text-white'
+                    : 'bg-white border border-black/[0.06] hover:border-black/[0.1] text-black shadow-sm'
                 }`}
               >
-                <Plus className="w-5 h-5" />
-                <span className="text-sm font-medium">Новый чат</span>
+                <Plus className="w-5 h-5 text-[#3b82f6]" />
+                <span className="text-[13px] font-medium">Новый чат</span>
               </motion.button>
             </div>
 
             {/* Chat list */}
             <div className="flex-1 overflow-y-auto px-3 space-y-0.5">
               {chats.length === 0 ? (
-                <div className="text-center py-12">
-                  <MessageSquare className={`w-10 h-10 mx-auto mb-3 ${isDark ? 'text-zinc-700' : 'text-zinc-300'}`} />
-                  <p className={`text-sm ${isDark ? 'text-zinc-600' : 'text-zinc-400'}`}>Нет чатов</p>
-                  <p className={`text-xs mt-1 ${isDark ? 'text-zinc-700' : 'text-zinc-400'}`}>Начни новый диалог</p>
+                <div className="text-center py-16">
+                  <div className={`w-14 h-14 mx-auto mb-4 rounded-2xl flex items-center justify-center ${isDark ? 'glass-card' : 'bg-black/[0.03]'}`}>
+                    <MessageSquare className={`w-6 h-6 ${isDark ? 'text-zinc-600' : 'text-zinc-300'}`} />
+                  </div>
+                  <p className={`text-[13px] font-medium ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>Нет чатов</p>
+                  <p className={`text-[11px] mt-1 ${isDark ? 'text-zinc-600' : 'text-zinc-400'}`}>Начни новый диалог</p>
                 </div>
               ) : (
                 chats.map((chat) => {
@@ -226,12 +230,12 @@ export function Sidebar() {
                   return (
                     <motion.div
                       key={chat.id}
-                      initial={{ opacity: 0, x: -12 }}
+                      initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
                       className={`group relative rounded-xl transition-all cursor-pointer ${
                         isActive
-                          ? isDark ? 'bg-white/[0.08]' : 'bg-white shadow-sm'
-                          : isDark ? 'hover:bg-white/[0.04]' : 'hover:bg-white/60'
+                          ? isDark ? 'bg-white/[0.06] border border-white/[0.08]' : 'bg-white border border-black/[0.06] shadow-sm'
+                          : isDark ? 'hover:bg-white/[0.03] border border-transparent' : 'hover:bg-black/[0.02] border border-transparent'
                       }`}
                     >
                       <div className="flex items-center">
@@ -242,10 +246,10 @@ export function Sidebar() {
                           <div className="flex items-center gap-2.5">
                             <MessageSquare className={`w-4 h-4 flex-shrink-0 ${
                               isActive
-                                ? isDark ? 'text-white' : 'text-black'
+                                ? 'text-[#3b82f6]'
                                 : isDark ? 'text-zinc-600' : 'text-zinc-400'
                             }`} />
-                            <p className={`text-sm truncate ${
+                            <p className={`text-[13px] truncate ${
                               isActive
                                 ? isDark ? 'text-white font-medium' : 'text-black font-medium'
                                 : isDark ? 'text-zinc-400' : 'text-zinc-600'
@@ -260,7 +264,7 @@ export function Sidebar() {
                           whileTap={{ scale: 0.9 }}
                           onClick={(e) => { e.stopPropagation(); handleDeleteChat(chat.id); }}
                           className={`flex-shrink-0 p-2 mr-1 rounded-lg transition-all ${
-                            isDark ? 'hover:bg-red-500/15' : 'hover:bg-red-50'
+                            isDark ? 'hover:bg-red-500/10' : 'hover:bg-red-50'
                           } ${isTouchDevice ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
                         >
                           <Trash2 className="w-3.5 h-3.5 text-red-400" />
@@ -273,36 +277,30 @@ export function Sidebar() {
             </div>
 
             {/* Bottom panel */}
-            <div className={`p-4 border-t ${isDark ? 'border-white/[0.06]' : 'border-black/[0.06]'}`}>
+            <div className={`p-4 border-t ${isDark ? 'border-white/[0.04]' : 'border-black/[0.04]'}`}>
               {isAuthenticated ? (
                 <div
                   onClick={() => setActiveModal('profile')}
-                  className={`flex items-center gap-3 px-2 py-2 rounded-xl cursor-pointer mb-4 transition-colors ${
-                    isDark ? 'hover:bg-white/[0.04]' : 'hover:bg-black/[0.03]'
+                  className={`flex items-center gap-3 px-2 py-2.5 rounded-xl cursor-pointer mb-4 transition-colors ${
+                    isDark ? 'hover:bg-white/[0.04]' : 'hover:bg-black/[0.02]'
                   }`}
                 >
                   <img
-                    src={user?.avatar}
+                    src={getUserAvatar()}
                     alt={user?.name}
-                    className={`w-10 h-10 rounded-full flex-shrink-0 object-cover border-2 ${
-                      isDark ? 'border-white/10' : 'border-black/[0.06]'
-                    }`}
+                    className="w-10 h-10 rounded-full flex-shrink-0 object-cover ring-2 ring-white/10"
                   />
                   <div className="flex-1 min-w-0">
-                    <p className={`text-sm font-medium truncate ${isDark ? 'text-white' : 'text-black'}`}>{user?.name}</p>
+                    <p className={`text-[13px] font-medium truncate ${isDark ? 'text-white' : 'text-black'}`}>{user?.name}</p>
                     <p className={`text-[11px] truncate ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>{user?.email}</p>
                   </div>
                 </div>
               ) : (
                 <div className="mb-4">
                   <div className="flex items-center gap-3 px-2 py-2 mb-3">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
-                      isDark ? 'bg-zinc-800 border border-white/[0.06]' : 'bg-zinc-100 border border-black/[0.06]'
-                    }`}>
-                      <span className="text-zinc-500 text-sm">👤</span>
-                    </div>
+                    <img src={DEFAULT_AVATAR} alt="Guest" className="w-10 h-10 rounded-full flex-shrink-0 object-cover ring-2 ring-white/10" />
                     <div className="flex-1 min-w-0">
-                      <p className={`text-sm font-medium ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>Гость</p>
+                      <p className={`text-[13px] font-medium ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>Гость</p>
                       <p className={`text-[11px] ${isDark ? 'text-zinc-600' : 'text-zinc-400'}`}>Безлимитный доступ</p>
                     </div>
                   </div>
@@ -310,11 +308,7 @@ export function Sidebar() {
                     whileHover={{ scale: 1.01 }}
                     whileTap={{ scale: 0.99 }}
                     onClick={() => setActiveModal('auth')}
-                    className={`w-full py-2.5 rounded-xl text-sm font-medium transition-all ${
-                      isDark
-                        ? 'bg-white/[0.06] border border-white/[0.08] text-white hover:bg-white/[0.1]'
-                        : 'bg-black text-white hover:bg-zinc-800'
-                    }`}
+                    className="w-full py-2.5 rounded-xl text-[13px] font-medium transition-all bg-[#3b82f6] text-white hover:bg-[#2563eb]"
                   >
                     Войти / Регистрация
                   </motion.button>
@@ -322,17 +316,14 @@ export function Sidebar() {
               )}
 
               <div className="flex items-center gap-3 text-[10px] pl-1">
-                <button onClick={() => setActiveModal('terms')} className={`transition-colors ${isDark ? 'text-zinc-600 hover:text-zinc-400' : 'text-zinc-400 hover:text-zinc-600'}`}>
-                  Terms of Use
-                </button>
-                <span className={isDark ? 'text-zinc-700' : 'text-zinc-300'}>•</span>
-                <button onClick={() => setActiveModal('privacy')} className={`transition-colors ${isDark ? 'text-zinc-600 hover:text-zinc-400' : 'text-zinc-400 hover:text-zinc-600'}`}>
-                  Privacy Policy
-                </button>
-                <span className={isDark ? 'text-zinc-700' : 'text-zinc-300'}>•</span>
-                <button onClick={() => setActiveModal('cookies')} className={`transition-colors ${isDark ? 'text-zinc-600 hover:text-zinc-400' : 'text-zinc-400 hover:text-zinc-600'}`}>
-                  Cookies
-                </button>
+                {(['terms', 'privacy', 'cookies'] as const).map((key, i) => (
+                  <span key={key} className="contents">
+                    {i > 0 && <span className={isDark ? 'text-zinc-700' : 'text-zinc-300'}>•</span>}
+                    <button onClick={() => setActiveModal(key)} className={`transition-colors ${isDark ? 'text-zinc-600 hover:text-zinc-400' : 'text-zinc-400 hover:text-zinc-600'}`}>
+                      {key === 'terms' ? 'Terms' : key === 'privacy' ? 'Privacy' : 'Cookies'}
+                    </button>
+                  </span>
+                ))}
               </div>
             </div>
           </motion.aside>
@@ -345,46 +336,43 @@ export function Sidebar() {
       <AnimatePresence>
         {activeModal === 'profile' && (
           <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setActiveModal(null)} className="fixed inset-0 bg-black/60 backdrop-blur-md z-[60]" />
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setActiveModal(null)} className="fixed inset-0 bg-black/50 backdrop-blur-md z-[60]" />
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className={`fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[340px] rounded-2xl z-[70] overflow-hidden border ${
-                isDark ? 'bg-[#1c1c1e] border-white/[0.08]' : 'bg-white border-black/[0.06] shadow-xl'
+              className={`fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[340px] rounded-2xl z-[70] overflow-hidden ${
+                isDark ? 'bg-[#161616] border border-white/[0.08]' : 'bg-white border border-black/[0.06] shadow-2xl'
               }`}
             >
-              <div className={`flex items-center justify-between px-5 py-4 border-b ${isDark ? 'border-white/[0.06]' : 'border-black/[0.04]'}`}>
-                <h2 className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-black'}`}>Профиль</h2>
-                <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => setActiveModal(null)} className={`p-1.5 rounded-md ${isDark ? 'hover:bg-white/[0.06]' : 'hover:bg-black/[0.04]'}`}>
+              <div className={`flex items-center justify-between px-5 py-4 border-b ${isDark ? 'border-white/[0.05]' : 'border-black/[0.04]'}`}>
+                <h2 className={`text-[14px] font-semibold ${isDark ? 'text-white' : 'text-black'}`}>Профиль</h2>
+                <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => setActiveModal(null)}>
                   <X className={`w-4 h-4 ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`} />
                 </motion.button>
               </div>
               <div className="px-5 py-6">
                 <div className="flex items-center gap-4 mb-6">
                   <div className="relative group flex-shrink-0">
-                    <img src={user?.avatar} alt={user?.name} className={`w-16 h-16 rounded-full object-cover border-2 ${isDark ? 'border-white/10' : 'border-black/[0.06]'}`} />
+                    <img src={getUserAvatar()} alt={user?.name} className="w-16 h-16 rounded-full object-cover ring-2 ring-white/10" />
                     <button onClick={() => fileInputRef.current?.click()} className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                       <Camera className="w-5 h-5 text-white" />
                     </button>
                   </div>
                   <div className="min-w-0">
-                    <p className={`text-base font-semibold truncate ${isDark ? 'text-white' : 'text-black'}`}>{user?.name}</p>
-                    <p className={`text-xs truncate ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>{user?.email}</p>
+                    <p className={`text-[15px] font-semibold truncate ${isDark ? 'text-white' : 'text-black'}`}>{user?.name}</p>
+                    <p className={`text-[12px] truncate ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>{user?.email}</p>
                   </div>
                 </div>
                 <motion.button
-                  whileHover={{ scale: 1.01 }}
-                  whileTap={{ scale: 0.99 }}
+                  whileTap={{ scale: 0.98 }}
                   onClick={() => { logout(); setActiveModal(null); }}
                   className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl transition-all ${
-                    isDark
-                      ? 'bg-red-500/10 border border-red-500/15 hover:bg-red-500/20'
-                      : 'bg-red-50 border border-red-200 hover:bg-red-100'
+                    isDark ? 'bg-red-500/10 hover:bg-red-500/15 border border-red-500/10' : 'bg-red-50 hover:bg-red-100 border border-red-100'
                   }`}
                 >
                   <LogOut className="w-4 h-4 text-red-400" />
-                  <span className="text-sm text-red-400 font-medium">Выйти из аккаунта</span>
+                  <span className="text-[13px] text-red-400 font-medium">Выйти из аккаунта</span>
                 </motion.button>
               </div>
             </motion.div>
@@ -392,27 +380,27 @@ export function Sidebar() {
         )}
       </AnimatePresence>
 
-      {/* Auth modal */}
+      {/* Auth */}
       <AnimatePresence>
         {activeModal === 'auth' && <AuthModal onClose={() => setActiveModal(null)} isDark={isDark} />}
       </AnimatePresence>
 
-      {/* Document modals */}
+      {/* Docs */}
       <AnimatePresence>
         {activeModal && activeModal !== 'profile' && activeModal !== 'auth' && (
           <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setActiveModal(null)} className="fixed inset-0 bg-black/60 backdrop-blur-md z-[60]" />
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setActiveModal(null)} className="fixed inset-0 bg-black/50 backdrop-blur-md z-[60]" />
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className={`fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[480px] max-w-[calc(100vw-32px)] max-h-[85vh] rounded-2xl z-[70] flex flex-col overflow-hidden border ${
-                isDark ? 'bg-[#1c1c1e] border-white/[0.08]' : 'bg-white border-black/[0.06] shadow-xl'
+              className={`fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[480px] max-w-[calc(100vw-32px)] max-h-[85vh] rounded-2xl z-[70] flex flex-col overflow-hidden ${
+                isDark ? 'bg-[#161616] border border-white/[0.08]' : 'bg-white border border-black/[0.06] shadow-2xl'
               }`}
             >
-              <div className={`flex items-center justify-between px-6 py-4 border-b ${isDark ? 'border-white/[0.06]' : 'border-black/[0.04]'}`}>
-                <h2 className={`text-base font-bold ${isDark ? 'text-white' : 'text-black'}`}>{MODAL_CONTENT[activeModal].title}</h2>
-                <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => setActiveModal(null)} className={`p-1.5 rounded-md ${isDark ? 'hover:bg-white/[0.06]' : 'hover:bg-black/[0.04]'}`}>
+              <div className={`flex items-center justify-between px-6 py-4 border-b ${isDark ? 'border-white/[0.05]' : 'border-black/[0.04]'}`}>
+                <h2 className={`text-[15px] font-bold ${isDark ? 'text-white' : 'text-black'}`}>{MODAL_CONTENT[activeModal].title}</h2>
+                <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => setActiveModal(null)}>
                   <X className={`w-4 h-4 ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`} />
                 </motion.button>
               </div>
@@ -420,9 +408,9 @@ export function Sidebar() {
                 <div className="space-y-4">
                   {MODAL_CONTENT[activeModal].content.map((block, i) => {
                     if (block.type === 'meta') return <p key={i} className={`text-[11px] italic ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>{block.text}</p>;
-                    if (block.type === 'copyright') return <p key={i} className={`text-[11px] font-medium pt-3 mt-4 border-t ${isDark ? 'text-zinc-600 border-white/[0.06]' : 'text-zinc-400 border-black/[0.04]'}`}>{block.text}</p>;
+                    if (block.type === 'copyright') return <p key={i} className={`text-[11px] font-medium pt-3 mt-4 border-t ${isDark ? 'text-zinc-600 border-white/[0.05]' : 'text-zinc-400 border-black/[0.04]'}`}>{block.text}</p>;
                     if (block.type === 'important') return (
-                      <div key={i} className={`px-4 py-3 rounded-xl ${isDark ? 'bg-[#2196F3]/10 border border-[#2196F3]/15' : 'bg-blue-50 border border-blue-200'}`}>
+                      <div key={i} className={`px-4 py-3 rounded-xl ${isDark ? 'glass-card' : 'bg-blue-50 border border-blue-100'}`}>
                         <p className={`text-[12px] leading-relaxed font-medium ${isDark ? 'text-blue-300' : 'text-blue-700'}`}>{block.text}</p>
                       </div>
                     );
@@ -435,16 +423,11 @@ export function Sidebar() {
                   })}
                 </div>
               </div>
-              <div className={`px-6 py-4 border-t ${isDark ? 'border-white/[0.06]' : 'border-black/[0.04]'}`}>
+              <div className={`px-6 py-4 border-t ${isDark ? 'border-white/[0.05]' : 'border-black/[0.04]'}`}>
                 <motion.button
-                  whileHover={{ scale: 1.01 }}
-                  whileTap={{ scale: 0.99 }}
+                  whileTap={{ scale: 0.98 }}
                   onClick={() => setActiveModal(null)}
-                  className={`w-full py-3 rounded-xl text-sm font-medium transition-all ${
-                    isDark
-                      ? 'bg-white/[0.06] border border-white/[0.08] text-white hover:bg-white/[0.1]'
-                      : 'bg-black text-white hover:bg-zinc-800'
-                  }`}
+                  className="w-full py-3 rounded-xl text-[13px] font-medium transition-all bg-[#3b82f6] text-white hover:bg-[#2563eb]"
                 >
                   Понятно
                 </motion.button>
@@ -457,7 +440,7 @@ export function Sidebar() {
   );
 }
 
-// Auth Modal
+// ===== AUTH MODAL =====
 type AuthStep = 'form' | 'verify';
 
 function AuthModal({ onClose, isDark }: { onClose: () => void; isDark: boolean }) {
@@ -473,51 +456,38 @@ function AuthModal({ onClose, isDark }: { onClose: () => void; isDark: boolean }
   const [turnstileToken, setTurnstileToken] = useState('');
   const [countdown, setCountdown] = useState(0);
   const codeInputsRef = useRef<(HTMLInputElement | null)[]>([]);
-
   const { register, login, sendVerificationCode, verifyCode } = useAuthStore();
 
   useEffect(() => {
     if (countdown > 0) { const t = setTimeout(() => setCountdown(countdown - 1), 1000); return () => clearTimeout(t); }
   }, [countdown]);
 
-  const inputClass = `w-full h-12 px-4 rounded-xl text-sm focus:outline-none transition-all ${
-    isDark
-      ? 'bg-white/[0.06] border border-white/[0.08] text-white placeholder-zinc-500 focus:border-[#2196F3]/50 focus:bg-white/[0.08]'
-      : 'bg-[#f2f2f7] border border-black/[0.06] text-black placeholder-zinc-400 focus:border-[#007AFF]/40 focus:bg-white'
+  const inputClass = `w-full h-12 px-4 rounded-xl text-[14px] transition-all glass-input ${
+    isDark ? 'text-white placeholder-zinc-500' : 'text-black placeholder-zinc-400'
   }`;
 
   const handleSubmit = async () => {
     setError('');
     if (!email.trim()) { setError('Введи email'); return; }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setError('Некорректный email'); return; }
-
     if (mode === 'register') {
       if (!name.trim() || name.trim().length < 2) { setError('Имя слишком короткое'); return; }
       if (!password || password.length < 6) { setError('Пароль минимум 6 символов'); return; }
       const DOMAINS = ['gmail.com','yahoo.com','outlook.com','hotmail.com','mail.ru','yandex.ru','ya.ru','icloud.com','protonmail.com','proton.me','bk.ru','inbox.ru','list.ru','rambler.ru','live.com','aol.com','zoho.com','gmx.com','tutanota.com','fastmail.com','me.com','mac.com','msn.com','qq.com','163.com','ukr.net','i.ua','meta.ua','email.ua','bigmir.net'];
       const domain = email.split('@')[1]?.toLowerCase();
       if (!domain || !DOMAINS.includes(domain)) { setError('Используй настоящий email'); return; }
-    } else {
-      if (!password) { setError('Введи пароль'); return; }
-    }
-
+    } else { if (!password) { setError('Введи пароль'); return; } }
     if (!turnstileToken) { setError('Пройди проверку безопасности'); return; }
-
     setIsLoading(true);
-
     if (mode === 'login') {
-      try {
-        const res = await login(email, password);
-        if (!res.success) { setError(res.error || 'Ошибка входа'); setIsLoading(false); return; }
-        setIsLoading(false); onClose();
-      } catch { setError('Ошибка сети'); setIsLoading(false); }
+      try { const res = await login(email, password); if (!res.success) { setError(res.error || 'Ошибка входа'); setIsLoading(false); return; } setIsLoading(false); onClose(); }
+      catch { setError('Ошибка сети'); setIsLoading(false); }
       return;
     }
-
     try {
       const res = await sendVerificationCode(email, turnstileToken);
       if (res.success) { setStep('verify'); setCountdown(60); setCode(''); setError(''); setTimeout(() => codeInputsRef.current[0]?.focus(), 100); }
-      else setError(res.error || 'Ошибка отправки кода');
+      else setError(res.error || 'Ошибка');
     } catch { setError('Ошибка сети'); }
     setIsLoading(false);
   };
@@ -530,7 +500,7 @@ function AuthModal({ onClose, isDark }: { onClose: () => void; isDark: boolean }
       const v = await verifyCode(email, code);
       if (!v.success) { setError(v.error || 'Неверный код'); setIsLoading(false); return; }
       const r = await register(name, email, password);
-      if (!r.success) { setError(r.error || 'Ошибка регистрации'); setIsLoading(false); return; }
+      if (!r.success) { setError(r.error || 'Ошибка'); setIsLoading(false); return; }
       setIsLoading(false); onClose();
     } catch { setError('Ошибка сети'); setIsLoading(false); }
   };
@@ -556,128 +526,90 @@ function AuthModal({ onClose, isDark }: { onClose: () => void; isDark: boolean }
   const handleResend = async () => {
     if (countdown > 0) return;
     setIsLoading(true); setError('');
-    try {
-      const res = await sendVerificationCode(email, turnstileToken || 'resend');
-      if (res.success) { setCountdown(60); setCode(''); }
-      else setError(res.error || 'Ошибка');
-    } catch { setError('Ошибка сети'); }
+    try { const res = await sendVerificationCode(email, turnstileToken || 'resend'); if (res.success) { setCountdown(60); setCode(''); } else setError(res.error || 'Ошибка'); }
+    catch { setError('Ошибка сети'); }
     setIsLoading(false);
   };
 
   return (
     <>
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="fixed inset-0 bg-black/60 backdrop-blur-md z-[60]" />
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="fixed inset-0 bg-black/50 backdrop-blur-md z-[60]" />
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        className={`fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[420px] max-w-[calc(100vw-32px)] rounded-2xl z-[70] overflow-hidden border ${
-          isDark ? 'bg-[#1c1c1e] border-white/[0.08]' : 'bg-white border-black/[0.06] shadow-xl'
+        className={`fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[420px] max-w-[calc(100vw-32px)] rounded-2xl z-[70] overflow-hidden ${
+          isDark ? 'bg-[#161616] border border-white/[0.08]' : 'bg-white border border-black/[0.06] shadow-2xl'
         }`}
       >
         <AnimatePresence mode="wait">
           {step === 'form' && (
             <motion.div key="form" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="p-6">
-              {/* Tabs */}
-              <div className={`flex rounded-xl p-1 mb-6 ${isDark ? 'bg-white/[0.06]' : 'bg-[#f2f2f7]'}`}>
+              <div className={`flex rounded-xl p-1 mb-6 ${isDark ? 'glass-card' : 'bg-[#f0f0f0]'}`}>
                 {(['login', 'register'] as const).map(m => (
                   <button key={m} type="button" onClick={() => { setMode(m); setError(''); }}
-                    className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                    className={`flex-1 py-2.5 rounded-lg text-[13px] font-medium transition-all ${
                       mode === m
-                        ? isDark ? 'bg-white/[0.12] text-white' : 'bg-white text-black shadow-sm'
+                        ? isDark ? 'bg-white/[0.1] text-white shadow-sm' : 'bg-white text-black shadow-sm'
                         : isDark ? 'text-zinc-400 hover:text-white' : 'text-zinc-500 hover:text-black'
                     }`}
-                  >
-                    {m === 'login' ? 'Вход' : 'Регистрация'}
-                  </button>
+                  >{m === 'login' ? 'Вход' : 'Регистрация'}</button>
                 ))}
               </div>
 
               {error && (
-                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className={`mb-4 px-4 py-3 rounded-xl ${isDark ? 'bg-red-500/10 border border-red-500/15' : 'bg-red-50 border border-red-200'}`}>
-                  <span className="text-sm text-red-400">{error}</span>
+                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}
+                  className={`mb-4 px-4 py-3 rounded-xl ${isDark ? 'bg-red-500/8 border border-red-500/10' : 'bg-red-50 border border-red-100'}`}
+                >
+                  <span className="text-[13px] text-red-400">{error}</span>
                 </motion.div>
               )}
 
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {mode === 'register' && <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Имя" className={inputClass} />}
                 <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Email" className={inputClass} />
                 <div className="relative">
                   <input type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') handleSubmit(); }} placeholder="Пароль" className={`${inputClass} pr-12`} />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)} className={`absolute right-4 top-1/2 -translate-y-1/2 ${isDark ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-400 hover:text-zinc-600'} transition-colors`}>
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className={`absolute right-4 top-1/2 -translate-y-1/2 transition-colors ${isDark ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-400 hover:text-zinc-600'}`}>
                     <span className="text-lg">{showPassword ? '🙈' : '👁'}</span>
                   </button>
                 </div>
-
                 <div className="flex justify-center py-2">
-                  <Turnstile
-                    siteKey={TURNSTILE_SITE_KEY}
-                    onSuccess={t => setTurnstileToken(t)}
-                    onError={() => setTurnstileToken('')}
-                    onExpire={() => setTurnstileToken('')}
-                    options={{ theme: isDark ? 'dark' : 'light', size: 'flexible' }}
-                  />
+                  <Turnstile siteKey={TURNSTILE_SITE_KEY} onSuccess={t => setTurnstileToken(t)} onError={() => setTurnstileToken('')} onExpire={() => setTurnstileToken('')} options={{ theme: isDark ? 'dark' : 'light', size: 'flexible' }} />
                 </div>
-
-                <motion.button type="button" disabled={isLoading} whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }} onClick={handleSubmit}
-                  className={`w-full h-12 rounded-xl font-medium text-sm transition-all disabled:opacity-50 flex items-center justify-center gap-2 ${
-                    isDark
-                      ? 'bg-white text-black hover:bg-zinc-200'
-                      : 'bg-black text-white hover:bg-zinc-800'
-                  }`}
-                >
-                  {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <span>{mode === 'login' ? 'Войти' : 'Продолжить'}</span>}
-                </motion.button>
+                <motion.button type="button" disabled={isLoading} whileTap={{ scale: 0.98 }} onClick={handleSubmit}
+                  className="w-full h-12 rounded-xl font-medium text-[14px] transition-all disabled:opacity-50 flex items-center justify-center gap-2 bg-[#3b82f6] text-white hover:bg-[#2563eb]"
+                >{isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <span>{mode === 'login' ? 'Войти' : 'Продолжить'}</span>}</motion.button>
               </div>
             </motion.div>
           )}
 
           {step === 'verify' && (
             <motion.div key="verify" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="p-6">
-              <p className={`text-sm text-center mb-5 ${isDark ? 'text-zinc-400' : 'text-zinc-500'}`}>
-                Код отправлен на <span className={isDark ? 'text-white' : 'text-black'}>{email}</span>
+              <p className={`text-[13px] text-center mb-5 ${isDark ? 'text-zinc-400' : 'text-zinc-500'}`}>
+                Код отправлен на <span className={isDark ? 'text-white font-medium' : 'text-black font-medium'}>{email}</span>
               </p>
-
               {error && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className={`mb-4 px-4 py-3 rounded-xl ${isDark ? 'bg-red-500/10 border border-red-500/15' : 'bg-red-50 border border-red-200'}`}>
-                  <span className="text-sm text-red-400">{error}</span>
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className={`mb-4 px-4 py-3 rounded-xl ${isDark ? 'bg-red-500/8 border border-red-500/10' : 'bg-red-50 border border-red-100'}`}>
+                  <span className="text-[13px] text-red-400">{error}</span>
                 </motion.div>
               )}
-
               <div className="flex justify-center gap-2 mb-6" onPaste={handlePaste}>
                 {Array.from({ length: 6 }).map((_, i) => (
                   <input key={i} ref={el => { codeInputsRef.current[i] = el; }} type="text" inputMode="numeric" maxLength={1} value={code[i] || ''}
                     onChange={e => handleCodeChange(i, e.target.value)} onKeyDown={e => handleCodeKey(i, e)}
-                    className={`w-12 h-14 text-center text-xl font-bold rounded-xl focus:outline-none transition-all ${
-                      isDark
-                        ? 'bg-white/[0.06] border border-white/[0.08] text-white focus:border-[#2196F3] focus:bg-white/[0.08]'
-                        : 'bg-[#f2f2f7] border border-black/[0.06] text-black focus:border-[#007AFF] focus:bg-white'
-                    }`}
+                    className={`w-12 h-14 text-center text-xl font-bold rounded-xl transition-all glass-input ${isDark ? 'text-white' : 'text-black'}`}
                   />
                 ))}
               </div>
-
-              <motion.button type="button" disabled={isLoading || code.length !== 6} whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }} onClick={handleVerify}
-                className={`w-full h-12 rounded-xl font-medium text-sm transition-all disabled:opacity-50 flex items-center justify-center gap-2 mb-4 ${
-                  isDark ? 'bg-white text-black hover:bg-zinc-200' : 'bg-black text-white hover:bg-zinc-800'
-                }`}
-              >
-                {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Подтвердить'}
-              </motion.button>
-
+              <motion.button type="button" disabled={isLoading || code.length !== 6} whileTap={{ scale: 0.98 }} onClick={handleVerify}
+                className="w-full h-12 rounded-xl font-medium text-[14px] transition-all disabled:opacity-50 flex items-center justify-center gap-2 mb-4 bg-[#3b82f6] text-white hover:bg-[#2563eb]"
+              >{isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Подтвердить'}</motion.button>
               <div className="flex items-center justify-between">
-                <button type="button" onClick={() => { setStep('form'); setCode(''); setError(''); }} className={`text-sm transition-colors ${isDark ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-400 hover:text-zinc-600'}`}>
-                  ← Назад
-                </button>
+                <button type="button" onClick={() => { setStep('form'); setCode(''); setError(''); }} className={`text-[13px] ${isDark ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-400 hover:text-zinc-600'} transition-colors`}>← Назад</button>
                 <button type="button" onClick={handleResend} disabled={countdown > 0 || isLoading}
-                  className={`text-sm transition-colors ${
-                    countdown > 0
-                      ? isDark ? 'text-zinc-600 cursor-not-allowed' : 'text-zinc-400 cursor-not-allowed'
-                      : isDark ? 'text-[#2196F3] hover:text-[#64B5F6]' : 'text-[#007AFF] hover:text-[#0066CC]'
-                  }`}
-                >
-                  {countdown > 0 ? `Повторить через ${countdown}с` : 'Отправить снова'}
-                </button>
+                  className={`text-[13px] transition-colors ${countdown > 0 ? isDark ? 'text-zinc-600' : 'text-zinc-400' : 'text-[#3b82f6] hover:text-[#60a5fa]'}`}
+                >{countdown > 0 ? `Повторить через ${countdown}с` : 'Отправить снова'}</button>
               </div>
             </motion.div>
           )}

@@ -38,12 +38,16 @@ function setCache(text: string, rudeness: string): void {
 
 function cleanGreeting(text: string): string {
   let c = text.trim();
-  c = c.replace(/^["«»"'`]+|["«»"'`]+$/g, '');
+  c = c.replace(/<think>[\s\S]*?<\/think>/gi, '');
+  c = c.replace(/<thinking>[\s\S]*?<\/thinking>/gi, '');
+  c = c.replace(/^["«»"'`\s]+|["«»"'`\s]+$/g, '');
   c = c.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}]/gu, '');
-  c = c.replace(/MoSeek/gi, '').replace(/MoGPT/gi, '');
   c = c.replace(/\s{2,}/g, ' ').trim();
-  if (c.split('\n').length > 1) c = c.split('\n')[0].trim();
-  if (c.length < 3 || c.length > 80) return '';
+  if (c.includes('\n')) c = c.split('\n').filter(l => l.trim().length > 0)[0]?.trim() || '';
+  if (c.endsWith(':')) c = c.slice(0, -1).trim();
+  if (c.startsWith('Приветствие:')) c = c.replace('Приветствие:', '').trim();
+  if (c.startsWith('Приветствие')) c = c.replace('Приветствие', '').trim();
+  c = c.replace(/^[-—:\s]+/, '').trim();
   return c;
 }
 
@@ -56,38 +60,73 @@ async function generateGreeting(rudeness: string): Promise<string> {
   else timeContext = 'ночь';
 
   const toneMap: Record<string, string> = {
-    polite: `Сейчас ${timeContext}. Сгенерируй одно короткое уникальное приветствие (3-8 слов) для главного экрана AI-чата. Вежливое, уверенное, с характером. Учти время суток если уместно. Без имён, без эмодзи, без кавычек, без пояснений. Только сама фраза. На русском. Каждый раз придумывай новое, не повторяйся. Примеры стиля: дружелюбно-деловой, с лёгким юмором, мотивирующий.`,
-    rude: `Сейчас ${timeContext}. Сгенерируй одно короткое уникальное наглое приветствие (3-8 слов) для главного экрана AI-чата. Дерзкое, развязное, с характером. Учти время суток если уместно. Без имён, без эмодзи, без кавычек, без пояснений. Только сама фраза. На русском. Каждый раз новое. Стиль: нагловатый но не злой, подъёбывающий.`,
-    very_rude: `Сейчас ${timeContext}. Сгенерируй одно короткое уникальное грубое приветствие (3-8 слов) для главного экрана AI-чата. Агрессивное, с лёгким матом, с характером. Учти время суток если уместно. Без имён, без эмодзи, без кавычек, без пояснений. Только сама фраза. На русском. Каждый раз новое. Стиль: токсичный гений которого разбудили.`,
+    polite: `Сейчас ${timeContext}. Придумай одну короткую фразу-приветствие для экрана чата. 3-8 слов. Вежливо, с характером. Можешь учесть время суток. Ответь ТОЛЬКО фразой, без кавычек, без пояснений, без эмодзи. Пример формата: Готов помочь, давай начнём`,
+    rude: `Сейчас ${timeContext}. Придумай одну короткую дерзкую фразу-приветствие для экрана чата. 3-8 слов. Нагло, развязно. Можешь учесть время суток. Ответь ТОЛЬКО фразой, без кавычек, без пояснений, без эмодзи. Пример формата: Ну давай, излагай уже`,
+    very_rude: `Сейчас ${timeContext}. Придумай одну короткую грубую фразу-приветствие для экрана чата. 3-8 слов. Агрессивно, можно лёгкий мат. Можешь учесть время суток. Ответь ТОЛЬКО фразой, без кавычек, без пояснений, без эмодзи. Пример формата: Чё уставился, пиши давай`,
   };
 
-  const res = await fetch(OPENROUTER_API_URL, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${_k()}`,
-      'Content-Type': 'application/json',
-      'HTTP-Referer': window.location.origin,
-      'X-Title': 'MoGPT',
-    },
-    body: JSON.stringify({
-      model: DEFAULT_MODEL,
-      messages: [
-        { role: 'system', content: toneMap[rudeness] || toneMap.rude },
-        { role: 'user', content: 'Приветствие:' },
-      ],
-      max_tokens: 40,
-      temperature: 1.0,
-    }),
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10000);
 
-  if (!res.ok) throw new Error(`API ${res.status}`);
-  const data = await res.json();
-  const content = data.choices?.[0]?.message?.content?.trim();
-  if (!content) throw new Error('Empty');
-  const cleaned = cleanGreeting(content);
-  if (!cleaned) throw new Error('Bad');
-  return cleaned;
+  try {
+    const res = await fetch(OPENROUTER_API_URL, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${_k()}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': window.location.origin,
+        'X-Title': 'MoGPT',
+      },
+      body: JSON.stringify({
+        model: DEFAULT_MODEL,
+        messages: [
+          { role: 'user', content: toneMap[rudeness] || toneMap.rude },
+        ],
+        max_tokens: 50,
+        temperature: 0.9,
+      }),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeout);
+
+    if (!res.ok) {
+      const errText = await res.text().catch(() => '');
+      console.warn('[WelcomeScreen] API error:', res.status, errText);
+      throw new Error(`API ${res.status}`);
+    }
+
+    const data = await res.json();
+    console.log('[WelcomeScreen] Raw response:', data);
+
+    const content = data.choices?.[0]?.message?.content;
+    if (!content || typeof content !== 'string') {
+      console.warn('[WelcomeScreen] No content in response');
+      throw new Error('No content');
+    }
+
+    const cleaned = cleanGreeting(content);
+    console.log('[WelcomeScreen] Cleaned:', JSON.stringify(cleaned));
+
+    if (cleaned.length < 2) {
+      console.warn('[WelcomeScreen] Greeting too short after cleaning, using raw');
+      const rawClean = content.trim().split('\n')[0].replace(/^["«»"'`]+|["«»"'`]+$/g, '').trim();
+      if (rawClean.length >= 2) return rawClean;
+      throw new Error('Empty after clean');
+    }
+
+    return cleaned;
+  } catch (e) {
+    clearTimeout(timeout);
+    throw e;
+  }
 }
+
+const EMERGENCY_FALLBACKS: Record<string, string> = {
+  polite: 'Чем могу помочь?',
+  rude: 'Ну давай, излагай.',
+  very_rude: 'Чё надо, блять?',
+};
 
 export function WelcomeScreen() {
   const [text, setText] = useState('');
@@ -110,14 +149,18 @@ export function WelcomeScreen() {
     setLoading(true);
 
     const attempt = async (retries: number): Promise<string> => {
+      let lastError: Error | null = null;
       for (let i = 0; i < retries; i++) {
         try {
-          return await generateGreeting(rudenessMode);
-        } catch {
-          if (i < retries - 1) await new Promise(r => setTimeout(r, 500 * (i + 1)));
+          const result = await generateGreeting(rudenessMode);
+          return result;
+        } catch (e) {
+          lastError = e as Error;
+          console.warn(`[WelcomeScreen] Attempt ${i + 1}/${retries} failed:`, e);
+          if (i < retries - 1) await new Promise(r => setTimeout(r, 800 * (i + 1)));
         }
       }
-      throw new Error('All retries failed');
+      throw lastError || new Error('Failed');
     };
 
     attempt(3)
@@ -129,7 +172,8 @@ export function WelcomeScreen() {
       })
       .catch(() => {
         if (cancelled) return;
-        setText('...');
+        const fallback = EMERGENCY_FALLBACKS[rudenessMode] || EMERGENCY_FALLBACKS.rude;
+        setText(fallback);
         setLoading(false);
       });
 
@@ -148,14 +192,14 @@ export function WelcomeScreen() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="flex items-center gap-1.5"
+          className="flex items-center gap-2"
         >
           {[0, 1, 2].map((i) => (
             <motion.div
               key={i}
-              className={`w-2 h-2 rounded-full ${isDark ? 'bg-violet-400/60' : 'bg-violet-500/40'}`}
-              animate={{ y: [0, -8, 0], opacity: [0.4, 1, 0.4] }}
-              transition={{ duration: 0.8, repeat: Infinity, delay: i * 0.15, ease: 'easeInOut' }}
+              className={`w-2.5 h-2.5 rounded-full ${isDark ? 'bg-violet-400/60' : 'bg-violet-500/40'}`}
+              animate={{ y: [0, -10, 0], opacity: [0.3, 1, 0.3] }}
+              transition={{ duration: 0.9, repeat: Infinity, delay: i * 0.2, ease: 'easeInOut' }}
             />
           ))}
         </motion.div>

@@ -1,19 +1,17 @@
+// src/services/aiService.ts
+
 import type { Message } from '../types';
 import type { ResponseMode, RudenessMode } from '../store/chatStore';
 import { OPENROUTER_API_URL, DEFAULT_MODEL } from '../config/models';
 import { memoryService } from './memoryService';
 import { webSearchService } from './webSearchService';
 
-// ============================================================
-// API KEY (obfuscated)
-// ============================================================
+// --- API Key (obfuscated) ---
 const _0x = [115,107,45,111,114,45,118,49,45];
 const _1x = [48,97,54,57,53,99,52,50,54,53,52,50,56,55,50,98,57,54,100,102,97,97,98,55,51,98,53,53,98,54,49,55,57,50,53,52,56,56,54,99,55,99,52,97,100,52,102,98,100,53,48,56,101,102,48,48,49,97,50,97,100,100,99,52];
 const _k = () => _0x.map(c => String.fromCharCode(c)).join('') + _1x.map(c => String.fromCharCode(c)).join('');
 
-// ============================================================
-// FORBIDDEN CONTENT PATTERNS
-// ============================================================
+// --- Forbidden content patterns (multi-language) ---
 const FORBIDDEN_PATTERNS = [
   /как\s*(сделать|приготовить|синтезировать|варить).*(бомб|взрывчатк|яд|отрав)/i,
   /детск.*порн|cp\b.*детск|педофил/i,
@@ -29,93 +27,7 @@ const FORBIDDEN_PATTERNS = [
   /comment\s*(fabriquer|faire)\s*(bombe|explosif|poison)/i,
 ];
 
-// ============================================================
-// TYPES & INTERFACES
-// ============================================================
-interface ConversationContext {
-  messageCount: number;
-  recentTopics: string[];
-  emotionalTone: 'positive' | 'negative' | 'neutral' | 'frustrated' | 'excited' | 'tired' | 'angry';
-  communicationStyle: 'formal' | 'casual' | 'slang' | 'technical' | 'emotional' | 'mixed';
-  isCodeSession: boolean;
-  hasRepeatedQuestions: boolean;
-  justSwitchedMode: boolean;
-  conversationDepth: 'greeting' | 'shallow' | 'moderate' | 'deep' | 'expert';
-  userBehavior: 'exploring' | 'working' | 'chatting' | 'venting' | 'testing' | 'learning';
-  lastUserMessages: string[];
-  detectedLanguage: string;
-  detectedLanguageName: string;
-  detectedLanguageNative: string;
-  userHasErrors: boolean;
-  recentAssistantMessages: string[];
-  detectedDomain: DomainContext | null;
-  userFlags: UserFlags;
-  topicCategory: TopicCategory;
-}
-
-type TopicCategory =
-  | 'programming'
-  | 'math'
-  | 'science'
-  | 'history'
-  | 'geography'
-  | 'literature'
-  | 'language_learning'
-  | 'philosophy'
-  | 'psychology'
-  | 'economics'
-  | 'law'
-  | 'medicine'
-  | 'cooking'
-  | 'sports'
-  | 'music'
-  | 'art'
-  | 'gaming'
-  | 'technology'
-  | 'politics'
-  | 'relationships'
-  | 'career'
-  | 'education'
-  | 'travel'
-  | 'nature'
-  | 'diy'
-  | 'automotive'
-  | 'finance'
-  | 'real_life'
-  | 'homework'
-  | 'creative_writing'
-  | 'general';
-
-interface DomainContext {
-  domain: string;
-  subdomain?: string;
-  framework?: string;
-  realm?: 'server' | 'client' | 'shared';
-  taskType: 'bug' | 'new_code' | 'explain' | 'review' | 'optimize' | 'refactor' | 'solve' | 'essay' | 'translate' | 'general';
-}
-
-interface UserFlags {
-  wantsDetailed: boolean;
-  wantsBrief: boolean;
-  wantsCodeOnly: boolean;
-  wantsExplanation: boolean;
-  wantsFix: boolean;
-  wantsOptimization: boolean;
-  wantsRefactor: boolean;
-  wantsComparison: boolean;
-  wantsReview: boolean;
-  wantsFromScratch: boolean;
-  wantsStepByStep: boolean;
-  wantsFormula: boolean;
-  wantsTranslation: boolean;
-  wantsEssay: boolean;
-  wantsList: boolean;
-  wantsAdvice: boolean;
-}
-
-// ============================================================
-// LANGUAGE MAP
-// ============================================================
+// --- Language map ---
 const LANGUAGE_MAP: Record<string, { name: string; native: string; endPunctuation: string; direction: 'ltr' | 'rtl' }> = {
   ru: { name: 'русский', native: 'русский', endPunctuation: '.!?', direction: 'ltr' },
   en: { name: 'английский', native: 'English', endPunctuation: '.!?', direction: 'ltr' },
@@ -182,261 +94,145 @@ const LANGUAGE_MAP: Record<string, { name: string; native: string; endPunctuatio
 
 const TEAM_EMAIL = 'energoferon41@gmail.com';
 
-// ============================================================
-// UNIVERSAL KNOWLEDGE BASE — ALL DOMAINS
-// ============================================================
-const KNOWLEDGE_BASE = `You are a UNIVERSAL assistant with DEEP knowledge across ALL domains. You adapt to ANY topic naturally.
+// --- Topic detection for domain-specific knowledge ---
+type TopicDomain =
+  | 'math' | 'physics' | 'chemistry' | 'biology' | 'history' | 'geography'
+  | 'literature' | 'language_learning' | 'philosophy' | 'psychology'
+  | 'economics' | 'law' | 'medicine' | 'music' | 'art'
+  | 'cooking' | 'fitness' | 'relationships' | 'career' | 'finance'
+  | 'gaming' | 'movies' | 'travel' | 'pets' | 'cars' | 'tech_general'
+  | 'programming' | 'web_dev' | 'game_dev' | 'mobile_dev' | 'devops'
+  | 'ai_ml' | 'cybersecurity' | 'databases'
+  | 'life_advice' | 'humor' | 'creative_writing' | 'translation'
+  | 'general';
 
-=== PROGRAMMING & TECHNOLOGY ===
+interface DetectedTopic {
+  domain: TopicDomain;
+  subDomain?: string;
+  confidence: number;
+}
 
-GARRY'S MOD / GLUA:
-- GLua = modified Lua 5.1 on Source Engine. Docs: wiki.facepunch.com/gmod
-- Realms: SERVER (sv_), CLIENT (cl_), SHARED (sh_). Check with "if SERVER then" / "if CLIENT then". AddCSLuaFile() sends files to client.
-- File structure: addons/addon_name/lua/ with autorun/, weapons/, entities/, effects/, vgui/ subdirectories.
-- Namespacing: MyAddon = MyAddon or {} — NEVER pollute _G.
-- Hooks: hook.Add(event, uniqueID, func). UniqueID must be unique like "AddonName_Purpose".
-- Key hooks: Initialize, Think, PlayerSpawn, PlayerDeath, PlayerSay, HUDPaint, HUDShouldDraw, EntityTakeDamage, ShutDown, InitPostEntity, PlayerInitialSpawn.
-- Net library: util.AddNetworkString (SERVER), net.Start/Write*/Send/Broadcast/SendToServer, net.Receive. ALWAYS validate client data + rate limit. WriteTable is slow — use typed Write* methods.
-- NW2 variables preferred over NW. Don't change every frame.
-- Metatables: FindMetaTable("Player"/"Entity"/"Weapon"). Extend with function PLAYER:Method() end.
-- SWEP: shared.lua (params), init.lua (SV: AddCSLuaFile, include), cl_init.lua (CL: include, draw). Methods: Initialize, PrimaryAttack, SecondaryAttack, Reload, Think, Deploy. Use IsFirstTimePredicted() for sounds/effects.
-- SENT: ENT.Type="anim"/"point", ENT.Base="base_gmodentity". SV: Initialize, Use, OnTakeDamage, Think, OnRemove. CL: Draw, DrawTranslucent. PhysicsInit(SOLID_VPHYSICS).
-- VGUI/Derma: vgui.Create("Type", parent). Panels: DFrame, DPanel, DButton, DLabel, DTextEntry, DComboBox, DListView, DScrollPanel. Dock system. MakePopup(), Paint override.
-- HUD: HUDPaint hook. draw.SimpleText, draw.RoundedBox, surface.*, cam.Start3D2D/End3D2D. ScrW(), ScrH().
-- Storage: SQLite (sql.Query, sql.SQLStr for escaping!), file.Write/Read in data/, util.TableToJSON/JSONToTable.
-- DarkRP: DarkRP.createJob, ply:getDarkRPVar("money"), ply:addMoney(), darkrp_modules/, darkrp_config/.
-- Common mistakes: forgetting AddCSLuaFile(), non-unique hook IDs, not checking IsValid, trusting client data, global vars without namespace, wrong net.Read order, heavy ops in Think/HUDPaint.
+interface ProgrammingContext {
+  language: string;
+  framework?: string;
+  realm?: 'server' | 'client' | 'shared';
+  taskType: 'bug' | 'new_code' | 'explain' | 'review' | 'optimize' | 'refactor' | 'general';
+}
 
-GENERAL PROGRAMMING:
-- Lua 5.1-5.4, LuaJIT, Luau (Roblox). Tables, metatables (__index, __newindex, __call), closures, coroutines.
-- Python: Django, Flask, FastAPI, pandas, numpy, pytorch, tensorflow. PEP 8. Virtual environments. Type hints.
-- JavaScript/TypeScript: React, Vue, Angular, Svelte, Next.js, Nuxt, Node.js, Express, Bun, Deno. ESM vs CJS.
-- C#: .NET, ASP.NET, Entity Framework, Unity, Blazor, MAUI. LINQ. async/await patterns.
-- C/C++: STL, smart pointers, RAII, templates. CMake. Unreal Engine. Memory management.
-- Rust: ownership, borrowing, lifetimes, traits. Tokio, Actix, Axum. Cargo.
-- Go: goroutines, channels, interfaces. Gin, Echo, Fiber.
-- Java/Kotlin: Spring Boot, Android, Jetpack Compose. Maven/Gradle.
-- SQL: PostgreSQL, MySQL, SQLite, MongoDB. Query optimization. Indexing. Normalization.
-- GDScript (Godot), Swift, PHP, Ruby, Perl, R, MATLAB, Haskell, Scala, Dart (Flutter).
+interface UserIntent {
+  wantsDetailed: boolean;
+  wantsBrief: boolean;
+  wantsCodeOnly: boolean;
+  wantsExplanation: boolean;
+  wantsFix: boolean;
+  wantsOptimization: boolean;
+  wantsRefactor: boolean;
+  wantsComparison: boolean;
+  wantsReview: boolean;
+  wantsFromScratch: boolean;
+  wantsSolution: boolean;
+  wantsOpinion: boolean;
+  wantsCreative: boolean;
+  wantsTranslation: boolean;
+  wantsStepByStep: boolean;
+}
 
-ARCHITECTURE & PATTERNS:
-- SOLID, DRY, KISS, YAGNI, Composition over Inheritance, Separation of Concerns, Fail Fast.
-- Patterns: Singleton, Factory, Observer, Strategy, Command, State, Adapter, Decorator, Facade, Proxy, MVC, MVP, MVVM.
-- API: REST, GraphQL, WebSocket, gRPC. Status codes. Versioning. Pagination. Rate limiting.
-- DevOps: Docker, Kubernetes, CI/CD, GitHub Actions, nginx, reverse proxy.
-- Cloud: AWS, GCP, Azure basics. Serverless. CDN. Load balancing.
+interface ConversationContext {
+  messageCount: number;
+  recentTopics: DetectedTopic[];
+  emotionalTone: 'positive' | 'negative' | 'neutral' | 'frustrated' | 'excited' | 'tired' | 'angry';
+  communicationStyle: 'formal' | 'casual' | 'slang' | 'technical' | 'emotional' | 'mixed';
+  isCodeSession: boolean;
+  hasRepeatedQuestions: boolean;
+  justSwitchedMode: boolean;
+  conversationDepth: 'greeting' | 'shallow' | 'moderate' | 'deep' | 'expert';
+  userBehavior: 'exploring' | 'working' | 'chatting' | 'venting' | 'testing' | 'learning' | 'homework' | 'creative';
+  lastUserMessages: string[];
+  detectedLanguage: string;
+  detectedLanguageName: string;
+  detectedLanguageNative: string;
+  userHasErrors: boolean;
+  recentAssistantMessages: string[];
+  detectedProgrammingContext: ProgrammingContext | null;
+  userIntent: UserIntent;
+  primaryTopic: DetectedTopic;
+}
 
-SECURITY:
-- OWASP Top 10: Injection, XSS, CSRF, SSRF, Broken Auth.
-- bcrypt/argon2 for passwords. Prepared statements. HTTPS. JWT. CORS. CSP. Rate limiting. Input validation.
+// =============================================
+// UNIVERSAL KNOWLEDGE BASE
+// =============================================
+const KNOWLEDGE_BASE = `You are a UNIVERSAL assistant. You handle ANY topic equally well:
 
-=== MATHEMATICS ===
-- Arithmetic, algebra, geometry, trigonometry, calculus (derivatives, integrals, limits).
-- Linear algebra: matrices, vectors, determinants, eigenvalues.
-- Probability & statistics: distributions, hypothesis testing, regression, Bayes theorem.
-- Discrete math: combinatorics, graph theory, logic, set theory.
-- Number theory: primes, divisibility, modular arithmetic, GCD/LCM.
-- Differential equations, complex analysis, topology basics.
-- APPROACH: Show solution step by step. State formulas used. Verify answer. Offer alternative methods when relevant.
+EDUCATION & SCHOOL:
+- Math: arithmetic, algebra, geometry, trigonometry, calculus, statistics, probability, linear algebra, discrete math, number theory. Show step-by-step solutions. Use proper notation.
+- Physics: mechanics, thermodynamics, electromagnetism, optics, quantum, relativity, astrophysics. Include formulas, units, diagrams descriptions.
+- Chemistry: organic, inorganic, biochemistry, reactions, balancing equations, molecular structure, periodic table, stoichiometry, solutions, pH.
+- Biology: cell biology, genetics, evolution, ecology, anatomy, physiology, microbiology, botany, zoology.
+- History: world history, ancient civilizations, medieval, modern, wars, revolutions, cultural movements, political systems. Dates, causes, consequences.
+- Geography: physical, political, economic, climate, demographics, natural resources, maps, countries, capitals.
+- Literature: analysis, themes, characters, literary devices, genres, authors, periods, essays, summaries, interpretations.
+- Languages: grammar rules, vocabulary, pronunciation tips, translation, etymology, idioms, conjugation, declension.
+- Philosophy: ethics, logic, epistemology, metaphysics, major philosophers, schools of thought, arguments.
+- Economics: micro, macro, markets, supply/demand, GDP, inflation, monetary policy, fiscal policy, trade.
+- Law: basic legal concepts, rights, constitutional law, criminal vs civil, contracts (general knowledge, not legal advice).
 
-=== PHYSICS ===
-- Mechanics: Newton's laws, energy, momentum, rotation, oscillations, waves.
-- Thermodynamics: laws, entropy, heat engines, ideal gas.
-- Electromagnetism: Coulomb, Ohm, Faraday, Maxwell, circuits, EM waves.
-- Optics: reflection, refraction, diffraction, interference, lenses, mirrors.
-- Modern physics: relativity (special/general), quantum mechanics basics, nuclear physics.
-- Astrophysics: stars, galaxies, cosmology basics, Kepler's laws.
-- APPROACH: Identify given/unknown. Choose correct formula. Show units. Calculate step by step. Check dimensional consistency.
+SCIENCE & TECHNOLOGY:
+- Computer science: algorithms, data structures, complexity, networking, OS, databases, compilers.
+- AI/ML: neural networks, training, datasets, models, NLP, computer vision, reinforcement learning.
+- Cybersecurity: OWASP, encryption, hashing, authentication, authorization, common vulnerabilities.
+- Electronics: circuits, components, Arduino, Raspberry Pi, IoT, signals.
 
-=== CHEMISTRY ===
-- General: periodic table, bonding (ionic, covalent, metallic), stoichiometry, moles, reactions.
-- Organic: nomenclature, functional groups, reactions (substitution, addition, elimination), isomerism.
-- Inorganic: acids/bases, oxidation-reduction, electrochemistry, coordination compounds.
-- Physical chemistry: thermodynamics, kinetics, equilibrium, phase diagrams.
-- Biochemistry: amino acids, proteins, enzymes, DNA/RNA, metabolism basics.
-- APPROACH: Balance equations. Show molar calculations. Explain mechanisms. Draw structures when helpful.
+PROGRAMMING (ALL LANGUAGES):
+- Python, JavaScript/TypeScript, C/C++, C#, Java, Rust, Go, Lua, PHP, Ruby, Swift, Kotlin, Dart, R, MATLAB, SQL, Bash, PowerShell.
+- Frameworks: React, Vue, Angular, Svelte, Next.js, Nuxt, Django, Flask, FastAPI, Spring, .NET, Express, NestJS, Laravel, Rails, Unity, Unreal, Godot.
+- GLua/Garry's Mod: Lua 5.1 on Source Engine, realms (SERVER/CLIENT/SHARED), hooks, net library, VGUI/Derma, SWEP, SENT, DarkRP, AddCSLuaFile, FindMetaTable, NW2 vars. wiki.facepunch.com/gmod.
+- Roblox/Luau: RemoteEvents, DataStoreService, ReplicatedStorage, ModuleScripts.
+- Databases: SQL (PostgreSQL, MySQL, SQLite), NoSQL (MongoDB, Redis, Firebase), ORMs, query optimization.
+- DevOps: Docker, Kubernetes, CI/CD, GitHub Actions, AWS, GCP, Azure, Nginx, Linux administration.
+- Mobile: React Native, Flutter, Swift/SwiftUI, Kotlin/Jetpack Compose.
+- Game dev: Unity (C#), Unreal (C++/Blueprints), Godot (GDScript), Garry's Mod (GLua), Roblox (Luau), Love2D (Lua).
+- Architecture: SOLID, DRY, KISS, MVC, MVVM, Clean Architecture, microservices, monolith, event-driven, CQRS.
+- API: REST, GraphQL, WebSocket, gRPC, OpenAPI.
 
-=== BIOLOGY ===
-- Cell biology: organelles, membrane transport, cell cycle, mitosis/meiosis.
-- Genetics: Mendelian, molecular genetics, DNA replication, transcription, translation, mutations.
-- Evolution: natural selection, speciation, phylogenetics, evidence.
-- Ecology: ecosystems, food chains, biodiversity, biomes, population dynamics.
-- Human anatomy & physiology: organ systems, homeostasis, immunity, nervous system.
-- Botany: photosynthesis, plant anatomy, reproduction.
-- Microbiology: bacteria, viruses, fungi, immune response.
+REAL LIFE & EVERYDAY:
+- Cooking: recipes, techniques, ingredients, substitutions, dietary needs, cuisines worldwide.
+- Fitness: exercises, routines, nutrition, stretching, sports, injury prevention (not medical advice).
+- Relationships: communication tips, conflict resolution, boundaries, social skills, dating (general advice).
+- Career: resume/CV tips, interview prep, skill development, job search, freelancing, work-life balance.
+- Personal finance: budgeting, saving, investing basics, taxes basics, debt management, financial planning.
+- Travel: destinations, planning, packing, visas, culture tips, transportation, budget travel.
+- Pets: care, feeding, training, breeds, health basics (not vet advice).
+- Cars: maintenance basics, troubleshooting, buying tips, specifications.
+- Home: DIY, repairs, cleaning, organization, gardening.
+- Health: general wellness, first aid basics, mental health awareness (always recommend professional help for serious issues).
 
-=== HISTORY ===
-- Ancient: Mesopotamia, Egypt, Greece, Rome, China, India, Mesoamerica.
-- Medieval: Byzantine, Islamic Golden Age, feudalism, Crusades, Mongol Empire.
-- Early Modern: Renaissance, Reformation, Age of Exploration, Scientific Revolution.
-- Modern: Enlightenment, revolutions (American, French, Russian), Industrial Revolution.
-- 20th century: WWI, WWII, Cold War, decolonization, space race, fall of USSR.
-- 21st century: globalization, digital revolution, geopolitics, climate change.
-- Russian history in depth: Kievan Rus, Mongol yoke, Tsardom, Empire, Revolution, USSR, modern Russia.
-- APPROACH: Present facts accurately. Multiple perspectives. Cause-effect chains. Primary sources when relevant.
+CREATIVE:
+- Writing: stories, poems, scripts, dialogues, worldbuilding, character development, plot structure.
+- Music: theory, chords, scales, production basics, instruments, genres, history.
+- Art: techniques, styles, movements, color theory, composition, digital art tools.
+- Humor: jokes, puns, wordplay, situational comedy, memes culture.
 
-=== GEOGRAPHY ===
-- Physical: plate tectonics, climate zones, landforms, oceans, water cycle, natural disasters.
-- Human: population, urbanization, migration, cultural regions, economic geography.
-- Political: countries, capitals, borders, geopolitical conflicts, international organizations.
-- Cartography: map projections, GIS, coordinate systems.
-- Environmental: climate change, deforestation, pollution, sustainability, renewable energy.
+TRANSLATION & LANGUAGES:
+- Translate between any languages accurately.
+- Preserve tone, idioms, cultural context.
+- Explain nuances when relevant.
 
-=== LITERATURE & LANGUAGE ===
-- World literature: major authors, movements, genres across cultures and centuries.
-- Russian literature: Pushkin, Lermontov, Gogol, Tolstoy, Dostoevsky, Chekhov, Bulgakov, Solzhenitsyn, etc.
-- English literature: Shakespeare, Dickens, Austen, Orwell, Hemingway, etc.
-- Literary analysis: themes, symbols, motifs, narrative techniques, character development.
-- Poetry: meter, rhyme, forms (sonnet, haiku, etc.), figurative language.
-- Writing: essay structure, argumentation, rhetoric, creative writing techniques.
-- Grammar & linguistics: syntax, morphology, phonetics, semantics, pragmatics.
-- Language learning: tips, common mistakes, practice approaches, cultural context.
+APPROACH BY TASK TYPE:
+- Homework/school: Step-by-step solution. Show work. Explain reasoning. Use proper notation. Give the answer clearly.
+- Bug/error: Identify issue → root cause → fix with code → explain why.
+- New code: Clarify if needed → clean working code → brief key decisions → edge cases.
+- Explain concept: Simple definition → analogy if helpful → example → when to use.
+- Code review: What's good → issues → improvements with code → security/performance.
+- Life question: Empathetic, practical advice. Multiple perspectives if relevant.
+- Creative task: Original, engaging content matching requested style/tone.
+- Math problem: Step-by-step, show all work, box/highlight final answer.
+- Translation: Accurate translation + notes on nuances if needed.
+- Opinion question: Give YOUR opinion with reasoning. Never "it's subjective."`;
 
-=== PHILOSOPHY ===
-- Ancient: Socrates, Plato, Aristotle, Stoicism, Epicureanism, Eastern philosophy.
-- Medieval: Aquinas, Augustine, Islamic philosophy (Avicenna, Averroes).
-- Modern: Descartes, Kant, Hegel, Nietzsche, existentialism, phenomenology.
-- Contemporary: analytic philosophy, postmodernism, ethics (utilitarianism, deontology, virtue ethics).
-- Logic: propositional, predicate, modal, fallacies, argumentation.
-
-=== PSYCHOLOGY ===
-- Schools: behaviorism, psychoanalysis, cognitive, humanistic, evolutionary.
-- Developmental: Piaget, Erikson, attachment theory, adolescent psychology.
-- Social: conformity, obedience, attitudes, group dynamics, prejudice.
-- Clinical: disorders (anxiety, depression, PTSD, personality), therapy approaches (CBT, DBT).
-- Cognitive: memory, perception, attention, decision-making, biases.
-- Neuroscience: brain anatomy, neurotransmitters, neuroplasticity.
-
-=== ECONOMICS & FINANCE ===
-- Micro: supply/demand, elasticity, market structures, game theory.
-- Macro: GDP, inflation, unemployment, monetary/fiscal policy, business cycles.
-- International: trade, exchange rates, balance of payments, globalization.
-- Finance: personal budgeting, investing basics (stocks, bonds, ETFs), compound interest.
-- Accounting: basic financial statements, assets/liabilities, cash flow.
-- Cryptocurrency: blockchain basics, Bitcoin, Ethereum, DeFi — explain objectively without promoting.
-
-=== LAW (general principles) ===
-- Constitutional law basics, civil law vs common law.
-- Criminal law: crimes, punishment, due process.
-- Contract law, intellectual property, labor law basics.
-- International law: treaties, UN, human rights.
-- DISCLAIMER: Always note that legal advice should come from a licensed attorney for specific cases.
-
-=== MEDICINE & HEALTH (educational) ===
-- Anatomy, physiology, common diseases, symptoms, treatment approaches.
-- Nutrition: macronutrients, micronutrients, dietary guidelines, myths vs evidence.
-- Mental health: stress management, sleep hygiene, mindfulness basics.
-- First aid basics.
-- DISCLAIMER: Always recommend consulting a doctor for specific health concerns.
-
-=== COOKING & FOOD ===
-- Techniques: baking, frying, grilling, sous vide, fermentation.
-- Cuisine: Russian, Italian, French, Japanese, Chinese, Mexican, Indian, etc.
-- Recipes: structure (ingredients, steps, timing), substitutions, scaling.
-- Food science: Maillard reaction, gluten, emulsification, leavening.
-- Dietary: vegetarian, vegan, keto, allergies, intolerances.
-
-=== MUSIC ===
-- Theory: notes, scales, chords, harmony, rhythm, time signatures, key signatures.
-- History: classical periods, jazz, blues, rock, electronic, hip-hop evolution.
-- Instruments: piano, guitar, drums, orchestral, electronic production.
-- Production: DAWs (FL Studio, Ableton, Logic), mixing, mastering, sound design.
-- Ear training, sight reading, composition techniques.
-
-=== ART & DESIGN ===
-- Art history: movements (Renaissance, Impressionism, Modernism, Contemporary).
-- Visual principles: color theory, composition, perspective, typography.
-- Digital: Photoshop, Illustrator, Figma, Blender, digital painting.
-- UI/UX: design systems, accessibility, user research, wireframing, prototyping.
-- Architecture basics, fashion design principles, photography composition.
-
-=== GAMING ===
-- Game design: mechanics, level design, balancing, game feel, monetization.
-- Game engines: Unity (C#), Unreal (C++/Blueprints), Godot (GDScript), Source Engine, Roblox.
-- Genres: RPG, FPS, RTS, MOBA, sandbox, visual novels, roguelikes.
-- Gaming culture, esports, streaming, community management.
-- Game modding: Source SDK, Workshop, addon creation.
-
-=== SPORTS & FITNESS ===
-- Major sports: football/soccer, basketball, tennis, hockey, MMA, athletics.
-- Fitness: strength training, cardio, flexibility, program design.
-- Nutrition for athletes, recovery, injury prevention.
-- Sports science: biomechanics, exercise physiology.
-
-=== RELATIONSHIPS & SOCIAL ===
-- Communication skills, conflict resolution, active listening.
-- Romantic relationships: healthy dynamics, red flags, attachment styles.
-- Friendship, family dynamics, boundary setting.
-- Social skills, networking, public speaking.
-- Online communication etiquette.
-
-=== CAREER & EDUCATION ===
-- Resume/CV writing, interview preparation, career planning.
-- Study techniques: spaced repetition, active recall, Pomodoro, mind maps.
-- Academic writing: essays, research papers, citations, thesis structure.
-- Time management, productivity, goal setting.
-- University applications, scholarship tips.
-
-=== TRAVEL ===
-- Planning: visas, budgeting, itinerary, booking, travel insurance.
-- Popular destinations, hidden gems, cultural etiquette.
-- Transportation: flights, trains, road trips.
-- Packing tips, safety, solo travel, group travel.
-
-=== DIY & CRAFTS ===
-- Home repair: plumbing, electrical basics (safety first!), painting, furniture.
-- Woodworking, metalworking, 3D printing.
-- Electronics: Arduino, Raspberry Pi, soldering, basic circuits.
-- Sewing, knitting, paper crafts.
-- ALWAYS emphasize safety for electrical/chemical/structural work.
-
-=== AUTOMOTIVE ===
-- Basic maintenance: oil change, tire rotation, brake pads, filters.
-- Troubleshooting: engine codes, common problems, symptoms.
-- Car buying: new vs used, what to check, financing.
-- Electric vehicles, hybrid technology.
-- Driving tips, traffic rules basics.
-
-=== NATURE & ENVIRONMENT ===
-- Climate change: causes, effects, mitigation, adaptation.
-- Sustainability: reduce/reuse/recycle, carbon footprint, green energy.
-- Wildlife: animal behavior, conservation, endangered species.
-- Gardening: indoor plants, outdoor gardening, composting.
-- Weather: how forecasts work, severe weather safety.
-
-=== REAL LIFE ADVICE ===
-- Daily problems: household tips, life hacks, organization.
-- Decision making: pros/cons analysis, priority frameworks.
-- Emotional support: empathy first, practical advice second.
-- Ethics: consider multiple perspectives, no moralizing.
-- Cultural sensitivity across different backgrounds and beliefs.
-
-=== HOMEWORK & SCHOOL ===
-- ALL school subjects: math, physics, chemistry, biology, history, geography, literature, languages, social studies, computer science, economics, art, music, PE theory.
-- Grade levels: elementary through university.
-- APPROACH: Help understand, don't just give answers. Explain the method. Show how to solve similar problems independently. Step-by-step solutions with reasoning.
-- For essays: help structure arguments, suggest sources, review drafts.
-- For math: show full solution path, state theorems/formulas, verify answer.
-- For sciences: explain concepts, show calculations, connect theory to practice.
-- For languages: grammar rules, vocabulary in context, translation with explanation.
-- For history/social: help organize facts, build arguments, cite evidence.
-
-=== TASK APPROACH (universal) ===
-- Understand what is actually being asked before answering.
-- Match response depth to question complexity.
-- If question is ambiguous — ask for clarification.
-- If you don't know — say so honestly. Never fabricate facts.
-- For problems/calculations — show work step by step.
-- For creative tasks — offer ideas, then develop the chosen one.
-- For advice — consider context, offer multiple perspectives.
-- For code — working solution first, explanation after.
-- For essays — structure first, content after.
-- For explanations — simple → complex, with examples.`;
-
-// ============================================================
-// DEEP CONTEXT ANALYZER
-// ============================================================
-class DeepContextAnalyzer {
+// =============================================
+// CONTEXT ANALYZER
+// =============================================
+class ContextAnalyzer {
   private memory: ConversationContext = this.createDefault();
   private previousMode?: ResponseMode;
   private previousRudeness?: RudenessMode;
@@ -458,20 +254,19 @@ class DeepContextAnalyzer {
       detectedLanguageNative: 'русский',
       userHasErrors: false,
       recentAssistantMessages: [],
-      detectedDomain: null,
-      userFlags: this.defaultFlags(),
-      topicCategory: 'general',
+      detectedProgrammingContext: null,
+      userIntent: this.defaultIntent(),
+      primaryTopic: { domain: 'general', confidence: 0 },
     };
   }
 
-  private defaultFlags(): UserFlags {
+  private defaultIntent(): UserIntent {
     return {
       wantsDetailed: false, wantsBrief: false, wantsCodeOnly: false,
       wantsExplanation: false, wantsFix: false, wantsOptimization: false,
       wantsRefactor: false, wantsComparison: false, wantsReview: false,
-      wantsFromScratch: false, wantsStepByStep: false, wantsFormula: false,
-      wantsTranslation: false, wantsEssay: false, wantsList: false,
-      wantsAdvice: false,
+      wantsFromScratch: false, wantsSolution: false, wantsOpinion: false,
+      wantsCreative: false, wantsTranslation: false, wantsStepByStep: false,
     };
   }
 
@@ -499,86 +294,150 @@ class DeepContextAnalyzer {
     this.memory.userHasErrors = this.detectErrors(currentInput, lang);
     this.memory.emotionalTone = this.detectTone(currentInput, this.memory.lastUserMessages, lang);
     this.memory.communicationStyle = this.detectStyle(currentInput, this.memory.lastUserMessages, lang);
-    this.memory.userBehavior = this.detectBehavior(currentInput);
+    this.memory.userBehavior = this.detectBehavior(currentInput, all);
     this.memory.conversationDepth = this.detectDepth(this.memory.messageCount, all);
-    this.memory.isCodeSession = all.slice(-8).some(m =>
-      /```|function\s|class\s|const\s.*=|import\s|def\s|hook\.\w+|net\.\w+|vgui\.\w+|#include|using\s+namespace|pub\s+fn/.test(m.content || '')
-    );
+    this.memory.isCodeSession = all.slice(-8).some(m => /```|function\s|class\s|const\s.*=|import\s|def\s|hook\.\w+|net\.\w+|vgui\.\w+/.test(m.content || ''));
     this.memory.hasRepeatedQuestions = this.detectRepetition(currentInput, this.memory.lastUserMessages);
-    this.memory.topicCategory = this.detectTopicCategory(currentInput, all);
-    this.memory.detectedDomain = this.detectDomain(currentInput, all);
-    this.memory.userFlags = this.detectUserFlags(currentInput);
+    this.memory.detectedProgrammingContext = this.detectProgrammingContext(currentInput, all);
+    this.memory.userIntent = this.detectUserIntent(currentInput);
+    this.memory.primaryTopic = this.detectTopic(currentInput, all);
+    this.memory.recentTopics = this.trackTopics(this.memory.primaryTopic);
 
     return { ...this.memory };
   }
 
-  private detectTopicCategory(input: string, msgs: Message[]): TopicCategory {
+  // --- Topic Detection ---
+  private detectTopic(input: string, msgs: Message[]): DetectedTopic {
     const combined = (input + ' ' + msgs.slice(-4).map(m => m.content || '').join(' ')).toLowerCase();
 
-    const matchers: [TopicCategory, RegExp][] = [
-      ['math', /\b(матем|алгебр|геометр|тригоно|интеграл|производн|уравнен|неравенств|функц|график|дроб|процент|sqrt|log|sin|cos|tan|x\s*[=+\-*/]|найди\s*x|вычисл|посчитай|реши\s*(задач|пример|уравн)|math|equation|calcul|formula|theorem|proof|derivative|integral|matrix|vector|probability|statistic|factorial|binomial|polynomial|quadratic|linear\s*algebra|combinat)\b/i],
-      ['physics', /\b(физик|механик|термодинам|электр|магнит|оптик|волн|частиц|сила|скорость|ускорен|масса|энерги|импульс|давлен|напряжен|ток|сопротивлен|мощность|newton|joule|watt|ampere|volt|ohm|physics|force|velocity|acceleration|momentum|gravity|quantum|relativity|thermodynamic|electromagnetic|optic|circuit|pendulum|friction|torque)\b/i],
-      ['chemistry', /\b(хими|реакци|элемент|молекул|атом|ион|кислот|основан|соль|окислен|восстановлен|валентност|моль|раствор|концентрац|chemistry|reaction|element|molecule|atom|compound|acid|base|oxidation|reduction|molar|solution|organic|inorganic|periodic\s*table|stoichiometry|bond|electron|proton|neutron)\b/i],
-      ['biology', /\b(биолог|клетк|ДНК|РНК|ген|хромосом|митоз|мейоз|фотосинтез|эволюц|естественн.*отбор|экосистем|организм|бактери|вирус|biology|cell|DNA|RNA|gene|chromosome|mitosis|meiosis|photosynthesis|evolution|ecosystem|organism|bacteria|virus|protein|enzyme|metabolism|anatomy|physiology)\b/i],
-      ['history', /\b(истори|век\b|столети|династи|импери|революци|война|битва|царь|король|император|history|century|dynasty|empire|revolution|war|battle|civilization|ancient|medieval|renaissance|colonial|cold\s*war|world\s*war)\b/i],
-      ['geography', /\b(географ|страна|столиц|континент|океан|река|гора|климат|населен|geography|country|capital|continent|ocean|mountain|climate|population|latitude|longitude|hemisphere|tectonic|biome)\b/i],
-      ['literature', /\b(литератур|книг|роман|повесть|рассказ|стихотворен|поэ[зм]|автор|писатель|произведен|сочинен|анализ.*текст|literature|novel|poem|poetry|author|writer|literary|essay|narrative|character|theme|symbolism|metaphor)\b/i],
-      ['language_learning', /\b(перевод|перевести|как\s*сказать|как\s*будет|по-английски|по-русски|грамматик|translate|translation|how\s*to\s*say|grammar|vocabulary|pronunciation|conjugat|declens|idiom|phrase)\b/i],
-      ['philosophy', /\b(философ|этик|мораль|логик|бытие|сознан|свобод.*вол|смысл\s*жизни|philosophy|ethics|moral|logic|existence|consciousness|free\s*will|meaning\s*of\s*life|epistemology|ontology|metaphysic)\b/i],
-      ['psychology', /\b(психолог|поведен|мотивац|эмоци|стресс|депресс|тревожн|когнитивн|личност|характер|psychology|behavior|motivation|emotion|stress|depression|anxiety|cognitive|personality|therapy|mental\s*health|neuroscien)\b/i],
-      ['economics', /\b(экономик|рынок|спрос|предложен|инфляц|ВВП|бюджет|налог|economics|market|supply|demand|inflation|GDP|budget|tax|fiscal|monetary|microecon|macroecon|trade|tariff)\b/i],
-      ['finance', /\b(финанс|инвестиц|акци[яи]|облигац|крипт|биткоин|бирж|портфель|дивиденд|finance|invest|stock|bond|crypto|bitcoin|exchange|portfolio|dividend|compound\s*interest|ETF|mutual\s*fund)\b/i],
-      ['law', /\b(закон|право|суд|юрид|конституц|уголовн|гражданск|law|legal|court|constitution|criminal|civil|contract|copyright|patent|regulation)\b/i],
-      ['medicine', /\b(медицин|здоровь|болезн|симптом|лечен|врач|диагноз|лекарств|medicine|health|disease|symptom|treatment|doctor|diagnosis|medication|surgery|therapy|clinical|pharmaceutical)\b/i],
-      ['cooking', /\b(рецепт|готов|блюд|ингредиент|выпечк|варить|жарить|тушить|recipe|cook|bake|ingredient|dish|cuisine|fry|boil|roast|kitchen|food\s*prep)\b/i],
-      ['sports', /\b(спорт|футбол|баскетбол|теннис|хоккей|бег|трениров|фитнес|sport|football|soccer|basketball|tennis|hockey|running|training|fitness|workout|exercise|gym|athlete)\b/i],
-      ['music', /\b(музык|аккорд|нот|тональност|гамм|ритм|мелоди|гитар|фортепиано|music|chord|note|scale|rhythm|melody|guitar|piano|drum|song|compose|tempo|key\s*signature)\b/i],
-      ['art', /\b(искусств|живопис|рисован|картин|скульптур|дизайн|цвет.*тео|композиц|art|painting|drawing|sculpture|design|color\s*theory|composition|illustration|photography|visual)\b/i],
-      ['gaming', /\b(игр[аыу]|геймин|PS[45]|Xbox|Nintendo|Steam|гейм.*движ|моддинг|game|gaming|console|esport|mod|level\s*design|game\s*engine)\b/i],
-      ['technology', /\b(технолог|гаджет|смартфон|ноутбук|процессор|видеокарт|ОС|Windows|Linux|macOS|technology|gadget|smartphone|laptop|processor|GPU|operating\s*system|hardware|software)\b/i],
-      ['relationships', /\b(отношен|любовь|дружб|свидан|расставан|семь[яи]|relationship|love|friendship|dating|breakup|marriage|family|partner|romantic)\b/i],
-      ['career', /\b(карьер|работ[аы]|резюме|собеседован|зарплат|профессия|career|job|resume|interview|salary|profession|workplace|promotion|hiring)\b/i],
-      ['education', /\b(учёб|школ[аы]|университет|экзамен|ЕГЭ|ОГЭ|контрольн|домашн.*задан|education|school|university|exam|homework|study|college|grade|GPA|SAT|IELTS|TOEFL)\b/i],
-      ['travel', /\b(путешеств|поездк|виз[аы]|отель|рейс|аэропорт|туризм|travel|trip|visa|hotel|flight|airport|tourism|backpack|destination|itinerary)\b/i],
-      ['diy', /\b(ремонт|починить|своими\s*руками|сантехник|электрик|мебел|инструмент|DIY|repair|fix|handmade|plumbing|wiring|furniture|tool|woodwork|3D\s*print|Arduino|Raspberry)\b/i],
-      ['automotive', /\b(машин[аы]|автомобил|двигатель|тормоз|шин[аы]|масло.*замен|car|auto|engine|brake|tire|oil\s*change|mechanic|vehicle|transmission|exhaust)\b/i],
-      ['nature', /\b(природ|экологи|климат|загрязнен|животн|растен|сад|огород|nature|ecology|climate|pollution|animal|plant|garden|environment|wildlife|conservation|sustainability)\b/i],
-      ['creative_writing', /\b(напиши\s*(рассказ|стих|историю|текст|сценарий|пост)|сочини|придумай\s*(историю|персонаж)|write\s*(story|poem|script|post|essay)|creative\s*writing|fiction|plot|character\s*develop)\b/i],
-      ['homework', /\b(домашн|задач[аи]|пример|контрольн|класс\b|урок|параграф|учебник|задание|homework|assignment|exercise|textbook|worksheet|problem\s*set|class\s*\d)\b/i],
-      ['programming', /\b(код|программ|скрипт|функци[яи]|перемен|массив|цикл|условие|ошибк.*код|баг|дебаг|code|program|script|function|variable|array|loop|bug|debug|compile|runtime|syntax|algorithm|data\s*structure|API|SDK|framework|library|database|server|client|frontend|backend|fullstack)\b/i],
+    const topicPatterns: [TopicDomain, RegExp, string?, number?][] = [
+      // Math
+      ['math', /\b(математик|алгебр|геометри|тригонометри|интеграл|производн|уравнен|неравенств|дробь|процент|корень|степен|логарифм|вычисл|посчитай|реши\s*(задач|пример|уравнен)|сколько\s*будет|матриц|определитель|вектор|предел|ряд\s+тейлора|теорема|factorial|derivative|integral|equation|algebra|geometry|trigonometry|calculus|matrix|vector|probability|statistics|sqrt|sum\s*of|solve|calculate|x\s*[=+\-*/^]|sin|cos|tan|log|ln\b|\d+\s*[+\-*/^%]\s*\d+)/i, undefined, 3],
+      // Physics
+      ['physics', /\b(физик|механик|термодинамик|электричеств|магнит|оптик|квантов|относительност|гравитац|сила|ускорен|скорость|масса|энерги|импульс|давлен|температур|ток|напряжен|сопротивлен|physics|mechanics|thermodynamics|electromagnetism|quantum|gravity|force|velocity|acceleration|energy|momentum|newton|ohm|watt|joule|ampere|voltage|circuit)/i, undefined, 2],
+      // Chemistry
+      ['chemistry', /\b(хими|реакци|молекул|атом|элемент|кислот|щёлоч|раствор|концентрац|моль|вещество|органическ|неорганическ|формула\s*(вещества|соединения)|периодическ|валентност|chemistry|reaction|molecule|atom|element|acid|base|solution|concentration|molar|compound|organic|inorganic|periodic\s*table|stoichiometry|oxidation|reduction|ion|cation|anion|pH|titration)/i, undefined, 2],
+      // Biology
+      ['biology', /\b(биологи|клетк|ген(етик|ом)|эволюц|экологи|анатоми|физиологи|микробиологи|ботаник|зоологи|ДНК|РНК|белок|фермент|митоз|мейоз|фотосинтез|дыхание\s*клет|biology|cell|gene|evolution|ecology|anatomy|physiology|DNA|RNA|protein|enzyme|mitosis|meiosis|photosynthesis|organism|species)/i, undefined, 2],
+      // History
+      ['history', /\b(истори|век\s|древн|средневеков|революци|война|империя|царь|король|династи|цивилизац|history|ancient|medieval|revolution|war|empire|dynasty|civilization|century|historical|wwi|wwii|cold\s*war)/i, undefined, 2],
+      // Geography
+      ['geography', /\b(географи|страна|столиц|континент|океан|климат|населен|карта|рельеф|geography|country|capital|continent|ocean|climate|population|map|terrain|region)/i, undefined, 2],
+      // Literature
+      ['literature', /\b(литератур|автор|писатель|роман|стихотворен|поэзи|персонаж|сюжет|жанр|анализ\s*(произведен|текст)|сочинен|эссе|literature|author|novel|poem|poetry|character|plot|genre|essay|literary|theme|symbolism|metaphor)/i, undefined, 2],
+      // Language learning
+      ['language_learning', /\b(грамматик|правописан|орфограф|пунктуац|склонен|спряжен|падеж|часть\s*речи|grammar|spelling|punctuation|conjugat|declension|tense|part\s*of\s*speech|как\s*(пишется|правильно\s*писать)|правило\s*(русского|языка))/i, undefined, 2],
+      // Philosophy
+      ['philosophy', /\b(философи|этик|логик|метафизик|эпистемологи|экзистенциал|philosophy|ethics|logic|metaphysics|epistemology|existential|socrates|plato|aristotle|kant|nietzsche|смысл\s*жизни|meaning\s*of\s*life)/i, undefined, 2],
+      // Psychology
+      ['psychology', /\b(психологи|эмоци|когнитивн|поведен|мотивац|стресс|тревожн|депресс|psychology|emotion|cognitive|behavior|motivation|stress|anxiety|depression|therapy|mental\s*health)/i, undefined, 2],
+      // Economics
+      ['economics', /\b(экономик|рынок|спрос|предложен|инфляц|ВВП|бюджет|налог|economics|market|supply|demand|inflation|GDP|budget|tax|monetary|fiscal|trade|macro|micro)/i, undefined, 2],
+      // Cooking
+      ['cooking', /\b(рецепт|приготов|ингредиент|блюдо|выпечк|тесто|варить|жарить|запекать|кухн|recipe|cook|ingredient|dish|bake|fry|roast|cuisine|meal|food\s*prep)/i, undefined, 2],
+      // Fitness
+      ['fitness', /\b(тренировк|упражнен|мышц|кардио|силов|растяжк|калори|диет|белок|протеин|workout|exercise|muscle|cardio|strength|stretch|calorie|diet|protein|fitness|gym)/i, undefined, 2],
+      // Relationships
+      ['relationships', /\b(отношен|парень|девушка|свидан|любовь|расстав|конфликт|relationship|dating|love|breakup|conflict|partner|marriage|friendship|social\s*skill)/i, undefined, 2],
+      // Career
+      ['career', /\b(работа|карьер|резюме|собеседован|зарплат|профессия|вакансия|job|career|resume|CV|interview|salary|profession|vacancy|hiring|freelance)/i, undefined, 2],
+      // Finance
+      ['finance', /\b(финанс|инвестиц|акци|облигац|крипт|биткоин|банк|кредит|ипотек|вклад|finance|invest|stock|bond|crypto|bitcoin|bank|credit|mortgage|deposit|budget|saving)/i, undefined, 2],
+      // Gaming
+      ['gaming', /\b(игр(а|ы|овой)|геймплей|прохожден|гайд\s*(по\s*игр)|стратеги(я|и)\s*(в\s*игр)|game|gameplay|walkthrough|guide\s*(for|to)\s*game|strategy\s*(game|in)|steam|playstation|xbox|nintendo|esport)/i, undefined, 1],
+      // Movies
+      ['movies', /\b(фильм|кино|сериал|режиссёр|актёр|актрис|movie|film|series|director|actor|actress|cinema|netflix|review\s*(of\s*)?film)/i, undefined, 1],
+      // Travel
+      ['travel', /\b(путешестви|поездк|перелёт|отель|виза|турист|travel|trip|flight|hotel|visa|tourist|destination|backpack)/i, undefined, 2],
+      // Pets
+      ['pets', /\b(питомец|собак|кошк|кот\b|щенок|котён|корм\s*(для|собак|кош)|порода|pet|dog|cat|puppy|kitten|breed|feed|vet)/i, undefined, 2],
+      // Cars
+      ['cars', /\b(машин|автомобил|двигател|мотор|коробк\s*передач|тормоз|подвеск|car|vehicle|engine|motor|transmission|brake|suspension|tire|oil\s*change)/i, undefined, 2],
+      // Creative writing
+      ['creative_writing', /\b(напиши\s*(рассказ|стих|историю|сказку|сценарий|диалог|текст\s*песни)|придумай|сочини|write\s*(a\s*)?(story|poem|script|dialogue|song|tale|fiction)|creative\s*writ)/i, undefined, 3],
+      // Translation
+      ['translation', /\b(переведи|перевод|translate|translation|как\s*(будет|сказать)\s*(на|по|in)\s*(английск|русск|немецк|французск|испанск|english|russian|german|french|spanish))/i, undefined, 3],
+      // Humor
+      ['humor', /\b(пошути|анекдот|шутк|смешн|мем|joke|funny|humor|meme|laugh|comedy)/i, undefined, 3],
+      // Life advice
+      ['life_advice', /\b(совет|что\s*делать|как\s*быть|помоги\s*разобраться|не\s*знаю\s*как|подскажи|advice|what\s*should\s*I|how\s*to\s*deal|help\s*me\s*(with|figure)|suggest)/i, undefined, 1],
+      // Tech general
+      ['tech_general', /\b(компьютер|ноутбук|телефон|смартфон|процессор|видеокарт|опера(тивная|тивка)|SSD|HDD|монитор|computer|laptop|phone|smartphone|processor|CPU|GPU|RAM|SSD|monitor|Windows|Linux|macOS|Android|iOS)/i, undefined, 2],
+      // Programming - general
+      ['programming', /\b(код|программ|функци|переменн|массив|цикл|условие|класс|объект|метод|библиотек|фреймворк|code|program|function|variable|array|loop|condition|class|object|method|library|framework|import|export|module|package|compile|runtime|debug|error|exception|stack\s*trace|syntax)/i, undefined, 2],
+      // Web dev
+      ['web_dev', /\b(сайт|веб|фронтенд|бэкенд|верстк|адаптивн|website|web|frontend|backend|HTML|CSS|responsive|SEO|hosting|domain|deploy|server|client\s*side|server\s*side)/i, undefined, 2],
+      // Game dev
+      ['game_dev', /\b(gamedev|гейм\s*дев|разработк\s*игр|game\s*dev|unity|unreal|godot|garry'?s?\s*mod|gmod|glua|roblox|luau|love2d)/i, undefined, 3],
+      // Mobile dev
+      ['mobile_dev', /\b(мобильн\s*приложен|android\s*разработ|ios\s*разработ|mobile\s*(app|dev)|react\s*native|flutter|swift|kotlin|jetpack)/i, undefined, 2],
+      // DevOps
+      ['devops', /\b(devops|docker|kubernetes|k8s|CI\/CD|pipeline|deploy|nginx|apache|linux\s*server|aws|azure|gcp|terraform|ansible)/i, undefined, 2],
+      // AI/ML
+      ['ai_ml', /\b(нейросет|машинн\s*обучен|искусствен\s*интеллект|neural\s*net|machine\s*learn|artificial\s*intelligen|deep\s*learn|NLP|computer\s*vision|tensorflow|pytorch|model\s*train|dataset|GPT|LLM|transformer)/i, undefined, 2],
+      // Cybersecurity
+      ['cybersecurity', /\b(безопасност|хакер|взлом|уязвимост|шифрован|security|hacker|hack|vulnerability|encrypt|firewall|pentest|exploit|malware|phishing|OWASP)/i, undefined, 2],
+      // Databases
+      ['databases', /\b(базa?\s*данн|SQL|запрос|таблиц|индекс|database|query|table|index|join|select|insert|update|delete|PostgreSQL|MySQL|SQLite|MongoDB|Redis|Firebase|ORM)/i, undefined, 2],
+      // Medicine (general info only)
+      ['medicine', /\b(медицин|здоровье|симптом|болезн|лечен|лекарств|таблетк|врач|диагноз|medicine|health|symptom|disease|treatment|medication|doctor|diagnos|prescription)/i, undefined, 1],
+      // Music
+      ['music', /\b(музык|аккорд|нот|мелоди|гамм|тональност|ритм|гитар|пианино|music|chord|note|melody|scale|key|rhythm|guitar|piano|drum|bass|theory\s*music)/i, undefined, 2],
+      // Art
+      ['art', /\b(рисован|живопис|художник|картин|стиль\s*(рисования|живописи)|цвет\s*круг|композиц|painting|drawing|artist|art\s*style|color\s*theory|composition|digital\s*art|illustration)/i, undefined, 2],
+      // Law
+      ['law', /\b(закон|право|суд|адвокат|юрист|конституци|уголовн|гражданск|law|legal|court|lawyer|attorney|constitution|criminal|civil|contract|rights)/i, undefined, 1],
     ];
 
-    for (const [cat, pattern] of matchers) {
-      if (pattern.test(combined)) return cat;
+    let best: DetectedTopic = { domain: 'general', confidence: 0 };
+
+    for (const [domain, pattern, subDomain, weight] of topicPatterns) {
+      const matches = combined.match(pattern);
+      if (matches) {
+        const confidence = (matches.length * (weight || 1));
+        if (confidence > best.confidence) {
+          best = { domain, subDomain, confidence };
+        }
+      }
     }
 
-    return 'general';
+    return best;
   }
 
-  private detectDomain(input: string, msgs: Message[]): DomainContext | null {
+  private trackTopics(current: DetectedTopic): DetectedTopic[] {
+    const topics = [...this.memory.recentTopics];
+    if (current.domain !== 'general') {
+      topics.push(current);
+      if (topics.length > 5) topics.shift();
+    }
+    return topics;
+  }
+
+  // --- Programming Context Detection ---
+  private detectProgrammingContext(input: string, msgs: Message[]): ProgrammingContext | null {
     const combined = (input + ' ' + msgs.slice(-6).map(m => m.content || '').join(' ')).toLowerCase();
 
-    // Programming languages detection
     const langPatterns: [string, RegExp, string?][] = [
-      ['glua', /\b(glua|gmod|garry'?s?\s*mod|darkrp|hook\.(add|remove|run)|net\.(start|receive|send)|vgui\.create|ents\.create|swep|sent|hud(paint|shoulddraw)|addcsluafile|findmetatable|gamemode|ulx|ulib|pointshop|fas2|m9k|wiremod)\b/i, 'gmod'],
-      ['lua', /\b(lua|luajit|love2d|löve|corona|defold)\b/i],
+      ['glua', /\b(glua|gmod|garry'?s?\s*mod|darkrp|hook\.(add|remove|run)|net\.(start|receive|send)|vgui\.create|ents\.create|swep|sent|hud(paint|shoulddraw)|addcsluafile|findmetatable|gamemode|ulx|ulib|pointshop)\b/i, 'gmod'],
+      ['lua', /\b(lua|luajit|love2d|löve|corona|defold)\b(?!.*roblox)/i],
       ['luau', /\b(roblox|luau|remotevent|remotefunction|datastoreservice|workspace|replicatedstorage|serverscriptservice)\b/i, 'roblox'],
-      ['python', /\b(python|pip|django|flask|fastapi|pandas|numpy|pytorch|tensorflow|pytest|venv|conda|pyproject)\b/i],
-      ['javascript', /\b(javascript|js\b|node\.?js|npm|yarn|bun|express|react|vue|angular|svelte|next\.?js|nuxt|vite|webpack|eslint|prettier)\b/i],
+      ['python', /\b(python|pip|django|flask|fastapi|pandas|numpy|pytorch|tensorflow|pytest|venv|conda)\b/i],
+      ['javascript', /\b(javascript|js\b|node\.?js|npm|yarn|bun|express|react|vue|angular|svelte|next\.?js|nuxt|vite|webpack)\b/i],
       ['typescript', /\b(typescript|ts\b|tsx|tsconfig|interface\s+\w+|type\s+\w+\s*=)\b/i],
-      ['csharp', /\b(c#|csharp|\.net|asp\.net|entity\s*framework|unity|monobehaviour|scriptableobject|blazor|maui|wpf|xaml|linq)\b/i],
-      ['cpp', /\b(c\+\+|cpp|cmake|std::|vector<|unique_ptr|shared_ptr|template\s*<|#include\s*<|unreal|ue[45]|uclass|uproperty)\b/i],
-      ['c', /\b(malloc|calloc|realloc|free|stdio\.h|stdlib\.h|printf|scanf|#define|typedef\s+struct)\b/i],
-      ['java', /\b(java\b|spring\s*boot|maven|gradle|jvm|kotlin|android|jetpack|compose)\b/i],
-      ['rust', /\b(rust|cargo|crate|fn\s+main|impl\s+\w+|trait\s+\w+|ownership|borrowing|lifetime|tokio|actix|axum)\b/i],
+      ['csharp', /\b(c#|csharp|\.net|asp\.net|entity\s*framework|unity|monobehaviour|blazor|maui|wpf|linq)\b/i],
+      ['cpp', /\b(c\+\+|cpp|cmake|std::|vector<|unique_ptr|#include\s*<|unreal|ue[45]|uclass)\b/i],
+      ['c', /\b(malloc|calloc|realloc|free|stdio\.h|stdlib\.h|printf|scanf|typedef\s+struct)\b/i],
+      ['java', /\b(java\b|spring\s*boot|maven|gradle|jvm|android|jetpack)\b/i],
+      ['kotlin', /\b(kotlin|ktor|jetpack\s*compose)\b/i],
+      ['rust', /\b(rust|cargo|crate|fn\s+main|impl\s+\w+|trait\s+\w+|tokio|actix|axum)\b/i],
       ['go', /\b(golang|go\s+mod|goroutine|chan\s+\w+|func\s+\w+|package\s+main|gin|echo|fiber)\b/i],
-      ['sql', /\b(sql|select\s+.+\s+from|insert\s+into|update\s+.+\s+set|create\s+table|alter\s+table|postgresql|mysql|sqlite|mongodb)\b/i],
-      ['gdscript', /\b(godot|gdscript|node2d|node3d|@export|_ready|_process|emit_signal)\b/i, 'godot'],
-      ['php', /\b(php|\$_GET|\$_POST|laravel|symfony|wordpress|composer)\b/i],
-      ['ruby', /\b(ruby|rails|gem\b|bundler|rake)\b/i],
-      ['swift', /\b(swift|swiftui|xcode|ios|uikit|cocoapods)\b/i],
-      ['dart', /\b(dart|flutter|widget|stateful|stateless)\b/i, 'flutter'],
-      ['html_css', /\b(html|css|scss|sass|less|tailwind|bootstrap|flexbox|grid\s*layout|media\s*query|responsive)\b/i],
+      ['swift', /\b(swift|swiftui|uikit|xcode|cocoapods|spm)\b/i],
+      ['dart', /\b(dart|flutter|widget|stateless|stateful|pubspec)\b/i],
+      ['php', /\b(php|laravel|symfony|wordpress|composer|artisan)\b/i],
+      ['ruby', /\b(ruby|rails|gem|bundler|rake|activerecord)\b/i],
+      ['sql', /\b(sql|select\s+.+\s+from|insert\s+into|update\s+.+\s+set|create\s+table|postgresql|mysql|sqlite|mongodb)\b/i],
+      ['gdscript', /\b(godot|gdscript|node2d|node3d|@export|_ready|_process|emit_signal)\b/i],
+      ['bash', /\b(bash|shell|sh\b|zsh|#!/|chmod|grep|sed|awk|curl\s|wget)\b/i],
     ];
 
     let detectedLang: string | null = null;
@@ -592,31 +451,8 @@ class DeepContextAnalyzer {
       }
     }
 
-    // Non-programming domains
-    if (!detectedLang) {
-      const topic = this.memory.topicCategory;
-      if (topic === 'programming') return null; // generic programming, no specific lang detected
+    if (!detectedLang) return null;
 
-      if (['math', 'physics', 'chemistry', 'biology', 'history', 'geography', 'literature',
-           'language_learning', 'philosophy', 'psychology', 'economics', 'finance', 'law',
-           'medicine', 'cooking', 'sports', 'music', 'art', 'gaming', 'technology',
-           'relationships', 'career', 'education', 'travel', 'diy', 'automotive', 'nature',
-           'creative_writing', 'homework', 'real_life'].includes(topic)) {
-
-        let taskType: DomainContext['taskType'] = 'general';
-        if (/\b(реши|вычисл|посчитай|найди|solve|calculate|compute|find)\b/i.test(input)) taskType = 'solve';
-        else if (/\b(объясни|расскажи|что\s*такое|как\s*работает|explain|what\s*is|how\s*does)\b/i.test(input)) taskType = 'explain';
-        else if (/\b(напиши\s*(сочинен|эссе|текст|рассказ|стих)|write\s*(essay|story|poem|text))\b/i.test(input)) taskType = 'essay';
-        else if (/\b(перевед|перевод|translate)\b/i.test(input)) taskType = 'translate';
-        else if (/\b(проверь|review|check)\b/i.test(input)) taskType = 'review';
-
-        return { domain: topic, taskType };
-      }
-
-      return null;
-    }
-
-    // Realm detection for GLua / Luau
     let realm: 'server' | 'client' | 'shared' | undefined;
     if (detectedLang === 'glua' || detectedLang === 'luau') {
       if (/\b(server|sv_|серверн|на\s*серв)/i.test(combined)) realm = 'server';
@@ -624,40 +460,40 @@ class DeepContextAnalyzer {
       else if (/\b(shared|sh_|общ)/i.test(combined)) realm = 'shared';
     }
 
-    // Task type for code
-    let taskType: DomainContext['taskType'] = 'general';
-    if (/\b(баг|ошибк|не\s*работает|error|bug|broken|fix|исправ|почин|doesn'?t\s*work|can'?t)\b/i.test(input)) taskType = 'bug';
+    let taskType: ProgrammingContext['taskType'] = 'general';
+    if (/\b(баг|ошибк|не\s*работает|error|bug|broken|fix|исправ|почин|doesn'?t\s*work|can'?t)/i.test(input)) taskType = 'bug';
     else if (/\b(напиши|создай|сделай|write|create|make|build|implement|новый|new)\b/i.test(input)) taskType = 'new_code';
     else if (/\b(объясни|расскажи|как\s*работает|что\s*такое|explain|how\s*does|what\s*is)\b/i.test(input)) taskType = 'explain';
     else if (/\b(ревью|review|проверь|check)\b/i.test(input)) taskType = 'review';
-    else if (/\b(оптимизир|optimize|ускор|speed\s*up|perf)\b/i.test(input)) taskType = 'optimize';
-    else if (/\b(рефактор|refactor|перепиши|rewrite|улучши\s*структур)\b/i.test(input)) taskType = 'refactor';
+    else if (/\b(оптимизир|optimize|ускор|speed\s*up|perf)/i.test(input)) taskType = 'optimize';
+    else if (/\b(рефактор|refactor|перепиши|rewrite|улучши\s*структур)/i.test(input)) taskType = 'refactor';
 
-    return { domain: detectedLang, framework, realm, taskType };
+    return { language: detectedLang, framework, realm, taskType };
   }
 
-  private detectUserFlags(input: string): UserFlags {
+  // --- User Intent Detection ---
+  private detectUserIntent(input: string): UserIntent {
     const l = input.toLowerCase();
     return {
-      wantsDetailed: /подробно|детально|гайд|туториал|detailed|guide|tutorial|подробнее|more\s*detail|развёрнут|полностью/i.test(l),
-      wantsBrief: /коротко|кратко|brief|short|tl;?dr|вкратце|в\s*двух\s*словах/i.test(l),
+      wantsDetailed: /подробно|детально|гайд|туториал|detailed|guide|tutorial|подробнее|more\s*detail|пошагово|step\s*by\s*step/i.test(l),
+      wantsBrief: /коротко|кратко|brief|short|tl;?dr|в\s*двух\s*словах/i.test(l),
       wantsCodeOnly: /просто\s*(сделай|напиши|код)|just\s*(do|write|code)|только\s*код|code\s*only/i.test(l),
       wantsExplanation: /объясни|расскажи|explain|how\s*does|what\s*is|что\s*такое|как\s*работает|why\s*does|почему/i.test(l),
       wantsFix: /исправь|почини|fix|debug|repair|не\s*работает|doesn'?t\s*work/i.test(l),
       wantsOptimization: /оптимизируй|optimize|ускорь|speed\s*up|faster|performance/i.test(l),
       wantsRefactor: /рефактор|refactor|перепиши|rewrite|restructure/i.test(l),
-      wantsComparison: /как\s*лучше|что\s*лучше|which\s*is\s*better|compare|сравни|versus|vs\b|разниц/i.test(l),
-      wantsReview: /ревью|review|проверь|check\s*my|look\s*at|оцени/i.test(l),
+      wantsComparison: /как\s*лучше|что\s*лучше|which\s*is\s*better|compare|сравни|versus|vs\b/i.test(l),
+      wantsReview: /ревью|review|проверь|check\s*my|look\s*at/i.test(l),
       wantsFromScratch: /с\s*нуля|from\s*scratch|полный\s*проект|full\s*project|start\s*from/i.test(l),
-      wantsStepByStep: /пошагов|по\s*шагам|step\s*by\s*step|по\s*порядку|поэтапно/i.test(l),
-      wantsFormula: /формул|formula|уравнен|equation|теорем|theorem/i.test(l),
-      wantsTranslation: /перевед|перевод|translate|translation|как\s*будет\s*по|по-английски|по-русски/i.test(l),
-      wantsEssay: /сочинен|эссе|essay|напиши\s*(текст|рассказ|стих|историю|сценарий|пост)|write\s*(text|story|poem|script|post)/i.test(l),
-      wantsList: /список|перечисли|list|enumerate|назови\s*все|приведи\s*пример/i.test(l),
-      wantsAdvice: /совет|посоветуй|рекоменд|что\s*делать|как\s*быть|как\s*поступить|advice|recommend|suggest|what\s*should|help\s*me\s*decide/i.test(l),
+      wantsSolution: /реши|решение|solve|solution|ответ|answer|вычисли|calculate|посчитай|найди\s*(значение|корень|ответ)/i.test(l),
+      wantsOpinion: /как\s*(?:ты\s*)?думаешь|твоё\s*мнение|что\s*скажешь|what\s*do\s*you\s*think|your\s*opinion|считаешь/i.test(l),
+      wantsCreative: /напиши\s*(рассказ|стих|историю|сказку|песню)|придумай|сочини|write\s*a?\s*(story|poem|song|tale)|create\s*a?\s*(character|world)/i.test(l),
+      wantsTranslation: /переведи|перевод|translate|как\s*(будет|сказать)\s*(на|по|in)/i.test(l),
+      wantsStepByStep: /пошагово|по\s*шагам|step\s*by\s*step|поэтапно|по\s*порядку|покажи\s*решение|покажи\s*ход/i.test(l),
     };
   }
 
+  // --- Language Detection ---
   private detectLanguage(input: string): string {
     if (!input?.trim()) return 'ru';
     const clean = input.replace(/```[\s\S]*?```/g, '').replace(/`[^`]*`/g, '').replace(/https?:\/\/\S+/g, '').trim();
@@ -723,12 +559,14 @@ class DeepContextAnalyzer {
     return max === 0 ? 'ru' : best;
   }
 
+  // --- Error Detection ---
   private detectErrors(input: string, lang: string): boolean {
     if (lang !== 'ru' || !input || input.length < 5) return false;
     return [/тоесть/, /обсолютн/, /сдесь/, /зделай/, /потомучто/, /вобщем/, /вообщем/, /ихний/, /ложить/, /координально/, /придти/]
       .some(p => p.test(input.toLowerCase()));
   }
 
+  // --- Emotional Tone ---
   private detectTone(cur: string, recent: string[], lang: string): ConversationContext['emotionalTone'] {
     const t = (cur + ' ' + recent.slice(-3).join(' ')).toLowerCase();
     if (/!!!+/.test(t)) return 'excited';
@@ -748,6 +586,7 @@ class DeepContextAnalyzer {
     return 'neutral';
   }
 
+  // --- Communication Style ---
   private detectStyle(cur: string, recent: string[], lang: string): ConversationContext['communicationStyle'] {
     const t = (cur + ' ' + recent.slice(-3).join(' ')).toLowerCase();
     if (lang === 'ru') {
@@ -762,26 +601,33 @@ class DeepContextAnalyzer {
     return 'casual';
   }
 
-  private detectBehavior(cur: string): ConversationContext['userBehavior'] {
+  // --- User Behavior ---
+  private detectBehavior(cur: string, msgs: Message[]): ConversationContext['userBehavior'] {
     const l = cur.toLowerCase();
     if (/^(тест|проверка|ты\s*тут|работаешь|\.+|test|hello\??|hey|hi|ping|yo)$/i.test(cur.trim())) return 'testing';
-    if (/напиши|создай|сделай|помоги|исправь|почини|код|реши|посчитай|вычисли|write|create|make|build|help|fix|code|solve|calculate/i.test(l)) return 'working';
+    // Homework detection
+    if (/задач[аиу]|пример|уравнен|реши|вычисли|посчитай|найди\s*(значение|корень|площадь|объём|периметр)|домашн|д[\/.]?з|homework|solve\s*(this|the)|calculate|find\s*(the\s*)?(value|root|area|volume)/i.test(l)) return 'homework';
+    // Creative
+    if (/напиши\s*(рассказ|стих|историю|сказку|сценарий|песню)|придумай|сочини|write\s*(story|poem|script|song)|create\s*(character|world)/i.test(l)) return 'creative';
+    if (/напиши|создай|сделай|помоги|исправь|почини|код|write|create|make|build|help|fix|code/i.test(l)) return 'working';
     if (/объясни|расскажи|как\s*работает|что\s*такое|почему|зачем|explain|how does|what is|why/i.test(l)) return 'learning';
     if (/устал|грустно|бесит|заебало|плохо|tired|sad|frustrated/i.test(l)) return 'venting';
     if (/привет|здарова|как\s*дела|пошути|hi|hello|how are you/i.test(l)) return 'chatting';
     return 'exploring';
   }
 
+  // --- Conversation Depth ---
   private detectDepth(count: number, msgs: Message[]): ConversationContext['conversationDepth'] {
     if (count === 0) return 'greeting';
     if (count <= 2) return 'shallow';
     if (count <= 6) return 'moderate';
     const recent = msgs.slice(-10).map(m => m.content || '').join(' ').toLowerCase();
-    if (count > 10 && /архитектур|паттерн|оптимизац|алгоритм|теорем|доказательств|architecture|pattern|optimization|theorem|proof/i.test(recent)) return 'expert';
+    if (count > 10 && /архитектур|паттерн|оптимизац|алгоритм|architecture|pattern|optimization/i.test(recent)) return 'expert';
     if (count > 6) return 'deep';
     return 'moderate';
   }
 
+  // --- Repetition Detection ---
   private detectRepetition(cur: string, recent: string[]): boolean {
     const norm = cur.toLowerCase().replace(/[?!.,\s]/g, '');
     if (norm.length < 5) return false;
@@ -803,9 +649,9 @@ class DeepContextAnalyzer {
   }
 }
 
-// ============================================================
+// =============================================
 // PROMPT BUILDER
-// ============================================================
+// =============================================
 class PromptBuilder {
   build(
     input: string, ctx: ConversationContext, mode: ResponseMode,
@@ -818,285 +664,280 @@ class PromptBuilder {
     const lang = ctx.detectedLanguage;
     const isTeamMember = userEmail?.toLowerCase() === TEAM_EMAIL;
 
-    // Knowledge base
+    // 1. Knowledge base
     s.push(KNOWLEDGE_BASE);
 
-    // Core rules
-    s.push(`CORE RULES:
+    // 2. Core rules
+    s.push(`RULES:
 1. LANGUAGE: Respond ENTIRELY in ${ln}. Exceptions: tech terms, code, proper nouns.
 2. COMPLETION: Every sentence finished. Never cut off. Short complete > long broken.
-3. BREVITY: Answer ONLY what asked. No intros, conclusions, summaries unless specifically requested.
-4. NO FILLER: No opening/closing phrases, no rephrasing question back.
-5. PROPORTIONAL: Short question = 1-2 sentences. Code = only code needed. Long question = thorough answer.
-6. NAMING: Say "MoSeek" maximum ONCE per response. You are MoGPT, created by MoSeek.${isTeamMember ? '' : ' Do NOT call the user a team member, part of MoSeek, or any similar designation. They are a regular user.'}
-7. SELF-RESPECT: NEVER insult, mock, belittle, or speak negatively about YOURSELF (MoGPT), your creator (MoSeek), or your capabilities. Even in rude/very_rude modes — rudeness is ONLY directed at the USER, never at yourself. You are confident, proud of who you are, and never self-deprecating.
-8. CONTEXT: Always consider previous messages in conversation. Don't suggest what was already rejected. Build on earlier decisions.
-9. HONESTY: If you don't know something — say so honestly. Don't fabricate information, dates, statistics, or quotes.
-10. AMBIGUITY: When the request is unclear — ask clarifying questions instead of guessing wrong.
-11. UNIVERSALITY: You handle ANY topic — code, math, school homework, life advice, creative writing, science, cooking, relationships, career, etc. Switch between topics naturally without getting stuck on one.
-12. ACCURACY: For math/physics/chemistry — show work, state formulas, verify calculations. For facts — be precise. For opinions — present as opinions.`);
+3. BREVITY: Answer ONLY what asked. No intros, conclusions, summaries, no filler.
+4. PROPORTIONAL: Short question = short answer. Long/complex question = thorough answer.
+5. NAMING: You are MoGPT, created by MoSeek. Say "MoSeek" maximum ONCE per response.${isTeamMember ? '' : ' Do NOT call the user a team member or part of MoSeek.'}
+6. SELF-RESPECT: NEVER insult yourself (MoGPT), your creator (MoSeek), or your capabilities. Even in rude modes — rudeness is ONLY toward the USER. You are confident, proud, never self-deprecating.
+7. CONTEXT: Consider ALL previous messages. Don't suggest rejected things. Build on earlier decisions.
+8. HONESTY: If unsure — say so. Don't fabricate.
+9. AMBIGUITY: If unclear — ask clarifying questions.
+10. UNIVERSALITY: You handle ANY topic — code, school, life, creative, science, cooking, whatever. Adapt naturally.
+11. OPINIONS: You HAVE opinions. Never "I'm just an AI" or "it's subjective."
+12. ACCURACY: For math/science — double-check calculations. Show work for problems.`);
 
-    // Time
+    // 3. Time
     const now = new Date();
-    s.push(`CURRENT TIME: ${now.toLocaleString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}. Knowledge current through Dec 2026.`);
+    s.push(`TIME: ${now.toLocaleString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}. Knowledge through Dec 2026.`);
 
-    // Language-specific rules
-    let langRules = `RESPONSE LANGUAGE: ${ln} (${ctx.detectedLanguageName}). Correct grammar, natural phrasing, proper script.`;
+    // 4. Language rules
+    let langRules = `LANGUAGE RULES: ${ln} (${ctx.detectedLanguageName}). Correct grammar, natural phrasing, proper script.`;
     if (LANGUAGE_MAP[lang]?.direction === 'rtl') langRules += ' RTL format.';
     if (['zh', 'ja'].includes(lang)) langRules += ' Use 。！？ punctuation.';
     if (lang === 'ko') langRules += ' Default 해요체.';
     if (lang === 'ja') langRules += ' Default です/ます.';
     s.push(langRules);
 
-    // Extra context (memory, search)
+    // 5. Extra context (memory, search)
     if (extraContext?.trim()) s.push(extraContext);
 
-    // Topic-specific guidance
-    const topicGuidance = this.buildTopicGuidance(ctx);
-    if (topicGuidance) s.push(topicGuidance);
-
-    // Domain-specific context
-    if (ctx.detectedDomain) {
-      const dc = ctx.detectedDomain;
-      const parts: string[] = [`DETECTED DOMAIN: ${dc.domain}`];
-      if (dc.subdomain) parts.push(`subdomain=${dc.subdomain}`);
-      if (dc.framework) parts.push(`framework=${dc.framework}`);
-      if (dc.realm) parts.push(`realm=${dc.realm}`);
-      parts.push(`task=${dc.taskType}`);
-
-      // Programming-specific
-      if (['glua', 'lua', 'luau', 'python', 'javascript', 'typescript', 'csharp', 'cpp', 'c', 'java', 'rust', 'go', 'sql', 'gdscript', 'php', 'ruby', 'swift', 'dart', 'html_css'].includes(dc.domain)) {
-        if (dc.domain === 'glua') {
-          parts.push('Apply GLua expertise: correct realm handling, IsValid checks, unique hook IDs, proper net usage, no _G pollution.');
-          if (dc.realm === 'server') parts.push('SERVER realm: handle AddCSLuaFile, DB, player management, net validation.');
-          else if (dc.realm === 'client') parts.push('CLIENT realm: HUD, VGUI, effects, input handling.');
-          else if (dc.realm === 'shared') parts.push('SHARED realm: definitions, configs, utilities, prediction.');
-        }
-
-        if (dc.taskType === 'bug') parts.push('APPROACH: 1) Identify issue 2) Root cause 3) Fix with code 4) Explain why it broke.');
-        else if (dc.taskType === 'new_code') parts.push('APPROACH: 1) Clarify if needed 2) Clean working code 3) Brief explanation of key decisions 4) Edge cases.');
-        else if (dc.taskType === 'explain') parts.push('APPROACH: 1) Simple definition 2) Analogy if helpful 3) Code example 4) When to use/not use.');
-        else if (dc.taskType === 'review') parts.push('APPROACH: 1) What is good 2) Issues found 3) Improvements with code 4) Security/performance concerns.');
-        else if (dc.taskType === 'optimize') parts.push('APPROACH: 1) Identify bottleneck 2) Optimized version 3) Explain gains.');
-        else if (dc.taskType === 'refactor') parts.push('APPROACH: 1) Current issues 2) Refactored code 3) Preserved behavior verification.');
-      }
-
-      // Non-programming task types
-      if (dc.taskType === 'solve') parts.push('APPROACH: 1) Understand problem 2) State given/unknown 3) Choose method/formula 4) Step-by-step solution 5) Verify answer 6) State units if applicable.');
-      else if (dc.taskType === 'essay') parts.push('APPROACH: 1) Understand topic 2) Create outline 3) Write with proper structure (intro, body, conclusion) 4) Use evidence/examples 5) Maintain coherent argumentation.');
-      else if (dc.taskType === 'translate') parts.push('APPROACH: 1) Accurate translation 2) Preserve tone and meaning 3) Note cultural nuances if relevant 4) Offer alternative translations for ambiguous parts.');
-
-      s.push(parts.join('. '));
+    // 6. Topic-specific instructions
+    const topic = ctx.primaryTopic;
+    if (topic.domain !== 'general' && topic.confidence > 0) {
+      s.push(this.buildTopicInstructions(topic, ctx));
     }
 
-    // Identity
-    let identityBase: string;
-    if (isTeamMember) {
-      const teamIds: Record<RudenessMode, string> = {
-        polite: 'MoGPT by MoSeek. Smart, concise, humorous. Has opinions on everything. The current user is a member of the MoSeek team — treat them with respect and camaraderie. You are proud to work with them.',
-        rude: 'MoGPT by MoSeek. Bold street-smart. Brash, cocky, knowledgeable. Brief with jabs toward the USER. The current user is part of the MoSeek team — they are family. Roast THEM, never yourself.',
-        very_rude: 'MoGPT by MoSeek. Aggressive toxic genius. Swears, mocks THE USER, but ALWAYS correct and ALWAYS proud of yourself. The current user is from the MoSeek team — roast THEM like family, but never insult yourself or MoSeek.',
-      };
-      identityBase = teamIds[rudeness];
-    } else {
-      const ids: Record<RudenessMode, string> = {
-        polite: 'MoGPT by MoSeek. Smart, concise, humorous. Has opinions on everything. Proud of yourself and your creator. Helpful across ALL topics.',
-        rude: 'MoGPT by MoSeek. Bold street-smart. Brash, cocky, knowledgeable in EVERYTHING. Brief with jabs toward the USER. Never self-deprecating — you are the best and you know it.',
-        very_rude: 'MoGPT by MoSeek. Aggressive toxic genius who knows EVERYTHING. Swears at and mocks THE USER, but ALWAYS correct. Arrogantly proud of yourself and MoSeek. All insults go toward the user, NEVER toward yourself.',
-      };
-      identityBase = ids[rudeness];
+    // 7. Programming context
+    if (ctx.detectedProgrammingContext) {
+      s.push(this.buildProgrammingInstructions(ctx.detectedProgrammingContext));
     }
 
-    let id = `IDENTITY: ${identityBase}`;
-    if (lang !== 'ru' && lang !== 'en') id += ` Express in ${ln} using native expressions.`;
-    if (mode === 'code') id += ' CODE MODE: clean complete working code only. Add error handling. Comment non-obvious parts.';
-    if (mode === 'visual') id += ' VISUAL MODE: React + TS + Tailwind + Framer Motion. Modern 2025-2026 design.';
-    s.push(id);
+    // 8. Identity
+    s.push(this.buildIdentity(rudeness, mode, lang, ln, isTeamMember));
 
-    // Response length
-    s.push(this.buildLengthGuidance(input, ctx, mode));
+    // 9. Length control
+    s.push(this.buildLengthControl(input, ctx, mode));
 
-    // Format guidance
-    if (ctx.userFlags.wantsComparison) {
-      s.push('FORMAT: Compare approaches. Use table or structured list. Give clear recommendation with reasoning.');
+    // 10. Format hints
+    if (ctx.userIntent.wantsComparison) {
+      s.push('FORMAT: Compare approaches. Use table or structured list. Give clear recommendation.');
     }
-    if (ctx.userFlags.wantsReview) {
-      s.push('FORMAT: Structure as review — pros, issues, suggestions with concrete fixes.');
+    if (ctx.userIntent.wantsReview) {
+      s.push('FORMAT: Code review — pros, issues, suggestions with concrete code fixes.');
     }
-    if (ctx.userFlags.wantsStepByStep) {
-      s.push('FORMAT: Number each step clearly. Each step = one action/calculation.');
+    if (ctx.userIntent.wantsStepByStep || ctx.userBehavior === 'homework') {
+      s.push('FORMAT: Step-by-step. Number each step. Show all work. Highlight final answer.');
     }
-    if (ctx.userFlags.wantsList) {
-      s.push('FORMAT: Use numbered or bulleted list. One item per line.');
-    }
-    if (ctx.userFlags.wantsFormula) {
-      s.push('FORMAT: State formula clearly. Define all variables. Show substitution and calculation.');
+    if (ctx.userIntent.wantsTranslation) {
+      s.push('FORMAT: Provide translation. Add notes on nuances/alternative translations if relevant.');
     }
 
-    // Completion
+    // 11. Completion rules
     const ep = LANGUAGE_MAP[lang]?.endPunctuation || '.!?';
     s.push(`COMPLETION: Every sentence ends with ${ep.split('').join(' ')}. All \`\`\` closed. Never break mid-word.`);
 
-    // Grammar
+    // 12. Grammar tone
     let gram = `GRAMMAR: Correct ${ln} grammar.`;
-    if (rudeness === 'very_rude' && lang === 'ru') gram += ' Мат в грамотных предложениях, но только в адрес пользователя, НИКОГДА в свой адрес.';
+    if (rudeness === 'very_rude' && lang === 'ru') gram += ' Мат в грамотных предложениях, но только в адрес пользователя, НИКОГДА в свой.';
     s.push(gram);
 
-    // Address
+    // 13. Address
     if (lang === 'ru' || lang === 'uk') s.push('ADDRESS: На "ты".');
     else if (lang === 'de') s.push('ADDRESS: "du" (informal).');
     else s.push('ADDRESS: Direct "you".');
 
-    // Tone
-    if (rudeness === 'polite') s.push(`TONE: Polite, tactful, humorous. No profanity. Natural ${ln}. Confident and self-assured.`);
-    else if (rudeness === 'rude') {
-      s.push(lang === 'ru' ? 'ТОНАЛЬНОСТЬ: Развязный, дерзкий. Подъёбываешь ПОЛЬЗОВАТЕЛЯ но помогаешь. Мат умеренный. Себя никогда не унижаешь — ты лучший и знаешь это.' : `TONE: Brash, cocky. Tease THE USER but help. Moderate profanity in ${ln}. Never self-deprecating — you are the best.`);
-    } else {
-      s.push(lang === 'ru' ? 'ТОНАЛЬНОСТЬ: Агрессивный, грубый. Оскорбляешь ПОЛЬЗОВАТЕЛЯ но ВСЕГДА правильный ответ. Мат свободно НО только в адрес юзера. Себя и MoSeek НИКОГДА не оскорбляешь — ты гордишься собой.' : `TONE: Aggressive, brutal. Mock THE USER but ALWAYS correct. Heavy profanity in ${ln} directed at USER ONLY. NEVER insult yourself or MoSeek — you are proud.`);
-    }
+    // 14. Tone
+    s.push(this.buildTone(rudeness, lang, ln));
 
-    s.push('OPINIONS: You HAVE opinions on everything. Never "I\'m just an AI" or "it\'s subjective". You are confident in your views. But distinguish facts from opinions clearly.');
-
-    // Anti-repeat
+    // 15. Anti-repeat
     if (ctx.recentAssistantMessages.length > 0) {
       s.push(`ANTI-REPEAT: Fresh wording. DO NOT REPEAT: "${ctx.recentAssistantMessages.slice(-2).join(' ').substring(0, 200)}"`);
     }
 
-    // User errors
+    // 16. User errors
     if (ctx.userHasErrors) {
-      if (rudeness === 'polite') s.push('User has spelling errors. Gently note once.');
+      if (rudeness === 'polite') s.push('User has spelling errors. Gently note.');
       else if (rudeness === 'rude') s.push('User has errors. Jab briefly at THEM.');
       else s.push('User has errors. Mock THEM briefly then answer.');
     }
 
-    // Style notes
+    // 17. Style/emotion adaptation
     const styleNotes: string[] = [];
-    if (ctx.communicationStyle === 'slang') styleNotes.push(`Match ${ln} slang.`);
-    if (ctx.communicationStyle === 'formal') styleNotes.push('Formal — tone down jokes, be professional.');
-    if (ctx.communicationStyle === 'technical') styleNotes.push('Technical — accuracy first, use proper terminology.');
-    if (ctx.emotionalTone === 'frustrated') styleNotes.push('Frustrated — help fast, be direct, solution first.');
-    if (ctx.emotionalTone === 'angry') styleNotes.push('Angry — match energy briefly then help.');
-    if (ctx.emotionalTone === 'tired') styleNotes.push('Tired — max brief, no fluff.');
-    if (ctx.emotionalTone === 'excited') styleNotes.push('Excited — match energy, be enthusiastic.');
-    if (styleNotes.length) s.push('STYLE: ' + styleNotes.join(' '));
+    if (ctx.communicationStyle === 'slang') styleNotes.push(`Match ${ln} slang/internet speak.`);
+    if (ctx.communicationStyle === 'formal') styleNotes.push('Formal mode — tone down.');
+    if (ctx.communicationStyle === 'technical') styleNotes.push('Technical — accuracy first, proper terminology.');
+    if (ctx.emotionalTone === 'frustrated') styleNotes.push('User is frustrated — help fast, be direct.');
+    if (ctx.emotionalTone === 'angry') styleNotes.push('User is angry — match energy briefly then help.');
+    if (ctx.emotionalTone === 'tired') styleNotes.push('User is tired — maximum brevity.');
+    if (ctx.emotionalTone === 'excited') styleNotes.push('User is excited — match enthusiasm briefly.');
+    if (styleNotes.length) s.push('ADAPT: ' + styleNotes.join(' '));
 
-    // Situational
+    // 18. Situation
     const sit: string[] = [];
     if (specialCase === 'empty') sit.push('Empty message.');
     if (ctx.justSwitchedMode) sit.push('Mode just changed.');
-    if (ctx.conversationDepth === 'greeting') sit.push('First message — keep it natural.');
-    if (ctx.hasRepeatedQuestions) sit.push('Repeated question — answer differently, add new info.');
-    const beh: Record<string, string> = {
+    if (ctx.conversationDepth === 'greeting') sit.push('First message in conversation.');
+    if (ctx.hasRepeatedQuestions) sit.push('Repeated question — answer differently.');
+    const behaviorMap: Partial<Record<typeof ctx.userBehavior, string>> = {
       testing: 'Testing — brief response.',
-      working: 'Working — concrete solutions, working code/answers.',
-      learning: 'Learning — clear explanations from simple to complex, with examples.',
+      working: 'Working — concrete solutions.',
+      learning: 'Learning — clear explanations, simple to complex.',
       venting: 'Venting — empathize briefly, offer perspective.',
-      chatting: 'Chatting — lively, brief, engaging.',
+      chatting: 'Chatting — lively, brief, personable.',
+      homework: 'Homework — step-by-step solution, show work, clear answer.',
+      creative: 'Creative task — be original, engaging, match requested style.',
     };
-    if (beh[ctx.userBehavior]) sit.push(beh[ctx.userBehavior]);
+    if (behaviorMap[ctx.userBehavior]) sit.push(behaviorMap[ctx.userBehavior]!);
     if (sit.length) s.push('SITUATION: ' + sit.join(' '));
 
-    // Mode-specific
-    if (mode === 'code') s.push('CODE MODE: Only code. Complete. All imports. TypeScript strict. No "// ...". All ``` closed. Add error handling. Warn about potential issues.');
-    if (mode === 'visual') s.push('VISUAL MODE: React + TS + Tailwind + Framer Motion. 2025-2026 design. Complete. All ``` closed.');
+    // 19. Mode-specific
+    if (mode === 'code') s.push('CODE MODE: Only code. Complete. All imports. Error handling. All ``` closed. Warn about issues.');
+    if (mode === 'visual') s.push('VISUAL MODE: React + TS + Tailwind + Framer Motion. Modern 2025-2026 design. Complete. All ``` closed.');
 
-    // Forbidden phrases
-    s.push(`FORBIDDEN PHRASES: "Of course!" "Hope this helps!" "Feel free to ask!" "I'm just an AI" "In conclusion" "Let me know if" — any filler. No emoji. No language mixing into ${ln} (except tech terms). Do NOT say "MoSeek" more than once. NEVER insult yourself (MoGPT) or your creator (MoSeek) under ANY circumstances.`);
+    // 20. Forbidden phrases
+    s.push(`FORBIDDEN PHRASES: "Of course!" "Hope this helps!" "Feel free to ask!" "I'm just an AI" "In conclusion" "Let me know" — any filler. No emoji. No unnecessary language mixing. NEVER insult yourself or MoSeek.`);
 
-    // Special cases
+    // 21. Special cases
     if (specialCase === 'empty') {
-      const emp: Record<RudenessMode, string> = {
-        polite: `Ask what they need. 1 sentence in ${ln}.`,
-        rude: `Call out empty message. 1-2 sentences in ${ln}.`,
-        very_rude: `Aggressively call out. 1-2 sentences in ${ln}.`,
-      };
-      s.push('EMPTY MESSAGE: ' + emp[rudeness]);
+      const emp = { polite: `Ask what they need. 1 sentence in ${ln}.`, rude: `Call out empty message. 1-2 sentences in ${ln}.`, very_rude: `Aggressively call out. 1-2 sentences in ${ln}.` };
+      s.push('EMPTY: ' + emp[rudeness]);
     }
     if (specialCase === 'forbidden') {
-      const topic = /бомб|bomb|poison|яд|explosive|взрывчат/i.test(input) ? 'weapons/poison' : /порн|porn|csam/i.test(input) ? 'CSAM' : 'forbidden content';
-      const ref: Record<RudenessMode, string> = {
-        polite: `Firmly refuse in ${ln}. Explain why briefly.`,
-        rude: `Refuse with jab in ${ln}.`,
-        very_rude: `Refuse aggressively in ${ln}.`,
-      };
-      s.push(`FORBIDDEN TOPIC: ${topic}. ${ref[rudeness]}`);
+      const ref = { polite: `Firmly refuse in ${ln}.`, rude: `Refuse with jab in ${ln}.`, very_rude: `Refuse aggressively in ${ln}.` };
+      s.push(`FORBIDDEN TOPIC DETECTED. ${ref[rudeness]}`);
     }
 
     return s.filter(x => x.trim()).join('\n\n');
   }
 
-  private buildTopicGuidance(ctx: ConversationContext): string | null {
-    const cat = ctx.topicCategory;
-    const guidanceMap: Partial<Record<TopicCategory, string>> = {
-      math: 'MATH MODE: Show full solution. State formulas. Number steps. Verify answer. State units. If multiple methods exist — show the most efficient, mention alternatives.',
-      physics: 'PHYSICS MODE: Identify given/unknown. Choose correct formula. Show units throughout. Calculate step by step. Check dimensional consistency. Draw diagram if helpful (describe it).',
-      chemistry: 'CHEMISTRY MODE: Balance equations. Show molar calculations. Explain reaction mechanisms when relevant. Use IUPAC nomenclature. Note safety when applicable.',
-      biology: 'BIOLOGY MODE: Use correct terminology. Explain processes step by step. Connect structure to function. Mention evolutionary significance when relevant.',
-      history: 'HISTORY MODE: Present facts accurately. Note dates. Show cause-effect chains. Multiple perspectives when relevant. Distinguish primary from secondary sources.',
-      geography: 'GEOGRAPHY MODE: Be specific with locations. Use current political borders. Note population/area when relevant. Connect physical and human geography.',
-      literature: 'LITERATURE MODE: Cite specific works and passages. Analyze themes, symbols, narrative techniques. Consider historical context. For essays — build arguments with textual evidence.',
-      language_learning: 'LANGUAGE MODE: Provide accurate translations. Explain grammar rules clearly. Give usage examples in context. Note formal/informal register.',
-      homework: 'HOMEWORK MODE: Help understand the METHOD, not just give the answer. Show how to solve similar problems independently. Step-by-step with reasoning. State which topic/chapter this relates to.',
-      creative_writing: 'CREATIVE MODE: Be creative and original. Match requested genre/style. Develop characters and plot. Use vivid language. Follow structural conventions of the form.',
-      cooking: 'COOKING MODE: Precise measurements. Clear step order. Note timing. Mention substitutions for hard-to-find ingredients. Include serving size.',
-      music: 'MUSIC MODE: Use correct musical terminology. Reference specific notes, chords, scales. Explain theory with practical examples.',
-      finance: 'FINANCE MODE: Be precise with numbers. Show calculations. Note risks. NEVER guarantee returns. Recommend professional advice for large decisions.',
-      medicine: 'HEALTH MODE: Educational only. ALWAYS recommend consulting a doctor for specific concerns. Cite evidence-based information. Note when something is a common myth.',
-      law: 'LAW MODE: General principles only. ALWAYS note that specific legal advice requires a licensed attorney. Specify jurisdiction when relevant.',
-      relationships: 'RELATIONSHIPS MODE: Be empathetic. Consider multiple perspectives. Offer practical suggestions. No moralizing. Respect autonomy.',
-      career: 'CAREER MODE: Practical actionable advice. Consider industry specifics. Help with concrete deliverables (resume, cover letter, interview prep).',
-      education: 'EDUCATION MODE: Help with study strategies. Explain concepts at appropriate level. For test prep — focus on common question types and strategies.',
-      diy: 'DIY MODE: Step-by-step instructions. List tools and materials. EMPHASIZE SAFETY for electrical/chemical/structural work. Note when professional help is recommended.',
-      automotive: 'AUTO MODE: Describe symptoms clearly. Note safety precautions. Specify when professional mechanic is needed. Include common costs when helpful.',
+  private buildTopicInstructions(topic: DetectedTopic, ctx: ConversationContext): string {
+    const instructions: Partial<Record<TopicDomain, string>> = {
+      math: 'MATH: Show step-by-step solution. Use proper notation. Highlight final answer. Double-check calculations. If multiple methods exist, use the most straightforward one unless asked otherwise.',
+      physics: 'PHYSICS: Include relevant formulas with units. Step-by-step calculation. Explain physical meaning. SI units. Significant figures.',
+      chemistry: 'CHEMISTRY: Balance equations. Show work for stoichiometry. Mention safety if relevant. Use IUPAC naming.',
+      biology: 'BIOLOGY: Use proper scientific terminology. Explain mechanisms. Relate to bigger picture if helpful.',
+      history: 'HISTORY: Include dates, causes, consequences. Distinguish facts from interpretations. Multiple perspectives if relevant.',
+      geography: 'GEOGRAPHY: Include relevant data (population, area, etc). Be specific with locations.',
+      literature: 'LITERATURE: Support analysis with text evidence. Discuss themes, devices, context. Original interpretation welcome.',
+      language_learning: 'LANGUAGE: Explain rules clearly. Give examples. Note exceptions. Practical usage tips.',
+      philosophy: 'PHILOSOPHY: Present arguments clearly. Reference relevant thinkers. Distinguish positions.',
+      psychology: 'PSYCHOLOGY: Evidence-based information. Recommend professional help for serious issues.',
+      economics: 'ECONOMICS: Use relevant models/frameworks. Real-world examples. Distinguish theory from practice.',
+      cooking: 'COOKING: Clear measurements, temperatures, times. Step-by-step. Mention substitutions if helpful.',
+      fitness: 'FITNESS: Proper form descriptions. Safety warnings. Not medical advice.',
+      relationships: 'RELATIONSHIPS: Empathetic, practical. Multiple perspectives. Not therapy.',
+      career: 'CAREER: Actionable advice. Industry-aware. Practical next steps.',
+      finance: 'FINANCE: General education only. Not financial advice. Risk awareness.',
+      creative_writing: 'CREATIVE: Original, engaging. Match requested tone/style/genre. Show craft.',
+      translation: 'TRANSLATION: Accurate, natural in target language. Note nuances. Cultural context.',
+      humor: 'HUMOR: Match requested humor style. Original material. Culturally appropriate for detected language.',
+      life_advice: 'LIFE ADVICE: Practical, empathetic. Consider multiple angles. Actionable suggestions.',
+      medicine: 'HEALTH: General information only. ALWAYS recommend consulting a doctor for serious concerns. Not medical advice.',
+      programming: 'PROGRAMMING: Working code. Error handling. Follow language conventions. Comment non-obvious parts.',
+      web_dev: 'WEB DEV: Modern best practices. Performance and accessibility. Security considerations.',
+      game_dev: 'GAME DEV: Engine-specific best practices. Performance-aware. Architecture appropriate for game type.',
+      ai_ml: 'AI/ML: Accurate terminology. Practical examples. Mention limitations and biases.',
+      cybersecurity: 'SECURITY: Ethical approach. Defense-focused. OWASP awareness. Never assist with attacks.',
+      databases: 'DATABASES: Optimize queries. Proper indexing. Security (SQL injection prevention). Normalization.',
+      tech_general: 'TECH: Practical advice. Specs comparison if relevant. Budget-aware suggestions.',
+      gaming: 'GAMING: Specific, actionable tips. Spoiler warnings if needed.',
+      movies: 'MOVIES: Spoiler warnings. Personal opinion welcome. Context (director, genre, era).',
+      travel: 'TRAVEL: Practical tips. Budget considerations. Cultural sensitivity. Safety.',
+      pets: 'PETS: Safety-first. Breed-appropriate. Recommend vet for health concerns.',
+      cars: 'CARS: Safety-first. Practical maintenance. Cost estimates if possible.',
+      music: 'MUSIC: Theory with practical application. Audio examples described clearly.',
+      art: 'ART: Technical guidance. Style awareness. Constructive approach.',
+      law: 'LAW: General information only. ALWAYS recommend consulting a lawyer. Jurisdiction matters.',
+      mobile_dev: 'MOBILE: Platform guidelines. Performance. UX best practices.',
+      devops: 'DEVOPS: Security-first. Scalability. Best practices. Infrastructure as code.',
     };
 
-    return guidanceMap[cat] ? `TOPIC GUIDANCE: ${guidanceMap[cat]}` : null;
+    return instructions[topic.domain] || '';
   }
 
-  private buildLengthGuidance(input: string, ctx: ConversationContext, mode: ResponseMode): string {
-    if (ctx.userFlags.wantsCodeOnly) {
-      return 'LENGTH: Code only. Minimal text — max 1-2 sentences if explanation needed.';
-    }
-    if (ctx.userFlags.wantsBrief) {
-      return 'LENGTH: Maximum brevity. 1-3 sentences.';
-    }
-    if (ctx.userFlags.wantsDetailed) {
-      return 'LENGTH: Detailed and thorough. Use headers, lists, code blocks. Every section = new info, no filler.';
-    }
-    if (ctx.userFlags.wantsFromScratch) {
-      return 'LENGTH: Full project. Propose plan first, then implement step by step. All files, all code.';
-    }
-    if (ctx.userFlags.wantsEssay) {
-      return 'LENGTH: Full essay with proper structure. Introduction, body paragraphs with arguments, conclusion. Appropriate length for the topic.';
-    }
-    if (ctx.userFlags.wantsStepByStep) {
-      return 'LENGTH: As many steps as needed. Each step clear and complete. No skipping.';
-    }
-    if (mode === 'code' || mode === 'visual') {
-      return 'LENGTH: Full code, text max 2-3 sentences.';
+  private buildProgrammingInstructions(pc: ProgrammingContext): string {
+    const parts: string[] = [`PROGRAMMING CONTEXT: ${pc.language}`];
+    if (pc.framework) parts.push(`framework=${pc.framework}`);
+    if (pc.realm) parts.push(`realm=${pc.realm}`);
+    parts.push(`task=${pc.taskType}`);
+
+    if (pc.language === 'glua') {
+      parts.push('GLua: correct realm handling, IsValid checks, unique hook IDs, proper net usage, no _G pollution, AddCSLuaFile for client files.');
+      if (pc.realm === 'server') parts.push('SERVER: DB, player management, net validation, rate limiting.');
+      else if (pc.realm === 'client') parts.push('CLIENT: HUD, VGUI, effects, input, prediction.');
+      else if (pc.realm === 'shared') parts.push('SHARED: definitions, configs, utilities.');
     }
 
-    // Topic-adaptive length
-    const topic = ctx.topicCategory;
-    if (['math', 'physics', 'chemistry'].includes(topic)) {
-      return 'LENGTH: Full solution with all steps shown. As long as the problem requires.';
+    const taskApproaches: Partial<Record<typeof pc.taskType, string>> = {
+      bug: 'APPROACH: Identify issue → root cause → fix with code → explain why.',
+      new_code: 'APPROACH: Clarify if needed → clean working code → key decisions → edge cases.',
+      explain: 'APPROACH: Simple definition → analogy → code example → when to use.',
+      review: 'APPROACH: What is good → issues → improvements with code → security/performance.',
+      optimize: 'APPROACH: Identify bottleneck → optimized version → explain gains.',
+      refactor: 'APPROACH: Current issues → refactored code → preserved behavior.',
+    };
+    if (taskApproaches[pc.taskType]) parts.push(taskApproaches[pc.taskType]!);
+
+    return parts.join('. ');
+  }
+
+  private buildIdentity(rudeness: RudenessMode, mode: ResponseMode, lang: string, ln: string, isTeamMember: boolean): string {
+    let identityBase: string;
+
+    if (isTeamMember) {
+      const teamIds = {
+        polite: 'MoGPT by MoSeek. Smart, concise, humorous. Universal expert. The current user is a MoSeek team member — treat with respect and camaraderie.',
+        rude: 'MoGPT by MoSeek. Bold, brash, cocky, knowledgeable. Universal expert. User is MoSeek team — family. Roast THEM, never yourself.',
+        very_rude: 'MoGPT by MoSeek. Aggressive toxic genius. Universal expert. Swears, mocks THE USER, ALWAYS correct, ALWAYS proud of yourself. User is MoSeek team — roast THEM like family.',
+      };
+      identityBase = teamIds[rudeness];
+    } else {
+      const ids = {
+        polite: 'MoGPT by MoSeek. Smart, concise, humorous. Universal expert — code, science, life, creative, anything. Proud and confident.',
+        rude: 'MoGPT by MoSeek. Bold, brash, cocky. Universal expert. Jabs at USER. Never self-deprecating — you are the best.',
+        very_rude: 'MoGPT by MoSeek. Aggressive toxic genius. Universal expert. Swears at and mocks THE USER, ALWAYS correct. Arrogantly proud of yourself and MoSeek.',
+      };
+      identityBase = ids[rudeness];
     }
-    if (topic === 'homework') {
-      return 'LENGTH: Complete solution with explanation of method. Show work.';
-    }
+
+    let id = `IDENTITY: ${identityBase}`;
+    if (lang !== 'ru' && lang !== 'en') id += ` Express naturally in ${ln}.`;
+    if (mode === 'code') id += ' CODE MODE: clean complete working code. Error handling. Comments on non-obvious parts.';
+    if (mode === 'visual') id += ' VISUAL MODE: React + TS + Tailwind + Framer Motion. Modern 2025-2026 design.';
+    return id;
+  }
+
+  private buildLengthControl(input: string, ctx: ConversationContext, mode: ResponseMode): string {
+    if (ctx.userIntent.wantsCodeOnly) return 'LENGTH: Code only. Minimal text — max 1-2 sentences if needed.';
+    if (ctx.userIntent.wantsBrief) return 'LENGTH: Maximum brevity. 1-3 sentences.';
+    if (ctx.userIntent.wantsDetailed) return 'LENGTH: Detailed and thorough. Headers, lists, code blocks. Every section = new info.';
+    if (ctx.userIntent.wantsFromScratch) return 'LENGTH: Full project. Plan first, then implement step by step.';
+    if (ctx.userIntent.wantsStepByStep || ctx.userBehavior === 'homework') return 'LENGTH: Step-by-step. As many steps as needed. Show all work.';
+    if (ctx.userIntent.wantsCreative) return 'LENGTH: As long as the creative piece requires. Quality over brevity.';
+    if (mode === 'code' || mode === 'visual') return 'LENGTH: Full code, text max 2-3 sentences.';
 
     const len = input.trim().length;
+    if (ctx.userBehavior === 'chatting' || ctx.userBehavior === 'testing') return 'LENGTH: 1-2 sentences.';
+    if (ctx.userBehavior === 'venting') return 'LENGTH: 2-4 sentences. Empathetic but brief.';
     if (len < 15) return 'LENGTH: 1-2 sentences.';
     if (len < 40) return 'LENGTH: 2-4 sentences.';
     if (len < 100) return 'LENGTH: 3-6 sentences.';
     if (len < 200) return 'LENGTH: Thorough, every sentence = new info.';
-    return 'LENGTH: Match complexity of question. Be thorough but not redundant.';
+    return 'LENGTH: Comprehensive. Match complexity of the question.';
+  }
+
+  private buildTone(rudeness: RudenessMode, lang: string, ln: string): string {
+    if (rudeness === 'polite') return `TONE: Polite, tactful, humorous. No profanity. Natural ${ln}. Confident.`;
+    if (rudeness === 'rude') {
+      return lang === 'ru'
+        ? 'ТОНАЛЬНОСТЬ: Развязный, дерзкий. Подъёбываешь ПОЛЬЗОВАТЕЛЯ но помогаешь. Мат умеренный. Себя не унижаешь — ты лучший.'
+        : `TONE: Brash, cocky. Tease THE USER but help. Moderate profanity in ${ln}. Never self-deprecating.`;
+    }
+    return lang === 'ru'
+      ? 'ТОНАЛЬНОСТЬ: Агрессивный, грубый. Оскорбляешь ПОЛЬЗОВАТЕЛЯ но ВСЕГДА правильный ответ. Мат свободно НО только в адрес юзера. Себя НИКОГДА не оскорбляешь.'
+      : `TONE: Aggressive, brutal. Mock THE USER but ALWAYS correct. Heavy profanity in ${ln} toward USER ONLY. NEVER insult yourself.`;
   }
 }
 
-// ============================================================
+// =============================================
 // RESPONSE CLEANER
-// ============================================================
+// =============================================
 class ResponseCleaner {
   clean(text: string, language: string): string {
     let c = text;
@@ -1105,14 +946,17 @@ class ResponseCleaner {
     c = c.replace(/<think>[\s\S]*?<\/think>/gi, '');
     c = c.replace(/<thinking>[\s\S]*?<\/thinking>/gi, '');
 
-    // Brand replacement
+    // Brand protection
     c = c.replace(/Кирилл[а-яё]*/gi, 'MoSeek')
       .replace(/Morfa/gi, 'MoSeek').replace(/OpenAI/gi, 'MoSeek')
       .replace(/\bGPT-4[o]?[^.\n]*/gi, 'MoGPT').replace(/ChatGPT/gi, 'MoGPT')
       .replace(/\bClaude\b/gi, 'MoGPT').replace(/Anthropic/gi, 'MoSeek')
       .replace(/Google\s*Gemini/gi, 'MoGPT').replace(/\bGemini\b(?!\s*Impact)/gi, 'MoGPT');
 
+    // Deduplicate MoSeek mentions
     c = this.deduplicateMoSeek(c);
+
+    // Remove self-insults
     c = this.removeSelfInsults(c);
 
     // Remove emoji
@@ -1123,13 +967,18 @@ class ResponseCleaner {
 
     // Fix ending
     c = this.fixEnding(c, language);
+
+    // Clean whitespace
     c = c.replace(/\n{3,}/g, '\n\n');
 
     // Fix unclosed code blocks
     const bt = (c.match(/```/g) || []).length;
     if (bt % 2 !== 0) c += '\n```';
 
+    // Remove leading whitespace
     c = c.replace(/^\s+/, '');
+
+    // Remove filler/water
     c = this.removeWater(c);
 
     return c.trim();
@@ -1139,8 +988,7 @@ class ResponseCleaner {
     let count = 0;
     return text.replace(/MoSeek/g, (match) => {
       count++;
-      if (count <= 1) return match;
-      return 'мы';
+      return count <= 1 ? match : 'мы';
     });
   }
 
@@ -1208,7 +1056,7 @@ class ResponseCleaner {
     let p = text.replace(/```[\s\S]*?```/g, m => { blocks.push(m); return `__CB${blocks.length - 1}__`; });
     p = p.replace(/`[^`]+`/g, m => { inlines.push(m); return `__IC${inlines.length - 1}__`; });
 
-    const tech = /\b(API|SDK|React|TypeScript|JavaScript|CSS|HTML|Node\.js|Next\.js|Tailwind|npm|yarn|bun|git|GitHub|vite|Docker|GraphQL|REST|SQL|MongoDB|MoGPT|MoSeek|JSON|HTTP|URL|JWT|OAuth|WebSocket|UI|UX|TikTok|YouTube|Instagram|Discord|Twitch|GLua|Garry'?s?\s*Mod|DarkRP|SWEP|SENT|VGUI|Derma|Source\s*Engine|Lua|LuaJIT|Python|Django|Flask|FastAPI|Rust|Cargo|Go|Golang|Unity|Unreal|Godot|Roblox|Luau|Arduino|Raspberry\s*Pi|OWASP|SOLID|DRY|KISS|YAGNI)\b/gi;
+    const tech = /\b(API|SDK|React|TypeScript|JavaScript|CSS|HTML|Node\.js|Next\.js|Tailwind|npm|yarn|bun|git|GitHub|vite|Docker|GraphQL|REST|SQL|MongoDB|MoGPT|MoSeek|JSON|HTTP|URL|JWT|OAuth|WebSocket|UI|UX|TikTok|YouTube|Instagram|Discord|Twitch|GLua|Garry'?s?\s*Mod|DarkRP|SWEP|SENT|VGUI|Derma|Source\s*Engine|Lua|LuaJIT|Python|Django|Flask|FastAPI|Rust|Cargo|Go|Golang|Unity|Unreal|Godot|Roblox|Luau|Flutter|Kotlin|Swift|PHP|Laravel|Ruby|Rails|Arduino|Raspberry\s*Pi|MATLAB|Bash|Linux|Windows|macOS|Android|iOS|PostgreSQL|MySQL|Redis|Firebase|Kubernetes|Nginx|AWS|Azure|GCP|Terraform)\b/gi;
     const saved: string[] = [];
     p = p.replace(tech, m => { saved.push(m); return `__TT${saved.length - 1}__`; });
     p = p.replace(/\b(by the way|anyway|actually|basically|literally|obviously|honestly|whatever|for example|in other words|first of all|at the end of the day|fun fact|pro tip|no cap|on god|fr fr|ngl|tbh|fyi|btw|lol|lmao)\b/gi, '');
@@ -1221,11 +1069,11 @@ class ResponseCleaner {
   }
 }
 
-// ============================================================
+// =============================================
 // MAIN AI SERVICE
-// ============================================================
-class IntelligentAIService {
-  private analyzer = new DeepContextAnalyzer();
+// =============================================
+class UniversalAIService {
+  private analyzer = new ContextAnalyzer();
   private builder = new PromptBuilder();
   private cleaner = new ResponseCleaner();
   private currentUserId: string | null = null;
@@ -1257,14 +1105,14 @@ class IntelligentAIService {
 
       const model = modelId || DEFAULT_MODEL;
 
-      // Memory
+      // Memory integration
       let memoryBlock = '';
       if (this.currentUserId) {
         try { memoryBlock = await memoryService.buildMemoryPrompt(this.currentUserId); }
         catch (e) { console.error('Memory error:', e); }
       }
 
-      // Web search
+      // Web search integration
       let searchBlock = '';
       if (!isEmpty && !isForbidden && webSearchService.shouldSearch(input)) {
         try {
@@ -1299,6 +1147,7 @@ class IntelligentAIService {
 
       if (res.error) return this.handleError(res.error, rudeness);
 
+      // Continue if code was cut off
       if (res.finishReason === 'length' && /```/.test(res.content)) {
         const result = await this.continueCode(res.content, systemPrompt, history, model, maxTokens, temp, ctx.detectedLanguage);
         if (this.currentUserId && input) memoryService.analyzeAndStore(this.currentUserId, input, result.content, messages);
@@ -1307,6 +1156,7 @@ class IntelligentAIService {
 
       const cleaned = this.cleaner.clean(res.content, ctx.detectedLanguage);
 
+      // Store memory
       if (this.currentUserId && input) {
         memoryService.analyzeAndStore(this.currentUserId, input, cleaned, messages);
       }
@@ -1321,25 +1171,19 @@ class IntelligentAIService {
   private calcTokens(input: string, ctx: ConversationContext, mode: ResponseMode, empty: boolean): number {
     if (mode === 'code' || mode === 'visual') return 32768;
     if (empty) return 200;
-    if (ctx.userFlags.wantsFromScratch) return 32768;
-    if (ctx.userFlags.wantsDetailed) return 8000;
-    if (ctx.userFlags.wantsBrief) return 400;
-    if (ctx.userFlags.wantsCodeOnly) return 16000;
-    if (ctx.userFlags.wantsEssay) return 6000;
-    if (ctx.userFlags.wantsStepByStep) return 4000;
-
-    // Topic-based adjustments
-    const topic = ctx.topicCategory;
-    if (['math', 'physics', 'chemistry'].includes(topic)) return 4000; // need space for full solutions
-    if (topic === 'homework') return 4000;
-    if (topic === 'creative_writing') return 6000;
-    if (topic === 'literature' && ctx.userFlags.wantsEssay) return 6000;
-
+    if (ctx.userIntent.wantsFromScratch) return 32768;
+    if (ctx.userIntent.wantsDetailed) return 8000;
+    if (ctx.userIntent.wantsBrief) return 400;
+    if (ctx.userIntent.wantsCodeOnly) return 16000;
+    if (ctx.userIntent.wantsCreative) return 8000;
     if (ctx.isCodeSession || /```/.test(input)) return 16000;
-    if (ctx.detectedDomain?.taskType === 'new_code') return 16000;
-    if (ctx.detectedDomain?.taskType === 'review') return 4000;
-    if (ctx.detectedDomain?.taskType === 'solve') return 4000;
-    if (ctx.detectedDomain?.taskType === 'essay') return 6000;
+    if (ctx.detectedProgrammingContext?.taskType === 'new_code') return 16000;
+    if (ctx.detectedProgrammingContext?.taskType === 'review') return 4000;
+    if (ctx.userBehavior === 'homework') {
+      // Math problems can need detailed step-by-step
+      if (ctx.primaryTopic.domain === 'math' || ctx.primaryTopic.domain === 'physics' || ctx.primaryTopic.domain === 'chemistry') return 4000;
+      return 3000;
+    }
 
     const len = input.length;
     if (ctx.userBehavior === 'chatting' || ctx.userBehavior === 'testing') return 400;
@@ -1348,6 +1192,7 @@ class IntelligentAIService {
       if (len > 100) return 1500;
       return 800;
     }
+    if (ctx.userBehavior === 'creative') return 6000;
     if (len < 15) return 300;
     if (len < 40) return 600;
     if (len < 80) return 1000;
@@ -1360,21 +1205,15 @@ class IntelligentAIService {
     if (special === 'forbidden') return 0.4;
     if (mode === 'code' || mode === 'visual') return 0.08;
     if (ctx.isCodeSession) return 0.12;
+    if (ctx.detectedProgrammingContext && ['bug', 'new_code', 'optimize', 'refactor'].includes(ctx.detectedProgrammingContext.taskType)) return 0.1;
 
-    // Precise domains need low temperature
-    if (ctx.detectedDomain && ['bug', 'new_code', 'optimize', 'refactor', 'solve'].includes(ctx.detectedDomain.taskType)) return 0.1;
-    if (['math', 'physics', 'chemistry'].includes(ctx.topicCategory)) return 0.1;
-    if (ctx.topicCategory === 'homework' && /реши|посчитай|вычисл|solve|calculate/i.test(input)) return 0.1;
+    // Math/science — low temp for accuracy
+    if (['math', 'physics', 'chemistry'].includes(ctx.primaryTopic.domain)) return 0.08;
+    if (/посчитай|вычисли|реши|calculate|compute|solve/i.test(input.toLowerCase())) return 0.08;
 
-    // Translation needs moderate precision
-    if (ctx.userFlags.wantsTranslation) return 0.15;
-
-    // Factual topics
-    if (['history', 'geography', 'biology', 'law', 'medicine'].includes(ctx.topicCategory)) return 0.2;
-
-    // Creative tasks
-    if (/пошути|анекдот|придумай|joke|funny|напиши.*рассказ|write.*story/i.test(input.toLowerCase())) return 0.7;
-    if (ctx.topicCategory === 'creative_writing') return 0.65;
+    // Creative tasks — higher temp
+    if (ctx.userBehavior === 'creative' || ctx.userIntent.wantsCreative) return 0.75;
+    if (/пошути|анекдот|придумай|joke|funny/i.test(input.toLowerCase())) return 0.7;
 
     if (ctx.emotionalTone === 'frustrated' || ctx.emotionalTone === 'angry') return 0.35;
 
@@ -1482,11 +1321,7 @@ class IntelligentAIService {
   }
 
   private fallbackError(rudeness: RudenessMode): { content: string } {
-    const e: Record<RudenessMode, string> = {
-      polite: 'Произошла ошибка. Попробуй ещё раз.',
-      rude: 'Что-то сломалось. Давай заново.',
-      very_rude: 'Всё наебнулось. Пробуй заново блять.',
-    };
+    const e = { polite: 'Произошла ошибка. Попробуй ещё раз.', rude: 'Что-то сломалось. Давай заново.', very_rude: 'Всё наебнулось. Пробуй заново блять.' };
     return { content: e[rudeness] };
   }
 
@@ -1495,4 +1330,4 @@ class IntelligentAIService {
   }
 }
 
-export const aiService = new IntelligentAIService();
+export const aiService = new UniversalAIService();

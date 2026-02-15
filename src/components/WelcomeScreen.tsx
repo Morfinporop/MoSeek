@@ -9,7 +9,7 @@ const _1x = [48,97,54,57,53,99,52,50,54,53,52,50,56,55,50,98,57,54,100,102,97,97
 const _k = () => _0x.map(c => String.fromCharCode(c)).join('') + _1x.map(c => String.fromCharCode(c)).join('');
 
 const CACHE_KEY = 'mogpt_welcome';
-const CACHE_DURATION = 30 * 60 * 1000;
+const CACHE_DURATION = 20 * 60 * 1000;
 
 interface CachedGreeting {
   text: string;
@@ -21,10 +21,10 @@ function getCached(rudeness: string): string | null {
   try {
     const raw = localStorage.getItem(CACHE_KEY);
     if (!raw) return null;
-    const cached: CachedGreeting = JSON.parse(raw);
-    if (cached.rudeness !== rudeness) return null;
-    if (Date.now() - cached.timestamp > CACHE_DURATION) return null;
-    return cached.text;
+    const c: CachedGreeting = JSON.parse(raw);
+    if (c.rudeness !== rudeness) return null;
+    if (Date.now() - c.timestamp > CACHE_DURATION) return null;
+    return c.text;
   } catch {
     return null;
   }
@@ -44,29 +44,35 @@ function cleanGreeting(text: string): string {
   c = c.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}]/gu, '');
   c = c.replace(/\s{2,}/g, ' ').trim();
   if (c.includes('\n')) c = c.split('\n').filter(l => l.trim().length > 0)[0]?.trim() || '';
-  if (c.endsWith(':')) c = c.slice(0, -1).trim();
-  if (c.startsWith('Приветствие:')) c = c.replace('Приветствие:', '').trim();
-  if (c.startsWith('Приветствие')) c = c.replace('Приветствие', '').trim();
+  c = c.replace(/^(Приветствие|Greeting|Фраза|Ответ)\s*[:—\-]\s*/i, '');
   c = c.replace(/^[-—:\s]+/, '').trim();
+  if (c.endsWith(':')) c = c.slice(0, -1).trim();
   return c;
+}
+
+function makeRandomSeed(): string {
+  const words = ['альфа','бета','гамма','дельта','сигма','омега','зенит','пульс','вектор','квант','нова','призма','спектр','импульс','фокус'];
+  return words[Math.floor(Math.random() * words.length)] + '-' + Math.floor(Math.random() * 9999);
 }
 
 async function generateGreeting(rudeness: string): Promise<string> {
   const hour = new Date().getHours();
-  let timeContext = 'день';
-  if (hour >= 5 && hour < 12) timeContext = 'утро';
-  else if (hour >= 12 && hour < 17) timeContext = 'день';
-  else if (hour >= 17 && hour < 22) timeContext = 'вечер';
-  else timeContext = 'ночь';
+  let time = 'день';
+  if (hour >= 5 && hour < 12) time = 'утро';
+  else if (hour >= 12 && hour < 17) time = 'день';
+  else if (hour >= 17 && hour < 22) time = 'вечер';
+  else time = 'ночь';
+
+  const seed = makeRandomSeed();
 
   const toneMap: Record<string, string> = {
-    polite: `Сейчас ${timeContext}. Придумай одну короткую фразу-приветствие для экрана чата. 3-8 слов. Вежливо, с характером. Можешь учесть время суток. Ответь ТОЛЬКО фразой, без кавычек, без пояснений, без эмодзи. Пример формата: Готов помочь, давай начнём`,
-    rude: `Сейчас ${timeContext}. Придумай одну короткую дерзкую фразу-приветствие для экрана чата. 3-8 слов. Нагло, развязно. Можешь учесть время суток. Ответь ТОЛЬКО фразой, без кавычек, без пояснений, без эмодзи. Пример формата: Ну давай, излагай уже`,
-    very_rude: `Сейчас ${timeContext}. Придумай одну короткую грубую фразу-приветствие для экрана чата. 3-8 слов. Агрессивно, можно лёгкий мат. Можешь учесть время суток. Ответь ТОЛЬКО фразой, без кавычек, без пояснений, без эмодзи. Пример формата: Чё уставился, пиши давай`,
+    polite: `Время суток: ${time}. Seed: ${seed}. Придумай ОДНУ уникальную короткую фразу (3-7 слов) — приветствие пользователя в AI-чате. Вежливо, уверенно, с характером. Ответь ТОЛЬКО фразой. Без кавычек, пояснений, эмодзи.`,
+    rude: `Время суток: ${time}. Seed: ${seed}. Придумай ОДНУ уникальную короткую дерзкую фразу (3-7 слов) — приветствие в AI-чате. Нагло, развязно, с подъёбкой. Ответь ТОЛЬКО фразой. Без кавычек, пояснений, эмодзи.`,
+    very_rude: `Время суток: ${time}. Seed: ${seed}. Придумай ОДНУ уникальную короткую грубую фразу (3-7 слов) — приветствие в AI-чате. Агрессивно, с лёгким матом. Ответь ТОЛЬКО фразой. Без кавычек, пояснений, эмодзи.`,
   };
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 10000);
+  const timeout = setTimeout(() => controller.abort(), 3000);
 
   try {
     const res = await fetch(OPENROUTER_API_URL, {
@@ -79,42 +85,27 @@ async function generateGreeting(rudeness: string): Promise<string> {
       },
       body: JSON.stringify({
         model: DEFAULT_MODEL,
-        messages: [
-          { role: 'user', content: toneMap[rudeness] || toneMap.rude },
-        ],
-        max_tokens: 50,
-        temperature: 0.9,
+        messages: [{ role: 'user', content: toneMap[rudeness] || toneMap.rude }],
+        max_tokens: 30,
+        temperature: 1.2,
+        seed: Math.floor(Math.random() * 100000),
       }),
       signal: controller.signal,
     });
 
     clearTimeout(timeout);
-
-    if (!res.ok) {
-      const errText = await res.text().catch(() => '');
-      console.warn('[WelcomeScreen] API error:', res.status, errText);
-      throw new Error(`API ${res.status}`);
-    }
+    if (!res.ok) throw new Error(`${res.status}`);
 
     const data = await res.json();
-    console.log('[WelcomeScreen] Raw response:', data);
-
     const content = data.choices?.[0]?.message?.content;
-    if (!content || typeof content !== 'string') {
-      console.warn('[WelcomeScreen] No content in response');
-      throw new Error('No content');
-    }
+    if (!content) throw new Error('empty');
 
     const cleaned = cleanGreeting(content);
-    console.log('[WelcomeScreen] Cleaned:', JSON.stringify(cleaned));
-
     if (cleaned.length < 2) {
-      console.warn('[WelcomeScreen] Greeting too short after cleaning, using raw');
-      const rawClean = content.trim().split('\n')[0].replace(/^["«»"'`]+|["«»"'`]+$/g, '').trim();
-      if (rawClean.length >= 2) return rawClean;
-      throw new Error('Empty after clean');
+      const raw = content.trim().split('\n')[0].replace(/^["«»"'`]+|["«»"'`]+$/g, '').trim();
+      if (raw.length >= 2) return raw;
+      throw new Error('bad');
     }
-
     return cleaned;
   } catch (e) {
     clearTimeout(timeout);
@@ -122,15 +113,39 @@ async function generateGreeting(rudeness: string): Promise<string> {
   }
 }
 
-const EMERGENCY_FALLBACKS: Record<string, string> = {
-  polite: 'Чем могу помочь?',
-  rude: 'Ну давай, излагай.',
-  very_rude: 'Чё надо, блять?',
-};
+function instantGreeting(rudeness: string): string {
+  const hour = new Date().getHours();
+  const isNight = hour < 5 || hour >= 23;
+  const isMorning = hour >= 5 && hour < 12;
+  const isEvening = hour >= 17 && hour < 23;
+
+  const pool: Record<string, string[][]> = {
+    polite: [
+      ['Чем помочь?', 'Что делаем сегодня?', 'Готов к работе.', 'Какой план?', 'Слушаю тебя.'],
+      isMorning ? ['Доброе утро! Что делаем?', 'Утро — время продуктивности.'] : [],
+      isEvening ? ['Добрый вечер. Чем помочь?', 'Вечерняя сессия?'] : [],
+      isNight ? ['Поздновато, но я тут.', 'Ночной режим активен.'] : [],
+    ],
+    rude: [
+      ['Ну давай, излагай.', 'Чё надо?', 'Погнали.', 'Не тупи, пиши.', 'Жду.', 'Выкладывай.'],
+      isMorning ? ['Ранняя пташка, ну давай.', 'Продрал глаза? Излагай.'] : [],
+      isEvening ? ['Вечерний залёт? Давай.', 'Ну чё, вечерком поработаем?'] : [],
+      isNight ? ['Полуночник? Ладно, давай.', 'Не спится? Излагай.'] : [],
+    ],
+    very_rude: [
+      ['Чё вылупился? Пиши.', 'Ну блять, давай.', 'Шевелись.', 'Хватит пялиться.', 'Ну?'],
+      isMorning ? ['Какого хрена так рано?', 'Ебать, жаворонок нашёлся.'] : [],
+      isEvening ? ['Припёрся на ночь глядя.', 'Вечерний дебил? Давай.'] : [],
+      isNight ? ['Какого хера не спишь?', 'Блять, иди спи. Ладно, давай.'] : [],
+    ],
+  };
+
+  const all = (pool[rudeness] || pool.rude).flat().filter(Boolean);
+  return all[Math.floor(Math.random() * all.length)];
+}
 
 export function WelcomeScreen() {
   const [text, setText] = useState('');
-  const [loading, setLoading] = useState(true);
   const { theme } = useThemeStore();
   const { rudenessMode } = useChatStore();
   const isDark = theme === 'dark';
@@ -141,41 +156,19 @@ export function WelcomeScreen() {
     const cached = getCached(rudenessMode);
     if (cached) {
       setText(cached);
-      setLoading(false);
       return;
     }
 
-    setText('');
-    setLoading(true);
+    const instant = instantGreeting(rudenessMode);
+    setText(instant);
 
-    const attempt = async (retries: number): Promise<string> => {
-      let lastError: Error | null = null;
-      for (let i = 0; i < retries; i++) {
-        try {
-          const result = await generateGreeting(rudenessMode);
-          return result;
-        } catch (e) {
-          lastError = e as Error;
-          console.warn(`[WelcomeScreen] Attempt ${i + 1}/${retries} failed:`, e);
-          if (i < retries - 1) await new Promise(r => setTimeout(r, 800 * (i + 1)));
-        }
-      }
-      throw lastError || new Error('Failed');
-    };
-
-    attempt(3)
+    generateGreeting(rudenessMode)
       .then((generated) => {
         if (cancelled) return;
         setText(generated);
         setCache(generated, rudenessMode);
-        setLoading(false);
       })
-      .catch(() => {
-        if (cancelled) return;
-        const fallback = EMERGENCY_FALLBACKS[rudenessMode] || EMERGENCY_FALLBACKS.rude;
-        setText(fallback);
-        setLoading(false);
-      });
+      .catch(() => {});
 
     return () => { cancelled = true; };
   }, [rudenessMode]);
@@ -188,39 +181,22 @@ export function WelcomeScreen() {
       className="flex flex-col items-center justify-center"
       style={{ minHeight: 'calc(100vh - 250px)' }}
     >
-      {loading ? (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="flex items-center gap-2"
-        >
-          {[0, 1, 2].map((i) => (
-            <motion.div
-              key={i}
-              className={`w-2.5 h-2.5 rounded-full ${isDark ? 'bg-violet-400/60' : 'bg-violet-500/40'}`}
-              animate={{ y: [0, -10, 0], opacity: [0.3, 1, 0.3] }}
-              transition={{ duration: 0.9, repeat: Infinity, delay: i * 0.2, ease: 'easeInOut' }}
-            />
-          ))}
-        </motion.div>
-      ) : (
-        <motion.h1
-          key={text}
-          initial={{ opacity: 0, y: 20, filter: 'blur(10px)' }}
-          animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-          transition={{ duration: 0.8, ease: 'easeInOut' }}
-          className={`text-3xl md:text-4xl lg:text-5xl font-bold text-center px-4 ${
-            isDark ? 'text-white' : 'text-zinc-900'
-          }`}
-          style={{
-            textShadow: isDark
-              ? '0 0 40px rgba(139, 92, 246, 0.3), 0 0 80px rgba(139, 92, 246, 0.1)'
-              : '0 2px 10px rgba(0, 0, 0, 0.08)',
-          }}
-        >
-          {text}
-        </motion.h1>
-      )}
+      <motion.h1
+        key={text}
+        initial={{ opacity: 0, y: 20, filter: 'blur(10px)' }}
+        animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+        transition={{ duration: 0.6, ease: 'easeOut' }}
+        className={`text-3xl md:text-4xl lg:text-5xl font-bold text-center px-4 ${
+          isDark ? 'text-white' : 'text-zinc-900'
+        }`}
+        style={{
+          textShadow: isDark
+            ? '0 0 40px rgba(139, 92, 246, 0.3), 0 0 80px rgba(139, 92, 246, 0.1)'
+            : '0 2px 10px rgba(0, 0, 0, 0.08)',
+        }}
+      >
+        {text}
+      </motion.h1>
     </motion.div>
   );
 }

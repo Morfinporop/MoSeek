@@ -28,67 +28,1084 @@ const FORBIDDEN_PATTERNS = [
 ];
 
 const LANGUAGE_MAP: Record<string, { name: string; native: string; endPunctuation: string; direction: 'ltr' | 'rtl' }> = {
+  // ============================================================
+  // === СЛАВЯНСКИЕ ЯЗЫКИ ===
+  // ============================================================
   ru: { name: 'русский', native: 'русский', endPunctuation: '.!?', direction: 'ltr' },
-  en: { name: 'английский', native: 'English', endPunctuation: '.!?', direction: 'ltr' },
-  zh: { name: 'китайский', native: '中文', endPunctuation: '。！？', direction: 'ltr' },
-  ja: { name: 'японский', native: '日本語', endPunctuation: '。！？', direction: 'ltr' },
-  ko: { name: 'корейский', native: '한국어', endPunctuation: '.!?', direction: 'ltr' },
-  ar: { name: 'арабский', native: 'العربية', endPunctuation: '.!?', direction: 'rtl' },
-  hi: { name: 'хинди', native: 'हिन्दी', endPunctuation: '।!?', direction: 'ltr' },
-  th: { name: 'тайский', native: 'ไทย', endPunctuation: '.!?', direction: 'ltr' },
-  ka: { name: 'грузинский', native: 'ქართული', endPunctuation: '.!?', direction: 'ltr' },
-  hy: { name: 'армянский', native: 'Հայերեն', endPunctuation: '.!?', direction: 'ltr' },
-  he: { name: 'иврит', native: 'עברית', endPunctuation: '.!?', direction: 'rtl' },
-  tr: { name: 'турецкий', native: 'Türkçe', endPunctuation: '.!?', direction: 'ltr' },
-  de: { name: 'немецкий', native: 'Deutsch', endPunctuation: '.!?', direction: 'ltr' },
-  fr: { name: 'французский', native: 'Français', endPunctuation: '.!?', direction: 'ltr' },
-  es: { name: 'испанский', native: 'Español', endPunctuation: '.!?', direction: 'ltr' },
-  pt: { name: 'португальский', native: 'Português', endPunctuation: '.!?', direction: 'ltr' },
-  it: { name: 'итальянский', native: 'Italiano', endPunctuation: '.!?', direction: 'ltr' },
+  uk: { name: 'украинский', native: 'Українська', endPunctuation: '.!?', direction: 'ltr' },
+  be: { name: 'белорусский', native: 'Беларуская', endPunctuation: '.!?', direction: 'ltr' },
   pl: { name: 'польский', native: 'Polski', endPunctuation: '.!?', direction: 'ltr' },
   cs: { name: 'чешский', native: 'Čeština', endPunctuation: '.!?', direction: 'ltr' },
-  vi: { name: 'вьетнамский', native: 'Tiếng Việt', endPunctuation: '.!?', direction: 'ltr' },
-  uk: { name: 'украинский', native: 'Українська', endPunctuation: '.!?', direction: 'ltr' },
-  nl: { name: 'нидерландский', native: 'Nederlands', endPunctuation: '.!?', direction: 'ltr' },
-  sv: { name: 'шведский', native: 'Svenska', endPunctuation: '.!?', direction: 'ltr' },
-  da: { name: 'датский', native: 'Dansk', endPunctuation: '.!?', direction: 'ltr' },
-  no: { name: 'норвежский', native: 'Norsk', endPunctuation: '.!?', direction: 'ltr' },
-  fi: { name: 'финский', native: 'Suomi', endPunctuation: '.!?', direction: 'ltr' },
-  el: { name: 'греческий', native: 'Ελληνικά', endPunctuation: '.!?;', direction: 'ltr' },
-  ro: { name: 'румынский', native: 'Română', endPunctuation: '.!?', direction: 'ltr' },
-  hu: { name: 'венгерский', native: 'Magyar', endPunctuation: '.!?', direction: 'ltr' },
+  sk: { name: 'словацкий', native: 'Slovenčina', endPunctuation: '.!?', direction: 'ltr' },
+  sl: { name: 'словенский', native: 'Slovenščina', endPunctuation: '.!?', direction: 'ltr' },
   bg: { name: 'болгарский', native: 'Български', endPunctuation: '.!?', direction: 'ltr' },
   sr: { name: 'сербский', native: 'Српски', endPunctuation: '.!?', direction: 'ltr' },
   hr: { name: 'хорватский', native: 'Hrvatski', endPunctuation: '.!?', direction: 'ltr' },
-  sk: { name: 'словацкий', native: 'Slovenčina', endPunctuation: '.!?', direction: 'ltr' },
-  sl: { name: 'словенский', native: 'Slovenščina', endPunctuation: '.!?', direction: 'ltr' },
+  bs: { name: 'боснийский', native: 'Bosanski', endPunctuation: '.!?', direction: 'ltr' },
+  mk: { name: 'македонский', native: 'Македонски', endPunctuation: '.!?', direction: 'ltr' },
+  rue: { name: 'русинский', native: 'Русиньскый', endPunctuation: '.!?', direction: 'ltr' },
+  csb: { name: 'кашубский', native: 'Kaszëbsczi', endPunctuation: '.!?', direction: 'ltr' },
+  hsb: { name: 'верхнелужицкий', native: 'Hornjoserbšćina', endPunctuation: '.!?', direction: 'ltr' },
+  dsb: { name: 'нижнелужицкий', native: 'Dolnoserbšćina', endPunctuation: '.!?', direction: 'ltr' },
+  szl: { name: 'силезский', native: 'Ślůnsko godka', endPunctuation: '.!?', direction: 'ltr' },
+
+  // ============================================================
+  // === ГЕРМАНСКИЕ ЯЗЫКИ ===
+  // ============================================================
+  en: { name: 'английский', native: 'English', endPunctuation: '.!?', direction: 'ltr' },
+  de: { name: 'немецкий', native: 'Deutsch', endPunctuation: '.!?', direction: 'ltr' },
+  nl: { name: 'нидерландский', native: 'Nederlands', endPunctuation: '.!?', direction: 'ltr' },
+  sv: { name: 'шведский', native: 'Svenska', endPunctuation: '.!?', direction: 'ltr' },
+  da: { name: 'датский', native: 'Dansk', endPunctuation: '.!?', direction: 'ltr' },
+  no: { name: 'норвежский (букмол)', native: 'Norsk bokmål', endPunctuation: '.!?', direction: 'ltr' },
+  nn: { name: 'норвежский (нюнорск)', native: 'Nynorsk', endPunctuation: '.!?', direction: 'ltr' },
+  is: { name: 'исландский', native: 'Íslenska', endPunctuation: '.!?', direction: 'ltr' },
+  fo: { name: 'фарерский', native: 'Føroyskt', endPunctuation: '.!?', direction: 'ltr' },
+  fy: { name: 'западнофризский', native: 'Frysk', endPunctuation: '.!?', direction: 'ltr' },
+  stq: { name: 'сатерландский фризский', native: 'Seeltersk', endPunctuation: '.!?', direction: 'ltr' },
+  frr: { name: 'севернофризский', native: 'Nordfriisk', endPunctuation: '.!?', direction: 'ltr' },
+  af: { name: 'африкаанс', native: 'Afrikaans', endPunctuation: '.!?', direction: 'ltr' },
+  lb: { name: 'люксембургский', native: 'Lëtzebuergesch', endPunctuation: '.!?', direction: 'ltr' },
+  yi: { name: 'идиш', native: 'ייִדיש', endPunctuation: '.!?', direction: 'rtl' },
+  sco: { name: 'шотландский', native: 'Scots', endPunctuation: '.!?', direction: 'ltr' },
+  ang: { name: 'древнеанглийский', native: 'Englisc', endPunctuation: '.!?', direction: 'ltr' },
+  gsw: { name: 'швейцарский немецкий', native: 'Schwyzerdütsch', endPunctuation: '.!?', direction: 'ltr' },
+  bar: { name: 'баварский', native: 'Boarisch', endPunctuation: '.!?', direction: 'ltr' },
+  pfl: { name: 'пфальцский', native: 'Pfälzisch', endPunctuation: '.!?', direction: 'ltr' },
+  ksh: { name: 'кёльнский', native: 'Kölsch', endPunctuation: '.!?', direction: 'ltr' },
+  nds: { name: 'нижненемецкий', native: 'Plattdüütsch', endPunctuation: '.!?', direction: 'ltr' },
+  pdc: { name: 'пенсильванский немецкий', native: 'Pennsilfaanisch Deitsch', endPunctuation: '.!?', direction: 'ltr' },
+  li: { name: 'лимбургский', native: 'Limburgs', endPunctuation: '.!?', direction: 'ltr' },
+  zea: { name: 'зеландский', native: 'Zeêuws', endPunctuation: '.!?', direction: 'ltr' },
+  vls: { name: 'западнофламандский', native: 'West-Vlams', endPunctuation: '.!?', direction: 'ltr' },
+  got: { name: 'готский', native: '𐌲𐌿𐍄𐌹𐍃𐌺', endPunctuation: '.!?', direction: 'ltr' },
+  non: { name: 'древнескандинавский', native: 'Norrœnt mál', endPunctuation: '.!?', direction: 'ltr' },
+
+  // ============================================================
+  // === РОМАНСКИЕ ЯЗЫКИ ===
+  // ============================================================
+  fr: { name: 'французский', native: 'Français', endPunctuation: '.!?', direction: 'ltr' },
+  es: { name: 'испанский', native: 'Español', endPunctuation: '.!?¡¿', direction: 'ltr' },
+  pt: { name: 'португальский', native: 'Português', endPunctuation: '.!?', direction: 'ltr' },
+  'pt-BR': { name: 'бразильский португальский', native: 'Português do Brasil', endPunctuation: '.!?', direction: 'ltr' },
+  it: { name: 'итальянский', native: 'Italiano', endPunctuation: '.!?', direction: 'ltr' },
+  ro: { name: 'румынский', native: 'Română', endPunctuation: '.!?', direction: 'ltr' },
+  ca: { name: 'каталанский', native: 'Català', endPunctuation: '.!?', direction: 'ltr' },
+  gl: { name: 'галисийский', native: 'Galego', endPunctuation: '.!?', direction: 'ltr' },
+  oc: { name: 'окситанский', native: 'Occitan', endPunctuation: '.!?', direction: 'ltr' },
+  an: { name: 'арагонский', native: 'Aragonés', endPunctuation: '.!?', direction: 'ltr' },
+  ast: { name: 'астурийский', native: 'Asturianu', endPunctuation: '.!?', direction: 'ltr' },
+  co: { name: 'корсиканский', native: 'Corsu', endPunctuation: '.!?', direction: 'ltr' },
+  sc: { name: 'сардинский', native: 'Sardu', endPunctuation: '.!?', direction: 'ltr' },
+  wa: { name: 'валлонский', native: 'Walon', endPunctuation: '.!?', direction: 'ltr' },
+  la: { name: 'латинский', native: 'Latina', endPunctuation: '.!?', direction: 'ltr' },
+  mo: { name: 'молдавский', native: 'Moldovenească', endPunctuation: '.!?', direction: 'ltr' },
+  ht: { name: 'гаитянский креольский', native: 'Kreyòl ayisyen', endPunctuation: '.!?', direction: 'ltr' },
+  rm: { name: 'романшский', native: 'Rumantsch', endPunctuation: '.!?', direction: 'ltr' },
+  fur: { name: 'фриульский', native: 'Furlan', endPunctuation: '.!?', direction: 'ltr' },
+  lad: { name: 'ладино', native: 'Judezmo', endPunctuation: '.!?', direction: 'ltr' },
+  lmo: { name: 'ломбардский', native: 'Lombard', endPunctuation: '.!?', direction: 'ltr' },
+  pms: { name: 'пьемонтский', native: 'Piemontèis', endPunctuation: '.!?', direction: 'ltr' },
+  vec: { name: 'венетский', native: 'Vèneto', endPunctuation: '.!?', direction: 'ltr' },
+  lij: { name: 'лигурский', native: 'Ligure', endPunctuation: '.!?', direction: 'ltr' },
+  egl: { name: 'эмилиано-романьольский', native: 'Emigliàn-Rumagnòl', endPunctuation: '.!?', direction: 'ltr' },
+  nap: { name: 'неаполитанский', native: 'Napulitano', endPunctuation: '.!?', direction: 'ltr' },
+  scn: { name: 'сицилийский', native: 'Sicilianu', endPunctuation: '.!?', direction: 'ltr' },
+  rgn: { name: 'романьольский', native: 'Romagnòl', endPunctuation: '.!?', direction: 'ltr' },
+  mwl: { name: 'мирандский', native: 'Mirandés', endPunctuation: '.!?', direction: 'ltr' },
+  ext: { name: 'эстремадурский', native: 'Estremeñu', endPunctuation: '.!?', direction: 'ltr' },
+  frp: { name: 'франкопровансальский', native: 'Arpetan', endPunctuation: '.!?', direction: 'ltr' },
+  pcd: { name: 'пикардский', native: 'Picard', endPunctuation: '.!?', direction: 'ltr' },
+  nrf: { name: 'нормандский', native: 'Normaund', endPunctuation: '.!?', direction: 'ltr' },
+
+  // ============================================================
+  // === БАЛТИЙСКИЕ ЯЗЫКИ ===
+  // ============================================================
   lt: { name: 'литовский', native: 'Lietuvių', endPunctuation: '.!?', direction: 'ltr' },
   lv: { name: 'латышский', native: 'Latviešu', endPunctuation: '.!?', direction: 'ltr' },
+  ltg: { name: 'латгальский', native: 'Latgaļu', endPunctuation: '.!?', direction: 'ltr' },
+  sgs: { name: 'жемайтский', native: 'Žemaitėška', endPunctuation: '.!?', direction: 'ltr' },
+  prg: { name: 'прусский', native: 'Prūsiskan', endPunctuation: '.!?', direction: 'ltr' },
+
+  // ============================================================
+  // === КЕЛЬТСКИЕ ЯЗЫКИ ===
+  // ============================================================
+  ga: { name: 'ирландский', native: 'Gaeilge', endPunctuation: '.!?', direction: 'ltr' },
+  gd: { name: 'шотландский гэльский', native: 'Gàidhlig', endPunctuation: '.!?', direction: 'ltr' },
+  cy: { name: 'валлийский', native: 'Cymraeg', endPunctuation: '.!?', direction: 'ltr' },
+  br: { name: 'бретонский', native: 'Brezhoneg', endPunctuation: '.!?', direction: 'ltr' },
+  kw: { name: 'корнуоллский', native: 'Kernowek', endPunctuation: '.!?', direction: 'ltr' },
+  gv: { name: 'мэнский', native: 'Gaelg', endPunctuation: '.!?', direction: 'ltr' },
+
+  // ============================================================
+  // === ФИННО-УГОРСКИЕ (УРАЛЬСКИЕ) ЯЗЫКИ ===
+  // ============================================================
+  fi: { name: 'финский', native: 'Suomi', endPunctuation: '.!?', direction: 'ltr' },
   et: { name: 'эстонский', native: 'Eesti', endPunctuation: '.!?', direction: 'ltr' },
-  id: { name: 'индонезийский', native: 'Bahasa Indonesia', endPunctuation: '.!?', direction: 'ltr' },
-  ms: { name: 'малайский', native: 'Bahasa Melayu', endPunctuation: '.!?', direction: 'ltr' },
-  tl: { name: 'филиппинский', native: 'Filipino', endPunctuation: '.!?', direction: 'ltr' },
-  sw: { name: 'суахили', native: 'Kiswahili', endPunctuation: '.!?', direction: 'ltr' },
-  fa: { name: 'персидский', native: 'فارسی', endPunctuation: '.!?', direction: 'rtl' },
-  ur: { name: 'урду', native: 'اردو', endPunctuation: '.!?', direction: 'rtl' },
-  bn: { name: 'бенгальский', native: 'বাংলা', endPunctuation: '।!?', direction: 'ltr' },
-  ta: { name: 'тамильский', native: 'தமிழ்', endPunctuation: '.!?', direction: 'ltr' },
-  te: { name: 'телугу', native: 'తెలుగు', endPunctuation: '.!?', direction: 'ltr' },
-  mr: { name: 'маратхи', native: 'मराठी', endPunctuation: '।!?', direction: 'ltr' },
-  gu: { name: 'гуджарати', native: 'ગુજરાતી', endPunctuation: '.!?', direction: 'ltr' },
-  kn: { name: 'каннада', native: 'ಕನ್ನಡ', endPunctuation: '.!?', direction: 'ltr' },
-  ml: { name: 'малаялам', native: 'മലയാളം', endPunctuation: '.!?', direction: 'ltr' },
-  pa: { name: 'панджаби', native: 'ਪੰਜਾਬੀ', endPunctuation: '।!?', direction: 'ltr' },
-  my: { name: 'бирманский', native: 'မြန်မာ', endPunctuation: '။!?', direction: 'ltr' },
-  km: { name: 'кхмерский', native: 'ភាសាខ្មែរ', endPunctuation: '។!?', direction: 'ltr' },
-  lo: { name: 'лаосский', native: 'ພາສາລາວ', endPunctuation: '.!?', direction: 'ltr' },
-  mn: { name: 'монгольский', native: 'Монгол', endPunctuation: '.!?', direction: 'ltr' },
+  hu: { name: 'венгерский', native: 'Magyar', endPunctuation: '.!?', direction: 'ltr' },
+  se: { name: 'северносаамский', native: 'Davvisámegiella', endPunctuation: '.!?', direction: 'ltr' },
+  smn: { name: 'инари-саамский', native: 'Anarâškielâ', endPunctuation: '.!?', direction: 'ltr' },
+  sms: { name: 'колтта-саамский', native: 'Sää´mǩiõll', endPunctuation: '.!?', direction: 'ltr' },
+  sma: { name: 'южносаамский', native: 'Åarjelsaemien gïele', endPunctuation: '.!?', direction: 'ltr' },
+  smj: { name: 'луле-саамский', native: 'Julevsámegiella', endPunctuation: '.!?', direction: 'ltr' },
+  vro: { name: 'выруский', native: 'Võro', endPunctuation: '.!?', direction: 'ltr' },
+  liv: { name: 'ливский', native: 'Līvõ kēļ', endPunctuation: '.!?', direction: 'ltr' },
+  vep: { name: 'вепсский', native: 'Vepsän kel'', endPunctuation: '.!?', direction: 'ltr' },
+  izh: { name: 'ижорский', native: 'Ižoran keel', endPunctuation: '.!?', direction: 'ltr' },
+  krl: { name: 'карельский', native: 'Karjalan kieli', endPunctuation: '.!?', direction: 'ltr' },
+  udm: { name: 'удмуртский', native: 'Удмурт кыл', endPunctuation: '.!?', direction: 'ltr' },
+  kv: { name: 'коми-зырянский', native: 'Коми кыв', endPunctuation: '.!?', direction: 'ltr' },
+  koi: { name: 'коми-пермяцкий', native: 'Перем коми', endPunctuation: '.!?', direction: 'ltr' },
+  mdf: { name: 'мокшанский', native: 'Мокшень кяль', endPunctuation: '.!?', direction: 'ltr' },
+  myv: { name: 'эрзянский', native: 'Эрзянь кель', endPunctuation: '.!?', direction: 'ltr' },
+  mrj: { name: 'горномарийский', native: 'Кырык мары', endPunctuation: '.!?', direction: 'ltr' },
+  mhr: { name: 'луговомарийский', native: 'Олык марий', endPunctuation: '.!?', direction: 'ltr' },
+
+  // === Самодийские языки ===
+  yrk: { name: 'ненецкий', native: 'Ненэця вада', endPunctuation: '.!?', direction: 'ltr' },
+  sel: { name: 'селькупский', native: 'Шöльшы кум', endPunctuation: '.!?', direction: 'ltr' },
+  enf: { name: 'энецкий', native: 'Эньчу', endPunctuation: '.!?', direction: 'ltr' },
+  nga: { name: 'нганасанский', native: 'Ня"', endPunctuation: '.!?', direction: 'ltr' },
+
+  // ============================================================
+  // === ТЮРКСКИЕ ЯЗЫКИ ===
+  // ============================================================
+  tr: { name: 'турецкий', native: 'Türkçe', endPunctuation: '.!?', direction: 'ltr' },
+  az: { name: 'азербайджанский', native: 'Azərbaycan', endPunctuation: '.!?', direction: 'ltr' },
   kk: { name: 'казахский', native: 'Қазақша', endPunctuation: '.!?', direction: 'ltr' },
   uz: { name: 'узбекский', native: "O'zbekcha", endPunctuation: '.!?', direction: 'ltr' },
-  az: { name: 'азербайджанский', native: 'Azərbaycan', endPunctuation: '.!?', direction: 'ltr' },
+  ky: { name: 'киргизский', native: 'Кыргызча', endPunctuation: '.!?', direction: 'ltr' },
+  tk: { name: 'туркменский', native: 'Türkmen', endPunctuation: '.!?', direction: 'ltr' },
+  tt: { name: 'татарский', native: 'Татарча', endPunctuation: '.!?', direction: 'ltr' },
+  ba: { name: 'башкирский', native: 'Башҡортса', endPunctuation: '.!?', direction: 'ltr' },
+  cv: { name: 'чувашский', native: 'Чӑвашла', endPunctuation: '.!?', direction: 'ltr' },
+  crh: { name: 'крымскотатарский', native: 'Qırımtatarca', endPunctuation: '.!?', direction: 'ltr' },
+  ug: { name: 'уйгурский', native: 'ئۇيغۇرچە', endPunctuation: '.!?', direction: 'rtl' },
+  sah: { name: 'якутский', native: 'Сахалыы', endPunctuation: '.!?', direction: 'ltr' },
+  gag: { name: 'гагаузский', native: 'Gagauzca', endPunctuation: '.!?', direction: 'ltr' },
+  kum: { name: 'кумыкский', native: 'Къумукъча', endPunctuation: '.!?', direction: 'ltr' },
+  nog: { name: 'ногайский', native: 'Ногайша', endPunctuation: '.!?', direction: 'ltr' },
+  tyv: { name: 'тувинский', native: 'Тыва дыл', endPunctuation: '.!?', direction: 'ltr' },
+  alt: { name: 'алтайский', native: 'Алтай тил', endPunctuation: '.!?', direction: 'ltr' },
+  kjh: { name: 'хакасский', native: 'Хакас тілі', endPunctuation: '.!?', direction: 'ltr' },
+  krc: { name: 'карачаево-балкарский', native: 'Къарачай-малкъар', endPunctuation: '.!?', direction: 'ltr' },
+  dlg: { name: 'долганский', native: 'Тыа кил', endPunctuation: '.!?', direction: 'ltr' },
+  cjs: { name: 'шорский', native: 'Шор тили', endPunctuation: '.!?', direction: 'ltr' },
+  kim: { name: 'тофаларский', native: 'Тоъфа дыл', endPunctuation: '.!?', direction: 'ltr' },
+  kaa: { name: 'каракалпакский', native: 'Qaraqalpaqsha', endPunctuation: '.!?', direction: 'ltr' },
+
+  // ============================================================
+  // === МОНГОЛЬСКИЕ ЯЗЫКИ ===
+  // ============================================================
+  mn: { name: 'монгольский', native: 'Монгол', endPunctuation: '.!?', direction: 'ltr' },
+  bua: { name: 'бурятский', native: 'Буряад', endPunctuation: '.!?', direction: 'ltr' },
+  xal: { name: 'калмыцкий', native: 'Хальмг', endPunctuation: '.!?', direction: 'ltr' },
+  khk: { name: 'халха-монгольский', native: 'Халх', endPunctuation: '.!?', direction: 'ltr' },
+
+  // ============================================================
+  // === ТУНГУСО-МАНЬЧЖУРСКИЕ ЯЗЫКИ ===
+  // ============================================================
+  evn: { name: 'эвенкийский', native: 'Эвэды турэн', endPunctuation: '.!?', direction: 'ltr' },
+  eve: { name: 'эвенский', native: 'Эвэн турэн', endPunctuation: '.!?', direction: 'ltr' },
+  mnc: { name: 'маньчжурский', native: 'ᠮᠠᠨᠵᡠ ᡤᡳᠰᡠᠨ', endPunctuation: '.!?', direction: 'ltr' },
+  gld: { name: 'нанайский', native: 'На̄ний', endPunctuation: '.!?', direction: 'ltr' },
+  ulc: { name: 'ульчский', native: 'Нани', endPunctuation: '.!?', direction: 'ltr' },
+  ude: { name: 'удэгейский', native: 'Удиэ', endPunctuation: '.!?', direction: 'ltr' },
+  orc: { name: 'орочский', native: 'Орочисэл', endPunctuation: '.!?', direction: 'ltr' },
+  neg: { name: 'негидальский', native: 'Элкан бэйэнин', endPunctuation: '.!?', direction: 'ltr' },
+
+  // ============================================================
+  // === СЕМИТСКИЕ ЯЗЫКИ ===
+  // ============================================================
+  ar: { name: 'арабский (стандартный)', native: 'العربية الفصحى', endPunctuation: '.!?', direction: 'rtl' },
+  he: { name: 'иврит', native: 'עברית', endPunctuation: '.!?', direction: 'rtl' },
+  am: { name: 'амхарский', native: 'አማርኛ', endPunctuation: '።!?', direction: 'ltr' },
+  ti: { name: 'тигринья', native: 'ትግርኛ', endPunctuation: '።!?', direction: 'ltr' },
+  tig: { name: 'тигре', native: 'ትግረ', endPunctuation: '።!?', direction: 'ltr' },
+  mt: { name: 'мальтийский', native: 'Malti', endPunctuation: '.!?', direction: 'ltr' },
+  arz: { name: 'египетский арабский', native: 'مصرى', endPunctuation: '.!?', direction: 'rtl' },
+  arq: { name: 'алжирский арабский', native: 'دارجة', endPunctuation: '.!?', direction: 'rtl' },
+  apc: { name: 'левантийский арабский', native: 'عربي شامي', endPunctuation: '.!?', direction: 'rtl' },
+  acm: { name: 'иракский арабский', native: 'عراقي', endPunctuation: '.!?', direction: 'rtl' },
+  ary: { name: 'марокканский арабский', native: 'الدارجة', endPunctuation: '.!?', direction: 'rtl' },
+  aeb: { name: 'тунисский арабский', native: 'تونسي', endPunctuation: '.!?', direction: 'rtl' },
+  afb: { name: 'арабский Персидского залива', native: 'خليجي', endPunctuation: '.!?', direction: 'rtl' },
+  acq: { name: 'йеменский арабский', native: 'يمني', endPunctuation: '.!?', direction: 'rtl' },
+  ayl: { name: 'ливийский арабский', native: 'ليبي', endPunctuation: '.!?', direction: 'rtl' },
+  shu: { name: 'чадский арабский', native: 'عربي تشادي', endPunctuation: '.!?', direction: 'rtl' },
+  apd: { name: 'суданский арабский', native: 'عربي سوداني', endPunctuation: '.!?', direction: 'rtl' },
+  acx: { name: 'оманский арабский', native: 'عماني', endPunctuation: '.!?', direction: 'rtl' },
+  syc: { name: 'сирийский (классический)', native: 'ܣܘܪܝܝܐ', endPunctuation: '.!?', direction: 'rtl' },
+  arc: { name: 'арамейский', native: 'ܐܪܡܝܐ', endPunctuation: '.!?', direction: 'rtl' },
+  aii: { name: 'ассирийский', native: 'ܐܬܘܪܝܐ', endPunctuation: '.!?', direction: 'rtl' },
+  gez: { name: 'геэз', native: 'ግዕዝ', endPunctuation: '።!?', direction: 'ltr' },
+  har: { name: 'харари', native: 'ሐረሪ', endPunctuation: '።!?', direction: 'ltr' },
+  sgw: { name: 'себат-бет-гураге', native: 'ስብዓት', endPunctuation: '።!?', direction: 'ltr' },
+
+  // ============================================================
+  // === ИРАНСКИЕ ЯЗЫКИ ===
+  // ============================================================
+  fa: { name: 'персидский', native: 'فارسی', endPunctuation: '.!?', direction: 'rtl' },
+  ku: { name: 'курдский (курманджи)', native: 'Kurdî', endPunctuation: '.!?', direction: 'ltr' },
+  ckb: { name: 'курдский (сорани)', native: 'سۆرانی', endPunctuation: '.!?', direction: 'rtl' },
+  ps: { name: 'пушту', native: 'پښتو', endPunctuation: '.!?', direction: 'rtl' },
+  tg: { name: 'таджикский', native: 'Тоҷикӣ', endPunctuation: '.!?', direction: 'ltr' },
+  os: { name: 'осетинский', native: 'Ирон æвзаг', endPunctuation: '.!?', direction: 'ltr' },
+  sd: { name: 'синдхи', native: 'سنڌي', endPunctuation: '.!?', direction: 'rtl' },
+  bal: { name: 'белуджский', native: 'بلوچی', endPunctuation: '.!?', direction: 'rtl' },
+  tly: { name: 'талышский', native: 'Толышә зывон', endPunctuation: '.!?', direction: 'ltr' },
+  tat: { name: 'татский', native: 'Тоти', endPunctuation: '.!?', direction: 'ltr' },
+  glk: { name: 'гилянский', native: 'گیلکی', endPunctuation: '.!?', direction: 'rtl' },
+  mzn: { name: 'мазандеранский', native: 'مازرونی', endPunctuation: '.!?', direction: 'rtl' },
+  lrc: { name: 'лурский', native: 'لۊری', endPunctuation: '.!?', direction: 'rtl' },
+  haz: { name: 'хазарейский', native: 'هزارگی', endPunctuation: '.!?', direction: 'rtl' },
+  wak: { name: 'ваханский', native: 'Xikwor', endPunctuation: '.!?', direction: 'ltr' },
+  yai: { name: 'ягнобский', native: 'Яғнобӣ', endPunctuation: '.!?', direction: 'ltr' },
+  zza: { name: 'зазаки', native: 'Zazaki', endPunctuation: '.!?', direction: 'ltr' },
+  prs: { name: 'дари', native: 'دری', endPunctuation: '.!?', direction: 'rtl' },
+
+  // ============================================================
+  // === ИНДОАРИЙСКИЕ ЯЗЫКИ ===
+  // ============================================================
+  hi: { name: 'хинди', native: 'हिन्दी', endPunctuation: '।!?', direction: 'ltr' },
+  bn: { name: 'бенгальский', native: 'বাংলা', endPunctuation: '।!?', direction: 'ltr' },
+  ur: { name: 'урду', native: 'اردو', endPunctuation: '.!?', direction: 'rtl' },
+  pa: { name: 'панджаби (гурмукхи)', native: 'ਪੰਜਾਬੀ', endPunctuation: '।!?', direction: 'ltr' },
+  pnb: { name: 'панджаби (шахмукхи)', native: 'پنجابی', endPunctuation: '.!?', direction: 'rtl' },
+  gu: { name: 'гуджарати', native: 'ગુજરાતી', endPunctuation: '.!?', direction: 'ltr' },
+  mr: { name: 'маратхи', native: 'मराठी', endPunctuation: '।!?', direction: 'ltr' },
   ne: { name: 'непальский', native: 'नेपाली', endPunctuation: '।!?', direction: 'ltr' },
   si: { name: 'сингальский', native: 'සිංහල', endPunctuation: '.!?', direction: 'ltr' },
-  am: { name: 'амхарский', native: 'አማርኛ', endPunctuation: '።!?', direction: 'ltr' },
+  or: { name: 'ория (одия)', native: 'ଓଡ଼ିଆ', endPunctuation: '।!?', direction: 'ltr' },
+  as: { name: 'ассамский', native: 'অসমীয়া', endPunctuation: '।!?', direction: 'ltr' },
+  sa: { name: 'санскрит', native: 'संस्कृतम्', endPunctuation: '।!?', direction: 'ltr' },
+  ks: { name: 'кашмирский', native: 'कॉशुर', endPunctuation: '।!?', direction: 'rtl' },
+  bho: { name: 'бходжпури', native: 'भोजपुरी', endPunctuation: '।!?', direction: 'ltr' },
+  mai: { name: 'майтхили', native: 'मैथिली', endPunctuation: '।!?', direction: 'ltr' },
+  doi: { name: 'догри', native: 'डोगरी', endPunctuation: '।!?', direction: 'ltr' },
+  kok: { name: 'конкани', native: 'कोंकणी', endPunctuation: '।!?', direction: 'ltr' },
+  dv: { name: 'мальдивский (дивехи)', native: 'ދިވެހި', endPunctuation: '.!?', direction: 'rtl' },
+  rom: { name: 'цыганский (романи)', native: 'Romani čhib', endPunctuation: '.!?', direction: 'ltr' },
+  raj: { name: 'раджастхани', native: 'राजस्थानी', endPunctuation: '।!?', direction: 'ltr' },
+  awa: { name: 'авадхи', native: 'अवधी', endPunctuation: '।!?', direction: 'ltr' },
+  mag: { name: 'магахи', native: 'मगही', endPunctuation: '।!?', direction: 'ltr' },
+  hif: { name: 'фиджийский хинди', native: 'Fiji Hindi', endPunctuation: '.!?', direction: 'ltr' },
+  new: { name: 'неварский (невари)', native: 'नेपाल भाषा', endPunctuation: '।!?', direction: 'ltr' },
+  syl: { name: 'силхетский', native: 'ꠍꠤꠟꠐꠤ', endPunctuation: '.!?', direction: 'ltr' },
+  ctg: { name: 'читтагонский', native: 'চাটগাঁইয়া', endPunctuation: '।!?', direction: 'ltr' },
+  rkt: { name: 'рангпурский', native: 'রংপুরী', endPunctuation: '।!?', direction: 'ltr' },
+  bgc: { name: 'харьянви', native: 'हरियाणवी', endPunctuation: '।!?', direction: 'ltr' },
+  mwr: { name: 'марвари', native: 'मारवाड़ी', endPunctuation: '।!?', direction: 'ltr' },
+  gbm: { name: 'гархвали', native: 'गढ़वळि', endPunctuation: '।!?', direction: 'ltr' },
+  kfy: { name: 'кумаони', native: 'कुमाऊँनी', endPunctuation: '।!?', direction: 'ltr' },
+  skr: { name: 'сирайки', native: 'سرائیکی', endPunctuation: '.!?', direction: 'rtl' },
+  hne: { name: 'чхаттисгархи', native: 'छत्तीसगढ़ी', endPunctuation: '।!?', direction: 'ltr' },
+  bhb: { name: 'бхили', native: 'भीली', endPunctuation: '।!?', direction: 'ltr' },
+  lmn: { name: 'ламбади', native: 'लम्बाडी', endPunctuation: '।!?', direction: 'ltr' },
+
+  // ============================================================
+  // === ДРАВИДИЙСКИЕ ЯЗЫКИ ===
+  // ============================================================
+  ta: { name: 'тамильский', native: 'தமிழ்', endPunctuation: '.!?', direction: 'ltr' },
+  te: { name: 'телугу', native: 'తెలుగు', endPunctuation: '.!?', direction: 'ltr' },
+  kn: { name: 'каннада', native: 'ಕನ್ನಡ', endPunctuation: '.!?', direction: 'ltr' },
+  ml: { name: 'малаялам', native: 'മലയാളം', endPunctuation: '.!?', direction: 'ltr' },
+  tcy: { name: 'тулу', native: 'ತುಳು', endPunctuation: '.!?', direction: 'ltr' },
+  gon: { name: 'гонди', native: 'गोंडी', endPunctuation: '.!?', direction: 'ltr' },
+  kru: { name: 'курух', native: 'कुड़ुख़', endPunctuation: '.!?', direction: 'ltr' },
+  brh: { name: 'брагуи', native: 'براهوئی', endPunctuation: '.!?', direction: 'rtl' },
+  tda: { name: 'тода', native: 'தோடா', endPunctuation: '.!?', direction: 'ltr' },
+  kfb: { name: 'кодава', native: 'ಕೊಡವ', endPunctuation: '.!?', direction: 'ltr' },
+  bdr: { name: 'бадага', native: 'படகா', endPunctuation: '.!?', direction: 'ltr' },
+
+  // ============================================================
+  // === ВОСТОЧНОАЗИАТСКИЕ ЯЗЫКИ (СИНО-ТИБЕТСКИЕ И ДР.) ===
+  // ============================================================
+  zh: { name: 'китайский (упрощённый)', native: '简体中文', endPunctuation: '。！？', direction: 'ltr' },
+  'zh-TW': { name: 'китайский (традиционный)', native: '繁體中文', endPunctuation: '。！？', direction: 'ltr' },
+  ja: { name: 'японский', native: '日本語', endPunctuation: '。！？', direction: 'ltr' },
+  ko: { name: 'корейский', native: '한국어', endPunctuation: '.!?', direction: 'ltr' },
+  yue: { name: 'кантонский', native: '粵語', endPunctuation: '。！？', direction: 'ltr' },
+  wuu: { name: 'у (шанхайский)', native: '吳語', endPunctuation: '。！？', direction: 'ltr' },
+  hak: { name: 'хакка', native: '客家語', endPunctuation: '。！？', direction: 'ltr' },
+  nan: { name: 'миньнаньский', native: '閩南語', endPunctuation: '。！？', direction: 'ltr' },
+  cdo: { name: 'миньдунский', native: '閩東語', endPunctuation: '。！？', direction: 'ltr' },
+  gan: { name: 'ганьский', native: '贛語', endPunctuation: '。！？', direction: 'ltr' },
+  hsn: { name: 'сянский', native: '湘語', endPunctuation: '。！？', direction: 'ltr' },
+  czh: { name: 'хуэйчжоуский', native: '徽語', endPunctuation: '。！？', direction: 'ltr' },
+  cjy: { name: 'цзиньский', native: '晉語', endPunctuation: '。！？', direction: 'ltr' },
+  cmn: { name: 'мандаринский', native: '官話', endPunctuation: '。！？', direction: 'ltr' },
+
+  // === Тибето-бирманские языки ===
+  bo: { name: 'тибетский', native: 'བོད་སྐད', endPunctuation: '།!?', direction: 'ltr' },
+  dz: { name: 'дзонг-кэ', native: 'རྫོང་ཁ', endPunctuation: '།!?', direction: 'ltr' },
+  my: { name: 'бирманский', native: 'မြန်မာ', endPunctuation: '။!?', direction: 'ltr' },
+  mni: { name: 'манипури (мейтей)', native: 'মৈতৈলোন্', endPunctuation: '.!?', direction: 'ltr' },
+  lus: { name: 'мизо', native: 'Mizo ṭawng', endPunctuation: '.!?', direction: 'ltr' },
+  kac: { name: 'качинский', native: 'Jingpho', endPunctuation: '.!?', direction: 'ltr' },
+  lhu: { name: 'лаху', native: 'Ladhof', endPunctuation: '.!?', direction: 'ltr' },
+  lif: { name: 'лимбу', native: 'ᤕᤰᤌᤢᤱ', endPunctuation: '.!?', direction: 'ltr' },
+  lep: { name: 'лепча', native: 'ᰛᰩᰵᰛᰧᰵ', endPunctuation: '.!?', direction: 'ltr' },
+  iii: { name: 'ий (сычуаньский)', native: 'ꆈꌠꉙ', endPunctuation: '.!?', direction: 'ltr' },
+  hni: { name: 'хани', native: 'Haqniq', endPunctuation: '.!?', direction: 'ltr' },
+  kar: { name: 'каренский', native: 'ကညီကျိာ်', endPunctuation: '.!?', direction: 'ltr' },
+  ksw: { name: 'с`гав карен', native: 'စှီၤ', endPunctuation: '.!?', direction: 'ltr' },
+  blk: { name: 'па-о', native: 'ပအိုဝ်ႏ', endPunctuation: '.!?', direction: 'ltr' },
+  rhi: { name: 'ронг (лепча)', native: 'Rong', endPunctuation: '.!?', direction: 'ltr' },
+  nwc: { name: 'классический неварский', native: 'नेपाल भाषा', endPunctuation: '.!?', direction: 'ltr' },
+
+  // ============================================================
+  // === ЯЗЫКИ ЮГО-ВОСТОЧНОЙ АЗИИ ===
+  // ============================================================
+  th: { name: 'тайский', native: 'ไทย', endPunctuation: '.!?', direction: 'ltr' },
+  vi: { name: 'вьетнамский', native: 'Tiếng Việt', endPunctuation: '.!?', direction: 'ltr' },
+  km: { name: 'кхмерский', native: 'ភាសាខ្មែរ', endPunctuation: '។!?', direction: 'ltr' },
+  lo: { name: 'лаосский', native: 'ພາສາລາວ', endPunctuation: '.!?', direction: 'ltr' },
+  id: { name: 'индонезийский', native: 'Bahasa Indonesia', endPunctuation: '.!?', direction: 'ltr' },
+  ms: { name: 'малайский', native: 'Bahasa Melayu', endPunctuation: '.!?', direction: 'ltr' },
+  tl: { name: 'тагальский', native: 'Tagalog', endPunctuation: '.!?', direction: 'ltr' },
+  fil: { name: 'филиппинский', native: 'Wikang Filipino', endPunctuation: '.!?', direction: 'ltr' },
+  jv: { name: 'яванский', native: 'Basa Jawa', endPunctuation: '.!?', direction: 'ltr' },
+  su: { name: 'сунданский', native: 'Basa Sunda', endPunctuation: '.!?', direction: 'ltr' },
+  ceb: { name: 'себуанский', native: 'Cebuano', endPunctuation: '.!?', direction: 'ltr' },
+  ilo: { name: 'илоканский', native: 'Ilokano', endPunctuation: '.!?', direction: 'ltr' },
+  min: { name: 'минангкабау', native: 'Minangkabau', endPunctuation: '.!?', direction: 'ltr' },
+  war: { name: 'варайский', native: 'Winaray', endPunctuation: '.!?', direction: 'ltr' },
+  hil: { name: 'хилигайнон', native: 'Hiligaynon', endPunctuation: '.!?', direction: 'ltr' },
+  ban: { name: 'балийский', native: 'Basa Bali', endPunctuation: '.!?', direction: 'ltr' },
+  ace: { name: 'ачехский', native: 'Bahsa Acèh', endPunctuation: '.!?', direction: 'ltr' },
+  bug: { name: 'бугийский', native: 'ᨅᨔ ᨕᨘᨁᨗ', endPunctuation: '.!?', direction: 'ltr' },
+  tet: { name: 'тетум', native: 'Tetun', endPunctuation: '.!?', direction: 'ltr' },
+  pag: { name: 'пангасинанский', native: 'Pangasinan', endPunctuation: '.!?', direction: 'ltr' },
+  pam: { name: 'пампанганский', native: 'Kapampangan', endPunctuation: '.!?', direction: 'ltr' },
+  bik: { name: 'бикольский', native: 'Bikol', endPunctuation: '.!?', direction: 'ltr' },
+  tsg: { name: 'тауcуг', native: 'Bahasa Sūg', endPunctuation: '.!?', direction: 'ltr' },
+  mdh: { name: 'маранао', native: 'Mëranaw', endPunctuation: '.!?', direction: 'ltr' },
+  mbb: { name: 'магинданао', native: 'Maguindanao', endPunctuation: '.!?', direction: 'ltr' },
+  mad: { name: 'мадурский', native: 'Madhura', endPunctuation: '.!?', direction: 'ltr' },
+  bjn: { name: 'банджарский', native: 'Banjar', endPunctuation: '.!?', direction: 'ltr' },
+  mkn: { name: 'малайский (кучинг)', native: 'Bahasa Sarawak', endPunctuation: '.!?', direction: 'ltr' },
+  iba: { name: 'ибанский', native: 'Jaku Iban', endPunctuation: '.!?', direction: 'ltr' },
+  dtp: { name: 'кадазандусун', native: 'Kadazandusun', endPunctuation: '.!?', direction: 'ltr' },
+  shn: { name: 'шанский', native: 'လိၵ်ႈတႆး', endPunctuation: '.!?', direction: 'ltr' },
+  mnw: { name: 'монский', native: 'ဘာသာမန်', endPunctuation: '.!?', direction: 'ltr' },
+
+  // === Тай-кадайские языки ===
+  za: { name: 'чжуанский', native: 'Vahcuengh', endPunctuation: '.!?', direction: 'ltr' },
+  nus: { name: 'нуосу', native: 'ꆈꌠꉙ', endPunctuation: '.!?', direction: 'ltr' },
+  lia: { name: 'ли', native: '黎語', endPunctuation: '.!?', direction: 'ltr' },
+  tts: { name: 'исанский', native: 'ภาษาอีสาน', endPunctuation: '.!?', direction: 'ltr' },
+  nod: { name: 'северотайский', native: 'คำเมือง', endPunctuation: '.!?', direction: 'ltr' },
+  sou: { name: 'южнотайский', native: 'ภาษาใต้', endPunctuation: '.!?', direction: 'ltr' },
+
+  // === Австроазиатские языки ===
+  sat: { name: 'сантали', native: 'ᱥᱟᱱᱛᱟᱲᱤ', endPunctuation: '.!?', direction: 'ltr' },
+  kha: { name: 'кхаси', native: 'Ka Ktien Khasi', endPunctuation: '.!?', direction: 'ltr' },
+  hoc: { name: 'хо', native: 'Ho', endPunctuation: '.!?', direction: 'ltr' },
+  mun: { name: 'мундари', native: 'मुण्डारी', endPunctuation: '.!?', direction: 'ltr' },
+  kjg: { name: 'кхму', native: 'ภาษาขมุ', endPunctuation: '.!?', direction: 'ltr' },
+
+  // === Мяо-яо (хмонг-мьен) ===
+  hmn: { name: 'хмонг', native: 'Hmoob', endPunctuation: '.!?', direction: 'ltr' },
+  hnj: { name: 'хмонг нджуа', native: 'Hmôngz Nziab', endPunctuation: '.!?', direction: 'ltr' },
+  ium: { name: 'яо (мьен)', native: 'Iu Mienh', endPunctuation: '.!?', direction: 'ltr' },
+
+  // ============================================================
+  // === КАВКАЗСКИЕ ЯЗЫКИ ===
+  // ============================================================
+  ka: { name: 'грузинский', native: 'ქართული', endPunctuation: '.!?', direction: 'ltr' },
+  hy: { name: 'армянский', native: 'Հայերեն', endPunctuation: '.!?', direction: 'ltr' },
+  ab: { name: 'абхазский', native: 'Аҧсуа', endPunctuation: '.!?', direction: 'ltr' },
+  ce: { name: 'чеченский', native: 'Нохчийн', endPunctuation: '.!?', direction: 'ltr' },
+  av: { name: 'аварский', native: 'Авар мацӀ', endPunctuation: '.!?', direction: 'ltr' },
+  lez: { name: 'лезгинский', native: 'Лезги чӀал', endPunctuation: '.!?', direction: 'ltr' },
+  ady: { name: 'адыгейский', native: 'Адыгабзэ', endPunctuation: '.!?', direction: 'ltr' },
+  kbd: { name: 'кабардинский', native: 'Адыгэбзэ', endPunctuation: '.!?', direction: 'ltr' },
+  inh: { name: 'ингушский', native: 'ГӀалгӀай мотт', endPunctuation: '.!?', direction: 'ltr' },
+  dar: { name: 'даргинский', native: 'Дарган мез', endPunctuation: '.!?', direction: 'ltr' },
+  lbe: { name: 'лакский', native: 'Лакку маз', endPunctuation: '.!?', direction: 'ltr' },
+  tab: { name: 'табасаранский', native: 'Табасаран чӀал', endPunctuation: '.!?', direction: 'ltr' },
+  aqc: { name: 'арчинский', native: 'Арчиб', endPunctuation: '.!?', direction: 'ltr' },
+  rut: { name: 'рутульский', native: 'МыхӀабишды чӀал', endPunctuation: '.!?', direction: 'ltr' },
+  agx: { name: 'агульский', native: 'Агул чӀал', endPunctuation: '.!?', direction: 'ltr' },
+  tkr: { name: 'цахурский', native: 'Цахурский', endPunctuation: '.!?', direction: 'ltr' },
+  udi: { name: 'удинский', native: 'Удин муз', endPunctuation: '.!?', direction: 'ltr' },
+  xmf: { name: 'мегрельский', native: 'მარგალური', endPunctuation: '.!?', direction: 'ltr' },
+  lzz: { name: 'лазский', native: 'ლაზური', endPunctuation: '.!?', direction: 'ltr' },
+  sva: { name: 'сванский', native: 'ლუშნუ ნინ', endPunctuation: '.!?', direction: 'ltr' },
+  bbl: { name: 'батсбийский', native: 'Бацбий мотт', endPunctuation: '.!?', direction: 'ltr' },
+
+  // ============================================================
+  // === ГРЕЧЕСКИЙ ===
+  // ============================================================
+  el: { name: 'греческий', native: 'Ελληνικά', endPunctuation: '.!?;', direction: 'ltr' },
+  grc: { name: 'древнегреческий', native: 'Ἑλληνική', endPunctuation: '.!?;', direction: 'ltr' },
+  pnt: { name: 'понтийский греческий', native: 'Ποντιακά', endPunctuation: '.!?;', direction: 'ltr' },
+  cpg: { name: 'каппадокийский греческий', native: 'Καππαδοκικά', endPunctuation: '.!?;', direction: 'ltr' },
+  tsd: { name: 'цаконский', native: 'Τσακωνικά', endPunctuation: '.!?;', direction: 'ltr' },
+
+  // ============================================================
+  // === БАСКСКИЙ ===
+  // ============================================================
+  eu: { name: 'баскский', native: 'Euskara', endPunctuation: '.!?', direction: 'ltr' },
+
+  // ============================================================
+  // === АЛБАНСКИЙ ===
+  // ============================================================
+  sq: { name: 'албанский', native: 'Shqip', endPunctuation: '.!?', direction: 'ltr' },
+  aln: { name: 'гегский', native: 'Gegë', endPunctuation: '.!?', direction: 'ltr' },
+  als: { name: 'тоскский', native: 'Toskë', endPunctuation: '.!?', direction: 'ltr' },
+
+  // ============================================================
+  // === АФРИКАНСКИЕ ЯЗЫКИ ===
+  // ============================================================
+
+  // --- Нигеро-конголезские: банту ---
+  sw: { name: 'суахили', native: 'Kiswahili', endPunctuation: '.!?', direction: 'ltr' },
+  zu: { name: 'зулу', native: 'isiZulu', endPunctuation: '.!?', direction: 'ltr' },
+  xh: { name: 'коса', native: 'isiXhosa', endPunctuation: '.!?', direction: 'ltr' },
+  st: { name: 'сесото (южный)', native: 'Sesotho', endPunctuation: '.!?', direction: 'ltr' },
+  tn: { name: 'тсвана', native: 'Setswana', endPunctuation: '.!?', direction: 'ltr' },
+  sn: { name: 'шона', native: 'chiShona', endPunctuation: '.!?', direction: 'ltr' },
+  ny: { name: 'чичева (ньянджа)', native: 'Chichewa', endPunctuation: '.!?', direction: 'ltr' },
+  rw: { name: 'киньяруанда', native: 'Kinyarwanda', endPunctuation: '.!?', direction: 'ltr' },
+  rn: { name: 'кирунди', native: 'Ikirundi', endPunctuation: '.!?', direction: 'ltr' },
+  lg: { name: 'ганда (луганда)', native: 'Luganda', endPunctuation: '.!?', direction: 'ltr' },
+  mg: { name: 'малагасийский', native: 'Malagasy', endPunctuation: '.!?', direction: 'ltr' },
+  ln: { name: 'лингала', native: 'Lingála', endPunctuation: '.!?', direction: 'ltr' },
+  kg: { name: 'конго (киконго)', native: 'Kikongo', endPunctuation: '.!?', direction: 'ltr' },
+  ts: { name: 'тсонга', native: 'Xitsonga', endPunctuation: '.!?', direction: 'ltr' },
+  ss: { name: 'свати', native: 'SiSwati', endPunctuation: '.!?', direction: 'ltr' },
+  ve: { name: 'венда', native: 'Tshivenḓa', endPunctuation: '.!?', direction: 'ltr' },
+  nr: { name: 'южный ндебеле', native: 'isiNdebele', endPunctuation: '.!?', direction: 'ltr' },
+  nd: { name: 'северный ндебеле', native: 'isiNdebele', endPunctuation: '.!?', direction: 'ltr' },
+  nso: { name: 'северный сото (сепеди)', native: 'Sepedi', endPunctuation: '.!?', direction: 'ltr' },
+  bem: { name: 'бемба', native: 'Ichibemba', endPunctuation: '.!?', direction: 'ltr' },
+  tum: { name: 'тумбука', native: 'chiTumbuka', endPunctuation: '.!?', direction: 'ltr' },
+  luo: { name: 'луо', native: 'Dholuo', endPunctuation: '.!?', direction: 'ltr' },
+  ki: { name: 'кикуйю', native: 'Gĩkũyũ', endPunctuation: '.!?', direction: 'ltr' },
+  kam: { name: 'камба', native: 'Kikamba', endPunctuation: '.!?', direction: 'ltr' },
+  lua: { name: 'чилуба', native: 'Tshiluba', endPunctuation: '.!?', direction: 'ltr' },
+  umb: { name: 'умбунду', native: 'Umbundu', endPunctuation: '.!?', direction: 'ltr' },
+  kmb: { name: 'кимбунду', native: 'Kimbundu', endPunctuation: '.!?', direction: 'ltr' },
+  nyn: { name: 'ньянколе', native: 'Runyankole', endPunctuation: '.!?', direction: 'ltr' },
+  chy: { name: 'чига', native: 'Rukiga', endPunctuation: '.!?', direction: 'ltr' },
+  sub: { name: 'сукума', native: 'Sukuma', endPunctuation: '.!?', direction: 'ltr' },
+  nym: { name: 'ньямвези', native: 'Nyamwezi', endPunctuation: '.!?', direction: 'ltr' },
+  heh: { name: 'хехе', native: 'Kihehe', endPunctuation: '.!?', direction: 'ltr' },
+  mas: { name: 'масаи', native: 'Maa', endPunctuation: '.!?', direction: 'ltr' },
+  luy: { name: 'лухья', native: 'Luhya', endPunctuation: '.!?', direction: 'ltr' },
+  guz: { name: 'гусии', native: 'Ekegusii', endPunctuation: '.!?', direction: 'ltr' },
+  mer: { name: 'меру', native: 'Kĩmĩrũ', endPunctuation: '.!?', direction: 'ltr' },
+  ksb: { name: 'шамбала', native: 'Kishambaa', endPunctuation: '.!?', direction: 'ltr' },
+  tog: { name: 'тонга (Замбия)', native: 'Chitonga', endPunctuation: '.!?', direction: 'ltr' },
+  loz: { name: 'лози', native: 'Silozi', endPunctuation: '.!?', direction: 'ltr' },
+  ndo: { name: 'ндонга', native: 'Oshindonga', endPunctuation: '.!?', direction: 'ltr' },
+  kwn: { name: 'кваньяма', native: 'Oshikwanyama', endPunctuation: '.!?', direction: 'ltr' },
+  her: { name: 'гереро', native: 'Otjiherero', endPunctuation: '.!?', direction: 'ltr' },
+  swb: { name: 'коморский', native: 'Shikomor', endPunctuation: '.!?', direction: 'ltr' },
+  run: { name: 'руанда-рунди', native: 'Ikinyarwanda', endPunctuation: '.!?', direction: 'ltr' },
+  cgg: { name: 'чига', native: 'Oruchiga', endPunctuation: '.!?', direction: 'ltr' },
+  kik: { name: 'кикуйю', native: 'Gĩkũyũ', endPunctuation: '.!?', direction: 'ltr' },
+  toi: { name: 'тонга (Замбия)', native: 'chiTonga', endPunctuation: '.!?', direction: 'ltr' },
+
+  // --- Нигеро-конголезские: западноафриканские ---
+  ha: { name: 'хауса', native: 'Hausa', endPunctuation: '.!?', direction: 'ltr' },
+  yo: { name: 'йоруба', native: 'Yorùbá', endPunctuation: '.!?', direction: 'ltr' },
+  ig: { name: 'игбо', native: 'Igbo', endPunctuation: '.!?', direction: 'ltr' },
+  wo: { name: 'волоф', native: 'Wolof', endPunctuation: '.!?', direction: 'ltr' },
+  ff: { name: 'фула (фулани)', native: 'Fulfulde', endPunctuation: '.!?', direction: 'ltr' },
+  ak: { name: 'акан', native: 'Akan', endPunctuation: '.!?', direction: 'ltr' },
+  tw: { name: 'тви', native: 'Twi', endPunctuation: '.!?', direction: 'ltr' },
+  ee: { name: 'эве', native: 'Eʋegbe', endPunctuation: '.!?', direction: 'ltr' },
+  bm: { name: 'бамбара', native: 'Bamanankan', endPunctuation: '.!?', direction: 'ltr' },
+  fon: { name: 'фон', native: 'Fɔ̀ngbè', endPunctuation: '.!?', direction: 'ltr' },
+  mos: { name: 'мооре (моси)', native: 'Mooré', endPunctuation: '.!?', direction: 'ltr' },
+  snk: { name: 'сонинке', native: 'Sooninkanxanne', endPunctuation: '.!?', direction: 'ltr' },
+  mn2: { name: 'мандинка', native: 'Mandinka', endPunctuation: '.!?', direction: 'ltr' },
+  sus: { name: 'сусу', native: 'Sosoxui', endPunctuation: '.!?', direction: 'ltr' },
+  dyu: { name: 'дьюла', native: 'Julakan', endPunctuation: '.!?', direction: 'ltr' },
+  ful: { name: 'фулфульде', native: 'Fulfulde', endPunctuation: '.!?', direction: 'ltr' },
+  tem: { name: 'темне', native: 'Temne', endPunctuation: '.!?', direction: 'ltr' },
+  men: { name: 'менде', native: 'Mɛnde', endPunctuation: '.!?', direction: 'ltr' },
+  kpe: { name: 'кпелле', native: 'Kpɛlɛwoo', endPunctuation: '.!?', direction: 'ltr' },
+  vai: { name: 'ваи', native: 'ꕙꔤ', endPunctuation: '.!?', direction: 'ltr' },
+  nqo: { name: 'нко', native: 'ߒߞߏ', endPunctuation: '.!?', direction: 'rtl' },
+  dag: { name: 'дагбани', native: 'Dagbanli', endPunctuation: '.!?', direction: 'ltr' },
+  gaa: { name: 'га', native: 'Gã', endPunctuation: '.!?', direction: 'ltr' },
+  ada: { name: 'адангме', native: 'Dangme', endPunctuation: '.!?', direction: 'ltr' },
+  efi: { name: 'эфик', native: 'Efịk', endPunctuation: '.!?', direction: 'ltr' },
+  ibb: { name: 'ибибио', native: 'Ibibio', endPunctuation: '.!?', direction: 'ltr' },
+  tiv: { name: 'тив', native: 'Tiv', endPunctuation: '.!?', direction: 'ltr' },
+  ijo: { name: 'иджо', native: 'Ịjọ', endPunctuation: '.!?', direction: 'ltr' },
+  bin: { name: 'бини (эдо)', native: 'Edo', endPunctuation: '.!?', direction: 'ltr' },
+  nup: { name: 'нупе', native: 'Nupe', endPunctuation: '.!?', direction: 'ltr' },
+  fuv: { name: 'фула (нигерийский)', native: 'Fulfude', endPunctuation: '.!?', direction: 'ltr' },
+  kcg: { name: 'тьяп', native: 'Tyap', endPunctuation: '.!?', direction: 'ltr' },
+  kbp: { name: 'кабие', native: 'Kabɩyɛ', endPunctuation: '.!?', direction: 'ltr' },
+  gur: { name: 'гурене', native: 'Gurene', endPunctuation: '.!?', direction: 'ltr' },
+  knf: { name: 'манкагне', native: 'Mankanya', endPunctuation: '.!?', direction: 'ltr' },
+  sef: { name: 'сенуфо', native: 'Sénoufo', endPunctuation: '.!?', direction: 'ltr' },
+  ddn: { name: 'денди', native: 'Dendi', endPunctuation: '.!?', direction: 'ltr' },
+  djr: { name: 'зарма', native: 'Zarmaciine', endPunctuation: '.!?', direction: 'ltr' },
+
+  // --- Нило-сахарские языки ---
+  om: { name: 'оромо', native: 'Oromoo', endPunctuation: '.!?', direction: 'ltr' },
+  so: { name: 'сомалийский', native: 'Soomaali', endPunctuation: '.!?', direction: 'ltr' },
+  din: { name: 'динка', native: 'Thuɔŋjäŋ', endPunctuation: '.!?', direction: 'ltr' },
+  nus2: { name: 'нуэр', native: 'Thok Naath', endPunctuation: '.!?', direction: 'ltr' },
+  knc: { name: 'канури', native: 'Kanuri', endPunctuation: '.!?', direction: 'ltr' },
+  son: { name: 'сонгай', native: 'Soŋay', endPunctuation: '.!?', direction: 'ltr' },
+  luo2: { name: 'шиллук', native: 'Dhøg Cøllø', endPunctuation: '.!?', direction: 'ltr' },
+  ach: { name: 'ачоли', native: 'Lwo', endPunctuation: '.!?', direction: 'ltr' },
+  lgg: { name: 'луггбара', native: 'Lugbara', endPunctuation: '.!?', direction: 'ltr' },
+  tuq: { name: 'тесо', native: 'Ateso', endPunctuation: '.!?', direction: 'ltr' },
+  lan: { name: 'ланго', native: 'Lëblaŋo', endPunctuation: '.!?', direction: 'ltr' },
+  kdj: { name: 'календжин', native: 'Kalenjin', endPunctuation: '.!?', direction: 'ltr' },
+  sid: { name: 'сидамо', native: 'Sidaamu Afoo', endPunctuation: '.!?', direction: 'ltr' },
+  wal: { name: 'волайта', native: 'Wolaytta', endPunctuation: '.!?', direction: 'ltr' },
+  gam: { name: 'гамо', native: 'Gamo', endPunctuation: '.!?', direction: 'ltr' },
+  hdy: { name: 'хадийя', native: 'Hadiyya', endPunctuation: '.!?', direction: 'ltr' },
+  aar: { name: 'афар', native: 'Qafar af', endPunctuation: '.!?', direction: 'ltr' },
+  ssy: { name: 'сахо', native: 'Saho', endPunctuation: '.!?', direction: 'ltr' },
+  bej: { name: 'беджа', native: 'Bidhaawyeet', endPunctuation: '.!?', direction: 'ltr' },
+
+  // --- Койсанские языки ---
+  naq: { name: 'нама', native: 'Khoekhoegowab', endPunctuation: '.!?', direction: 'ltr' },
+  ktz: { name: 'жуъхоан', native: 'Juǀʼhoansi', endPunctuation: '.!?', direction: 'ltr' },
+  san: { name: 'сан', native: 'San', endPunctuation: '.!?', direction: 'ltr' },
+  knw: { name: 'кхой', native: 'Khoi', endPunctuation: '.!?', direction: 'ltr' },
+
+  // --- Берберские языки ---
+  ber: { name: 'берберский (тамазигт)', native: 'ⵜⴰⵎⴰⵣⵉⵖⵜ', endPunctuation: '.!?', direction: 'ltr' },
+  kab: { name: 'кабильский', native: 'Taqbaylit', endPunctuation: '.!?', direction: 'ltr' },
+  tzm: { name: 'центральный атлас тамазигт', native: 'ⵜⴰⵎⴰⵣⵉⵖⵜ', endPunctuation: '.!?', direction: 'ltr' },
+  shi: { name: 'ташельхит', native: 'ⵜⴰⵛⵍⵃⵉⵜ', endPunctuation: '.!?', direction: 'ltr' },
+  rif: { name: 'рифский', native: 'Tarifit', endPunctuation: '.!?', direction: 'ltr' },
+  tmh: { name: 'тамашек', native: 'Tamashek', endPunctuation: '.!?', direction: 'ltr' },
+  thv: { name: 'тахагарт тамашек', native: 'Tamahaq', endPunctuation: '.!?', direction: 'ltr' },
+  zen: { name: 'зенага', native: 'Tuḍḍungiyya', endPunctuation: '.!?', direction: 'ltr' },
+
+  // --- Чадские языки ---
+  gba: { name: 'гбая', native: 'Gbaya', endPunctuation: '.!?', direction: 'ltr' },
+  zgh: { name: 'стандартный марокканский тамазигт', native: 'ⵜⴰⵎⴰⵣⵉⵖⵜ', endPunctuation: '.!?', direction: 'ltr' },
+
+  // ============================================================
+  // === ЯЗЫКИ КОРЕННЫХ НАРОДОВ АМЕРИКИ ===
+  // ============================================================
+
+  // --- Кечуанские ---
+  qu: { name: 'кечуа', native: 'Runasimi', endPunctuation: '.!?', direction: 'ltr' },
+  quz: { name: 'кечуа (кузко)', native: 'Qusqu Qhichwa', endPunctuation: '.!?', direction: 'ltr' },
+  qub: { name: 'кечуа (хуанка)', native: 'Wanka Qichwa', endPunctuation: '.!?', direction: 'ltr' },
+
+  // --- Аймара ---
+  ay: { name: 'аймара', native: 'Aymar aru', endPunctuation: '.!?', direction: 'ltr' },
+
+  // --- Тупи-гуарани ---
+  gn: { name: 'гуарани', native: "Avañe'ẽ", endPunctuation: '.!?', direction: 'ltr' },
+
+  // --- Юто-ацтекские ---
+  nah: { name: 'науатль', native: 'Nāhuatl', endPunctuation: '.!?', direction: 'ltr' },
+  nci: { name: 'классический науатль', native: 'Nāhuatlahtōlli', endPunctuation: '.!?', direction: 'ltr' },
+
+  // --- Ирокезские ---
+  chr: { name: 'чероки', native: 'ᏣᎳᎩ', endPunctuation: '.!?', direction: 'ltr' },
+  moh: { name: 'мохаукский', native: 'Kanien\'kéha', endPunctuation: '.!?', direction: 'ltr' },
+
+  // --- Алгонкинские ---
+  oj: { name: 'оджибве', native: 'ᐊᓂᔑᓈᐯᒧᐎᓐ', endPunctuation: '.!?', direction: 'ltr' },
+  cr: { name: 'кри', native: 'ᓀᐦᐃᔭᐍᐏᐣ', endPunctuation: '.!?', direction: 'ltr' },
+  mic: { name: 'микмак', native: "Mi'kmaq", endPunctuation: '.!?', direction: 'ltr' },
+  alq: { name: 'алгонкин', native: 'Anicinàbemowin', endPunctuation: '.!?', direction: 'ltr' },
+  mus: { name: 'мускоги (крик)', native: 'Mvskoke', endPunctuation: '.!?', direction: 'ltr' },
+  cho: { name: 'чокто', native: 'Chahta', endPunctuation: '.!?', direction: 'ltr' },
+
+  // --- На-дене ---
+  nv: { name: 'навахо', native: 'Diné bizaad', endPunctuation: '.!?', direction: 'ltr' },
+  tli: { name: 'тлингит', native: 'Lingít', endPunctuation: '.!?', direction: 'ltr' },
+
+  // --- Сиуанские ---
+  lkt: { name: 'лакота', native: 'Lakȟótiyapi', endPunctuation: '.!?', direction: 'ltr' },
+  dak: { name: 'дакота', native: 'Dakȟótiyapi', endPunctuation: '.!?', direction: 'ltr' },
+
+  // --- Майянские ---
+  yua: { name: 'юкатекский майя', native: "Maaya t'aan", endPunctuation: '.!?', direction: 'ltr' },
+  quc: { name: 'киче', native: "K'iche'", endPunctuation: '.!?', direction: 'ltr' },
+  kek: { name: 'кекчи', native: "Q'eqchi'", endPunctuation: '.!?', direction: 'ltr' },
+  mam: { name: 'мам', native: 'Mam', endPunctuation: '.!?', direction: 'ltr' },
+  cak: { name: 'какчикельский', native: 'Kaqchikel', endPunctuation: '.!?', direction: 'ltr' },
+  tzj: { name: 'цутухильский', native: "Tz'utujil", endPunctuation: '.!?', direction: 'ltr' },
+
+  // --- Ото-мангские ---
+  zap: { name: 'сапотекский', native: 'Diidxazá', endPunctuation: '.!?', direction: 'ltr' },
+  mig: { name: 'миштекский', native: 'Tu\'un sávi', endPunctuation: '.!?', direction: 'ltr' },
+  ote: { name: 'отоми', native: 'Hñähñu', endPunctuation: '.!?', direction: 'ltr' },
+
+  // --- Арауканские ---
+  arn: { name: 'мапуче (арауканский)', native: 'Mapudungun', endPunctuation: '.!?', direction: 'ltr' },
+
+  // --- Эскимосско-алеутские ---
+  iu: { name: 'инуктитут', native: 'ᐃᓄᒃᑎᑐᑦ', endPunctuation: '.!?', direction: 'ltr' },
+  kl: { name: 'гренландский (калааллисут)', native: 'Kalaallisut', endPunctuation: '.!?', direction: 'ltr' },
+  ik: { name: 'инупиак', native: 'Iñupiaq', endPunctuation: '.!?', direction: 'ltr' },
+  ess: { name: 'юпикский', native: 'Yupik', endPunctuation: '.!?', direction: 'ltr' },
+  ale: { name: 'алеутский', native: 'Unangax̂', endPunctuation: '.!?', direction: 'ltr' },
+
+  // --- Другие языки Америки ---
+  srn: { name: 'сранан-тонго', native: 'Sranantongo', endPunctuation: '.!?', direction: 'ltr' },
+  maz: { name: 'масатекский', native: 'Mazateco', endPunctuation: '.!?', direction: 'ltr' },
+  tar: { name: 'тараумара', native: 'Rarámuri', endPunctuation: '.!?', direction: 'ltr' },
+  shh: { name: 'шошонский', native: 'Sosoni', endPunctuation: '.!?', direction: 'ltr' },
+  ute: { name: 'юте', native: 'Ute', endPunctuation: '.!?', direction: 'ltr' },
+  hop: { name: 'хопи', native: 'Hopilavayi', endPunctuation: '.!?', direction: 'ltr' },
+  zun: { name: 'зуньи', native: "Shiwi'ma", endPunctuation: '.!?', direction: 'ltr' },
+  osa: { name: 'осейджский', native: 'Wazhazhe', endPunctuation: '.!?', direction: 'ltr' },
+  see: { name: 'сенека', native: 'Onödowá\'ga', endPunctuation: '.!?', direction: 'ltr' },
+  one: { name: 'онейда', native: 'Onʌyota\'a:ka', endPunctuation: '.!?', direction: 'ltr' },
+  tus: { name: 'тускарора', native: 'Skarù:ręˀ', endPunctuation: '.!?', direction: 'ltr' },
+  pqm: { name: 'пассамакводди', native: 'Peskotomuhkati', endPunctuation: '.!?', direction: 'ltr' },
+
+  // ============================================================
+  // === ОКЕАНИЙСКИЕ И АВСТРОНЕЗИЙСКИЕ ЯЗЫКИ ===
+  // ============================================================
+
+  // --- Полинезийские ---
+  mi: { name: 'маори', native: 'Te Reo Māori', endPunctuation: '.!?', direction: 'ltr' },
+  haw: { name: 'гавайский', native: 'ʻŌlelo Hawaiʻi', endPunctuation: '.!?', direction: 'ltr' },
+  sm: { name: 'самоанский', native: 'Gagana Samoa', endPunctuation: '.!?', direction: 'ltr' },
+  to: { name: 'тонганский', native: 'Lea fakatonga', endPunctuation: '.!?', direction: 'ltr' },
+  fj: { name: 'фиджийский', native: 'Vosa Vakaviti', endPunctuation: '.!?', direction: 'ltr' },
+  ty: { name: 'таитянский', native: 'Reo Tahiti', endPunctuation: '.!?', direction: 'ltr' },
+  rar: { name: 'раротонганский', native: 'Māori Kūki ʻĀirani', endPunctuation: '.!?', direction: 'ltr' },
+  niu: { name: 'ниуэ', native: 'Vagahau Niuē', endPunctuation: '.!?', direction: 'ltr' },
+  tkl: { name: 'токелауский', native: 'Tokelau', endPunctuation: '.!?', direction: 'ltr' },
+  tvl: { name: 'тувалуанский', native: 'Te Ggana Tuuvalu', endPunctuation: '.!?', direction: 'ltr' },
+  wls: { name: 'уоллисский', native: 'Fakaʻuvea', endPunctuation: '.!?', direction: 'ltr' },
+  fud: { name: 'футунский', native: 'Fakafutuna', endPunctuation: '.!?', direction: 'ltr' },
+  rap: { name: 'рапануйский', native: 'Vananga Rapa Nui', endPunctuation: '.!?', direction: 'ltr' },
+
+  // --- Меланезийские ---
+  mh: { name: 'маршалльский', native: 'Kajin M̧ajeļ', endPunctuation: '.!?', direction: 'ltr' },
+  bi: { name: 'бислама', native: 'Bislama', endPunctuation: '.!?', direction: 'ltr' },
+  tpi: { name: 'ток-писин', native: 'Tok Pisin', endPunctuation: '.!?', direction: 'ltr' },
+  ch: { name: 'чаморро', native: 'Chamoru', endPunctuation: '.!?', direction: 'ltr' },
+  gil: { name: 'кирибати (гилбертский)', native: 'Taetae ni Kiribati', endPunctuation: '.!?', direction: 'ltr' },
+  pon: { name: 'понапеанский', native: 'Pohnpeian', endPunctuation: '.!?', direction: 'ltr' },
+  chk2: { name: 'чуукский', native: 'Chuukese', endPunctuation: '.!?', direction: 'ltr' },
+  yap: { name: 'япский', native: 'Yapese', endPunctuation: '.!?', direction: 'ltr' },
+  kos: { name: 'кусайе', native: 'Kosraean', endPunctuation: '.!?', direction: 'ltr' },
+  pau: { name: 'палауский', native: 'a tekoi er a Belau', endPunctuation: '.!?', direction: 'ltr' },
+  nau: { name: 'науруанский', native: 'Dorerin Naoero', endPunctuation: '.!?', direction: 'ltr' },
+  uli: { name: 'улитийский', native: 'Ulithian', endPunctuation: '.!?', direction: 'ltr' },
+
+  // --- Папуасские ---
+  tox: { name: 'ток-писин', native: 'Tok Pisin', endPunctuation: '.!?', direction: 'ltr' },
+  zia: { name: 'зиа', native: 'Zia', endPunctuation: '.!?', direction: 'ltr' },
+  enga: { name: 'энга', native: 'Enga', endPunctuation: '.!?', direction: 'ltr' },
+  hul: { name: 'хули', native: 'Huli', endPunctuation: '.!?', direction: 'ltr' },
+  mel: { name: 'мелпа', native: 'Melpa', endPunctuation: '.!?', direction: 'ltr' },
+
+  // --- Австралийские языки ---
+  wbp: { name: 'вальпири', native: 'Warlpiri', endPunctuation: '.!?', direction: 'ltr' },
+  aer: { name: 'аррернте', native: 'Arrernte', endPunctuation: '.!?', direction: 'ltr' },
+  pjt: { name: 'питьянтьятьяра', native: 'Pitjantjatjara', endPunctuation: '.!?', direction: 'ltr' },
+  kdd: { name: 'кала лагау я', native: 'Kalaw Lagaw Ya', endPunctuation: '.!?', direction: 'ltr' },
+  tiw: { name: 'тиви', native: 'Tiwi', endPunctuation: '.!?', direction: 'ltr' },
+  gup: { name: 'гунвинггу', native: 'Kunwinjku', endPunctuation: '.!?', direction: 'ltr' },
+  yol: { name: 'йолнгу-мата', native: 'Yolŋu Matha', endPunctuation: '.!?', direction: 'ltr' },
+  adt: { name: 'адньяматана', native: 'Adnyamathanha', endPunctuation: '.!?', direction: 'ltr' },
+  dif: { name: 'дирбал', native: 'Dyirbal', endPunctuation: '.!?', direction: 'ltr' },
+
+  // ============================================================
+  // === КОРЕЙСКИЙ И ЯПОНСКИЙ (доп. варианты) ===
+  // ============================================================
+  ain: { name: 'айнский', native: 'アイヌ イタㇰ', endPunctuation: '。！？', direction: 'ltr' },
+  ryu: { name: 'рюкюский (окинавский)', native: 'うちなーぐち', endPunctuation: '。！？', direction: 'ltr' },
+
+  // ============================================================
+  // === ПАЛЕОАЗИАТСКИЕ И СИБИРСКИЕ ЯЗЫКИ ===
+  // ============================================================
+  ckt: { name: 'чукотский', native: 'Ԓыгъоравэтԓьэн', endPunctuation: '.!?', direction: 'ltr' },
+  nio: { name: 'нивхский', native: 'Ниғвӈ', endPunctuation: '.!?', direction: 'ltr' },
+  kca: { name: 'хантыйский', native: 'Хӑнты ясаӈ', endPunctuation: '.!?', direction: 'ltr' },
+  mns: { name: 'мансийский', native: 'Маньси', endPunctuation: '.!?', direction: 'ltr' },
+  cku: { name: 'корякский', native: 'Нымылан', endPunctuation: '.!?', direction: 'ltr' },
+  itl: { name: 'ительменский', native: 'Итэнмэн', endPunctuation: '.!?', direction: 'ltr' },
+  ket: { name: 'кетский', native: 'Кетский', endPunctuation: '.!?', direction: 'ltr' },
+  yux: { name: 'юкагирский (южный)', native: 'Одул', endPunctuation: '.!?', direction: 'ltr' },
+  ykg: { name: 'юкагирский (северный)', native: 'Вадул', endPunctuation: '.!?', direction: 'ltr' },
+  esi: { name: 'азиатский эскимосский', native: 'Yupighyt', endPunctuation: '.!?', direction: 'ltr' },
+
+  // ============================================================
+  // === ЯЗЫК ИЗОЛЯТ — ЯПОНСКИЙ КОРЕЙСКИЙ АЙНУ ===
+  // ============================================================
+  // (Японский, Корейский, Айнский уже добавлены выше)
+
+  // ============================================================
+  // === КРЕОЛЬСКИЕ И ПИДЖИН-ЯЗЫКИ ===
+  // ============================================================
+  pap: { name: 'папьяменто', native: 'Papiamentu', endPunctuation: '.!?', direction: 'ltr' },
+  gcr: { name: 'гвианский креольский', native: 'Kreyòl gwiyannen', endPunctuation: '.!?', direction: 'ltr' },
+  mfe: { name: 'маврикийский креольский', native: 'Kreol morisien', endPunctuation: '.!?', direction: 'ltr' },
+  rcf: { name: 'реюньонский креольский', native: 'Kréol réyoné', endPunctuation: '.!?', direction: 'ltr' },
+  crs: { name: 'сейшельский креольский', native: 'Seselwa', endPunctuation: '.!?', direction: 'ltr' },
+  kea: { name: 'кабувердьяну', native: 'Kabuverdianu', endPunctuation: '.!?', direction: 'ltr' },
+  jam: { name: 'ямайский креольский', native: 'Jamaican Patois', endPunctuation: '.!?', direction: 'ltr' },
+  bzj: { name: 'белизский креольский', native: 'Belize Kriol', endPunctuation: '.!?', direction: 'ltr' },
+  gcl: { name: 'гренадский креольский', native: 'Grenadian Creole', endPunctuation: '.!?', direction: 'ltr' },
+  acf: { name: 'сент-люсийский креольский', native: 'Kwéyòl', endPunctuation: '.!?', direction: 'ltr' },
+  lou: { name: 'луизианский креольский', native: 'Kréyol La Lwizyàn', endPunctuation: '.!?', direction: 'ltr' },
+  hwc: { name: 'гавайский креольский', native: 'Pidgin', endPunctuation: '.!?', direction: 'ltr' },
+  tcs: { name: 'торресов пролив креольский', native: 'Yumplatok', endPunctuation: '.!?', direction: 'ltr' },
+  pis: { name: 'пиджин Соломоновых островов', native: 'Pijin', endPunctuation: '.!?', direction: 'ltr' },
+  fpe: { name: 'фернандо-по креольский', native: 'Pichinglis', endPunctuation: '.!?', direction: 'ltr' },
+  por: { name: 'португальский креольский (Гвинея-Бисау)', native: 'Kriol', endPunctuation: '.!?', direction: 'ltr' },
+  cbk: { name: 'чабакано', native: 'Chabacano', endPunctuation: '.!?', direction: 'ltr' },
+  ccm: { name: 'малаккский креольский', native: 'Kristang', endPunctuation: '.!?', direction: 'ltr' },
+  pov: { name: 'гвинея-бисауский креольский', native: 'Kriyol', endPunctuation: '.!?', direction: 'ltr' },
+
+  // ============================================================
+  // === ИСКУССТВЕННЫЕ ЯЗЫКИ ===
+  // ============================================================
+  eo: { name: 'эсперанто', native: 'Esperanto', endPunctuation: '.!?', direction: 'ltr' },
+  ia: { name: 'интерлингва', native: 'Interlingua', endPunctuation: '.!?', direction: 'ltr' },
+  io: { name: 'идо', native: 'Ido', endPunctuation: '.!?', direction: 'ltr' },
+  vo: { name: 'волапюк', native: 'Volapük', endPunctuation: '.!?', direction: 'ltr' },
+  jbo: { name: 'ложбан', native: 'la .lojban.', endPunctuation: '.!?', direction: 'ltr' },
+  tok: { name: 'токипона', native: 'toki pona', endPunctuation: '.!?', direction: 'ltr' },
+  nov: { name: 'новиаль', native: 'Novial', endPunctuation: '.!?', direction: 'ltr' },
+  lfn: { name: 'лингва франка нова', native: 'Lingua Franca Nova', endPunctuation: '.!?', direction: 'ltr' },
+  sjn: { name: 'синдарин', native: 'Sindarin', endPunctuation: '.!?', direction: 'ltr' },
+  qya: { name: 'квенья', native: 'Quenya', endPunctuation: '.!?', direction: 'ltr' },
+  tlh: { name: 'клингонский', native: 'tlhIngan Hol', endPunctuation: '.!?', direction: 'ltr' },
+
+  // ============================================================
+  // === ДОПОЛНИТЕЛЬНЫЕ АФРИКАНСКИЕ ===
+  // ============================================================
+  sg: { name: 'санго', native: 'Sängö', endPunctuation: '.!?', direction: 'ltr' },
+  ti3: { name: 'тигре', native: 'ትግረ', endPunctuation: '።!?', direction: 'ltr' },
+
+  // ============================================================
+  // === ЧАМСКИЕ И МАЛАЙСКИЕ ЯЗЫКИ (ДОП.) ===
+  // ============================================================
+  cjm: { name: 'восточный чам', native: 'Cam', endPunctuation: '.!?', direction: 'ltr' },
+  cja: { name: 'западный чам', native: 'Cham', endPunctuation: '.!?', direction: 'ltr' },
+
+  // ============================================================
+  // === НИГЕРИЙСКИЕ ЯЗЫКИ (ДОП.) ===
+  // ============================================================
+  pcm: { name: 'нигерийский пиджин', native: 'Naijá', endPunctuation: '.!?', direction: 'ltr' },
+
+  // ============================================================
+  // === ТИБЕТСКИЕ ЯЗЫКИ (ДОП.) ===
+  // ============================================================
+  xsr: { name: 'шерпский', native: 'Sherpa', endPunctuation: '.!?', direction: 'ltr' },
+  taj: { name: 'тамангский', native: 'Tamang', endPunctuation: '.!?', direction: 'ltr' },
+  tsj: { name: 'цангла', native: 'Tshangla', endPunctuation: '.!?', direction: 'ltr' },
+
+  // ============================================================
+  // === НАХСКО-ДАГЕСТАНСКИЕ (ДОП.) ===
+  // ============================================================
+  ani: { name: 'андийский', native: 'Андий', endPunctuation: '.!?', direction: 'ltr' },
+  bph: { name: 'ботлихский', native: 'Буйхалъи', endPunctuation: '.!?', direction: 'ltr' },
+  gdo: { name: 'годоберинский', native: 'Гъодобери', endPunctuation: '.!?', direction: 'ltr' },
+  aqc2: { name: 'ахвахский', native: 'Ашвалъи', endPunctuation: '.!?', direction: 'ltr' },
+  tin: { name: 'тиндинский', native: 'Тинди', endPunctuation: '.!?', direction: 'ltr' },
+  khv: { name: 'хваршинский', native: 'Хваршинский', endPunctuation: '.!?', direction: 'ltr' },
+  ddo: { name: 'цезский (дидойский)', native: 'Цезий мец', endPunctuation: '.!?', direction: 'ltr' },
+  hin: { name: 'гинухский', native: 'Гинухский', endPunctuation: '.!?', direction: 'ltr' },
+  bph2: { name: 'бежтинский', native: 'Бежтинский', endPunctuation: '.!?', direction: 'ltr' },
+  gig: { name: 'гунзибский', native: 'Гунзибский', endPunctuation: '.!?', direction: 'ltr' },
+
+  // ============================================================
+  // === ЯЗЫКИ ЗНАКОВЫХ СИСТЕМ (ДОП.) ===
+  // ============================================================
+  // Не включены, так как это жестовые языки без письменной пунктуации.
+
+  // ============================================================
+  // === МЁРТВЫЕ/КЛАССИЧЕСКИЕ ЯЗЫКИ ===
+  // ============================================================
+  sux: { name: 'шумерский', native: '𒅴𒂠', endPunctuation: '.!?', direction: 'ltr' },
+  akk: { name: 'аккадский', native: '𒀝𒂵𒌈', endPunctuation: '.!?', direction: 'ltr' },
+  egy: { name: 'древнеегипетский', native: 'r n km.t', endPunctuation: '.!?', direction: 'ltr' },
+  hit: { name: 'хеттский', native: 'nešili', endPunctuation: '.!?', direction: 'ltr' },
+  peo: { name: 'древнеперсидский', native: '𐎠𐎼𐎡𐎹', endPunctuation: '.!?', direction: 'ltr' },
+  xto: { name: 'тохарский A', native: 'Ārśi', endPunctuation: '.!?', direction: 'ltr' },
+  txb: { name: 'тохарский B', native: 'Kuśiññe', endPunctuation: '.!?', direction: 'ltr' },
+  osp: { name: 'древнеиспанский', native: 'Castellano antiguo', endPunctuation: '.!?', direction: 'ltr' },
+  fro: { name: 'старофранцузский', native: 'François', endPunctuation: '.!?', direction: 'ltr' },
+  gmh: { name: 'средневерхненемецкий', native: 'Mittelhochdeutsch', endPunctuation: '.!?', direction: 'ltr' },
+  goh: { name: 'древневерхненемецкий', native: 'Althochdeutsch', endPunctuation: '.!?', direction: 'ltr' },
+  enm: { name: 'среднеанглийский', native: 'Middle English', endPunctuation: '.!?', direction: 'ltr' },
+  orv: { name: 'древнерусский', native: 'Древнерусский', endPunctuation: '.!?', direction: 'ltr' },
+  chu: { name: 'церковнославянский', native: 'Словѣ́ньскъ', endPunctuation: '.!?', direction: 'ltr' },
+  cu: { name: 'старославянский', native: 'Ⱄⰾⱁⰲⱑⱀⱐⱄⰽⱏ', endPunctuation: '.!?', direction: 'ltr' },
+  pi: { name: 'пали', native: 'पालि', endPunctuation: '।!?', direction: 'ltr' },
+  pli: { name: 'пали (лат.)', native: 'Pāḷi', endPunctuation: '.!?', direction: 'ltr' },
+  san2: { name: 'ведический санскрит', native: 'वैदिक', endPunctuation: '।!?', direction: 'ltr' },
+  phn: { name: 'финикийский', native: '𐤃𐤁𐤓𐤉𐤌', endPunctuation: '.!?', direction: 'rtl' },
+  uga: { name: 'угаритский', native: 'Ugaritic', endPunctuation: '.!?', direction: 'ltr' },
+  xcl: { name: 'древнеармянский (грабар)', native: 'Գրաբար', endPunctuation: '.!?', direction: 'ltr' },
+  oge: { name: 'древнегрузинский', native: 'ძველი ქართული', endPunctuation: '.!?', direction: 'ltr' },
+  cop: { name: 'коптский', native: 'ⲘⲉⲧⲢⲉⲙⲛ̀ⲭⲏⲙⲓ', endPunctuation: '.!?', direction: 'ltr' },
+
+  // ============================================================
+  // === ДОПОЛНИТЕЛЬНЫЕ АЗИАТСКИЕ (ХМОНГ, КАРЕН, ЛИ И ДР.) ===
+  // ============================================================
+  blt: { name: 'тай-дам', native: 'ꪼꪕꪒꪣ', endPunctuation: '.!?', direction: 'ltr' },
+  tdd: { name: 'тай-нуа (тай-лэ)', native: 'ᥖᥭᥰᥖᥬᥳᥑᥨᥒᥰ', endPunctuation: '.!?', direction: 'ltr' },
+  khb: { name: 'тай-лы (лы)', native: 'ᦅᦳᧃᦑᦺᦟᦹᧉ', endPunctuation: '.!?', direction: 'ltr' },
+  syl2: { name: 'силхетский нагари', native: 'ꠍꠤꠟꠐꠤ', endPunctuation: '.!?', direction: 'ltr' },
+
+  // ============================================================
+  // === ЯЗЫКИ ЮЖНОЙ АРАВИИ И РОГА АФРИКИ ===
+  // ============================================================
+  mhr2: { name: 'мехри', native: 'المهرية', endPunctuation: '.!?', direction: 'rtl' },
+  sqt: { name: 'сокотри', native: 'سقطري', endPunctuation: '.!?', direction: 'rtl' },
+
+  // ============================================================
+  // === ДОПОЛНИТЕЛЬНЫЕ ЯЗЫКИ ИНДИИ ===
+  // ============================================================
+  brx: { name: 'бодо', native: 'बड़ो', endPunctuation: '।!?', direction: 'ltr' },
+  grt: { name: 'гаро', native: 'A·chik', endPunctuation: '.!?', direction: 'ltr' },
+  lep2: { name: 'лепча', native: 'ᰛᰩᰵ', endPunctuation: '.!?', direction: 'ltr' },
+  njm: { name: 'нагамиз', native: 'Nagamese', endPunctuation: '.!?', direction: 'ltr' },
+  adi: { name: 'ади', native: 'Adi', endPunctuation: '.!?', direction: 'ltr' },
+  apt: { name: 'апатани', native: 'Apatani', endPunctuation: '.!?', direction: 'ltr' },
+  njo: { name: 'ао нага', native: 'Ao', endPunctuation: '.!?', direction: 'ltr' },
+  njz: { name: 'ангами нага', native: 'Tenyidie', endPunctuation: '.!?', direction: 'ltr' },
+  lir: { name: 'лоту нага', native: 'Lotha', endPunctuation: '.!?', direction: 'ltr' },
+  nbe: { name: 'сема нага', native: 'Sumi', endPunctuation: '.!?', direction: 'ltr' },
+  kho: { name: 'хотанский', native: 'Khotanese', endPunctuation: '.!?', direction: 'ltr' },
+  thl: { name: 'тхадо', native: 'Thadou', endPunctuation: '.!?', direction: 'ltr' },
+  hma: { name: 'хмар', native: 'Hmar', endPunctuation: '.!?', direction: 'ltr' },
+
+  // ============================================================
+  // === ЯЗЫКИ ОКЕАНИИ (ДОП.) ===
+  // ============================================================
+  tet2: { name: 'тетум (Восточный Тимор)', native: 'Tetun Dili', endPunctuation: '.!?', direction: 'ltr' },
+  tru: { name: 'ротуманский', native: 'Fäeag Rotuma', endPunctuation: '.!?', direction: 'ltr' },
+  ren: { name: 'ренеллский', native: 'Rennellese', endPunctuation: '.!?', direction: 'ltr' },
+  mna: { name: 'мбула', native: 'Mbula', endPunctuation: '.!?', direction: 'ltr' },
+
+  // ============================================================
+  // === ДОПОЛНИТЕЛЬНЫЕ ИРАНСКИЕ ===
+  // ============================================================
+  prc: { name: 'парачи', native: 'Parāčī', endPunctuation: '.!?', direction: 'ltr' },
+  oru: { name: 'ормури', native: 'Ormuri', endPunctuation: '.!?', direction: 'ltr' },
+  sgh: { name: 'шугнанский', native: 'Shughni', endPunctuation: '.!?', direction: 'ltr' },
+  isk: { name: 'ишкашимский', native: 'Ishkashimi', endPunctuation: '.!?', direction: 'ltr' },
+  srh: { name: 'сарыкольский', native: 'Sarikoli', endPunctuation: '.!?', direction: 'ltr' },
+  mnj: { name: 'мунджанский', native: 'Munji', endPunctuation: '.!?', direction: 'ltr' },
+
+  // ============================================================
+  // === ДОПОЛНИТЕЛЬНЫЕ ТЮРКСКИЕ ===
+  // ============================================================
+  otk: { name: 'древнетюркский', native: '𐰃𐱃𐰇𐰚', endPunctuation: '.!?', direction: 'ltr' },
+  uum: { name: 'уурумский', native: 'Urum', endPunctuation: '.!?', direction: 'ltr' },
+  kdr: { name: 'караимский', native: 'Karaj tili', endPunctuation: '.!?', direction: 'ltr' },
+  slr: { name: 'салаирский', native: 'Salır', endPunctuation: '.!?', direction: 'ltr' },
+  ybe: { name: 'западноюгурский', native: 'Yoɣur', endPunctuation: '.!?', direction: 'ltr' },
+  clu: { name: 'халаджский', native: 'Xalaj', endPunctuation: '.!?', direction: 'ltr' },
+
+  // ============================================================
+  // === КУШИТСКИЕ ЯЗЫКИ ===
+  // ============================================================
+  gax: { name: 'борана-арси-гуджи оромо', native: 'Borana', endPunctuation: '.!?', direction: 'ltr' },
+  ktb: { name: 'камбата', native: 'Kambaata', endPunctuation: '.!?', direction: 'ltr' },
+  ged: { name: 'гедео', native: 'Gedeo', endPunctuation: '.!?', direction: 'ltr' },
+  kxc: { name: 'консо', native: 'Konso', endPunctuation: '.!?', direction: 'ltr' },
+  bji: { name: 'бурджи', native: 'Burji', endPunctuation: '.!?', direction: 'ltr' },
+
+  // ============================================================
+  // === ОМОТСКИЕ ЯЗЫКИ ===
+  // ============================================================
+  wol: { name: 'воламо (волайта)', native: 'Wolaytta', endPunctuation: '.!?', direction: 'ltr' },
+  bwo: { name: 'бенч', native: 'Bench', endPunctuation: '.!?', direction: 'ltr' },
+  shk: { name: 'шеко', native: 'Sheko', endPunctuation: '.!?', direction: 'ltr' },
+  diz: { name: 'дизи', native: 'Dizi', endPunctuation: '.!?', direction: 'ltr' },
+
+  // ============================================================
+  // === ЯЗЫКИ ЮЖНОЙ АМЕРИКИ (ДОП.) ===
+  // ============================================================
+  ybh: { name: 'якуба (тукано)', native: 'Tukano', endPunctuation: '.!?', direction: 'ltr' },
+  shp: { name: 'шипибо-конибо', native: 'Shipibo-Konibo', endPunctuation: '.!?', direction: 'ltr' },
+  auc: { name: 'ваорани', native: 'Waorani', endPunctuation: '.!?', direction: 'ltr' },
+  guc: { name: 'вайуу', native: 'Wayuunaiki', endPunctuation: '.!?', direction: 'ltr' },
+  aro: { name: 'аравак', native: 'Lokono', endPunctuation: '.!?', direction: 'ltr' },
+  car: { name: 'карибский', native: 'Kari\'ña', endPunctuation: '.!?', direction: 'ltr' },
+  grn: { name: 'гуарани (парагвайский)', native: "Avañe'ẽ", endPunctuation: '.!?', direction: 'ltr' },
+  yrl: { name: 'ньенгату', native: 'Nheengatu', endPunctuation: '.!?', direction: 'ltr' },
+
+  // ============================================================
+  // === ЯЗЫКИ ЦЕНТРАЛЬНОЙ АМЕРИКИ (ДОП.) ===
+  // ============================================================
+  miq: { name: 'мискито', native: 'Miskitu', endPunctuation: '.!?', direction: 'ltr' },
+  cab2: { name: 'гарифуна', native: 'Garifuna', endPunctuation: '.!?', direction: 'ltr' },
+  kuz: { name: 'куна', native: 'Guna', endPunctuation: '.!?', direction: 'ltr' },
+
+  // ============================================================
+  // === ДОПОЛНИТЕЛЬНЫЕ СЛАВЯНСКИЕ ===
+  // ============================================================
+  'sr-Latn': { name: 'сербский (латиница)', native: 'Srpski', endPunctuation: '.!?', direction: 'ltr' },
+  cnr: { name: 'черногорский', native: 'Crnogorski', endPunctuation: '.!?', direction: 'ltr' },
+
+  // ============================================================
+  // === ДОПОЛНИТЕЛЬНЫЕ ИНДОНЕЗИЙСКИЕ ===
+  // ============================================================
+  sas: { name: 'сасакский', native: 'Sasak', endPunctuation: '.!?', direction: 'ltr' },
+  mak: { name: 'макассарский', native: 'Mangkasara', endPunctuation: '.!?', direction: 'ltr' },
+  gor: { name: 'горонтало', native: 'Hulondalo', endPunctuation: '.!?', direction: 'ltr' },
+  nia: { name: 'ниас', native: 'Li Niha', endPunctuation: '.!?', direction: 'ltr' },
+  bbc: { name: 'батакский тоба', native: 'Batak Toba', endPunctuation: '.!?', direction: 'ltr' },
+  rej: { name: 'реджангский', native: 'Rejang', endPunctuation: '.!?', direction: 'ltr' },
+  lbw: { name: 'лампунгский', native: 'Lampung', endPunctuation: '.!?', direction: 'ltr' },
+
+  // ============================================================
+  // === АНДАМАНСКИЕ И НИКОБАРСКИЕ ===
+  // ============================================================
+  grt2: { name: 'великий андаманский', native: 'Great Andamanese', endPunctuation: '.!?', direction: 'ltr' },
+  oon: { name: 'онге', native: 'Önge', endPunctuation: '.!?', direction: 'ltr' },
+  jrw: { name: 'джарава', native: 'Jarawara', endPunctuation: '.!?', direction: 'ltr' },
+  sen: { name: 'сентинельский', native: 'Sentinelese', endPunctuation: '.!?', direction: 'ltr' },
+  nco: { name: 'никобарский (кар)', native: 'Car Nicobarese', endPunctuation: '.!?', direction: 'ltr' },
+
+  // ============================================================
+  // === ДОПОЛНИТЕЛЬНЫЕ ФИЛИППИНСКИЕ ===
+  // ============================================================
+  ivv: { name: 'ивантанский', native: 'Ivatan', endPunctuation: '.!?', direction: 'ltr' },
+  if2: { name: 'ифугао', native: 'Ifugao', endPunctuation: '.!?', direction: 'ltr' },
+  kal: { name: 'калинга', native: 'Kalinga', endPunctuation: '.!?', direction: 'ltr' },
+  bon: { name: 'бонток', native: 'Bontok', endPunctuation: '.!?', direction: 'ltr' },
+  knb: { name: 'канканаэй', native: 'Kankanaey', endPunctuation: '.!?', direction: 'ltr' },
+
+  // ============================================================
+  // === ФОРМОЗСКИЕ (ТАЙВАНЬСКИЕ АБОРИГЕННЫЕ) ===
+  // ============================================================
+  ami: { name: 'амисский', native: 'Pangcah', endPunctuation: '.!?', direction: 'ltr' },
+  tay: { name: 'атаялский', native: 'Tayal', endPunctuation: '.!?', direction: 'ltr' },
+  pwn: { name: 'пайванский', native: 'Paiwan', endPunctuation: '.!?', direction: 'ltr' },
+  bnn: { name: 'бунунский', native: 'Bunun', endPunctuation: '.!?', direction: 'ltr' },
+  trv: { name: 'седикский (тароко)', native: 'Seediq', endPunctuation: '.!?', direction: 'ltr' },
+  dru: { name: 'руководский', native: 'Rukai', endPunctuation: '.!?', direction: 'ltr' },
+  tsu: { name: 'цоу', native: 'Tsou', endPunctuation: '.!?', direction: 'ltr' },
+  ssf: { name: 'саисият', native: 'Saisiyat', endPunctuation: '.!?', direction: 'ltr' },
+  ckv: { name: 'кавалан', native: 'Kavalan', endPunctuation: '.!?', direction: 'ltr' },
+  tao: { name: 'тао (ями)', native: 'Tao', endPunctuation: '.!?', direction: 'ltr' },
+
+  // ============================================================
+  // === ЯЗЫКИ МАДАГАСКАРА (ДОП.) ===
+  // ============================================================
+  plt: { name: 'малагасийский (платео)', native: 'Malagasy Plateau', endPunctuation: '.!?', direction: 'ltr' },
+  bhr: { name: 'бара малагасийский', native: 'Bara', endPunctuation: '.!?', direction: 'ltr' },
+  skg: { name: 'сакалава малагасийский', native: 'Sakalava', endPunctuation: '.!?', direction: 'ltr' },
+  tkg: { name: 'тесака малагасийский', native: 'Tesaka', endPunctuation: '.!?', direction: 'ltr' },
+  bkm: { name: 'бецимисарака', native: 'Betsimisaraka', endPunctuation: '.!?', direction: 'ltr' },
+
+  // ============================================================
+  // === ТИБЕТО-ГИМАЛАЙСКИЕ ===
+  // ============================================================
+  lhm: { name: 'лхоцампа', native: 'Lhotshamkha', endPunctuation: '.!?', direction: 'ltr' },
+  bhu: { name: 'бумтангский', native: 'Bumthangkha', endPunctuation: '.!?', direction: 'ltr' },
+  lya: { name: 'лаялскиий', native: 'Layakha', endPunctuation: '.!?', direction: 'ltr' },
+
+  // ============================================================
+  // === ЯЗЫКИ ВОСТОЧНОЙ ИНДОНЕЗИИ (ПАПУАССКИЕ) ===
+  // ============================================================
+  dani: { name: 'дани', native: 'Dani', endPunctuation: '.!?', direction: 'ltr' },
+  eka: { name: 'экаги', native: 'Ekagi', endPunctuation: '.!?', direction: 'ltr' },
+  mek: { name: 'мек', native: 'Mek', endPunctuation: '.!?', direction: 'ltr' },
+  asmat: { name: 'асмат', native: 'Asmat', endPunctuation: '.!?', direction: 'ltr' },
+
+  // ============================================================
+  // === ЯЗЫКИ СУРИНАМА ===
+  // ============================================================
+  djk: { name: 'аукский', native: 'Ndyuka', endPunctuation: '.!?', direction: 'ltr' },
+  srm: { name: 'сарамакканский', native: 'Saamáka', endPunctuation: '.!?', direction: 'ltr' },
+
+  // ============================================================
+  // === ГУРУНГСКИЕ И ДРУГИЕ ЯЗЫКИ НЕПАЛА ===
+  // ============================================================
+  ggn: { name: 'гурунг', native: 'Tamu Kyui', endPunctuation: '.!?', direction: 'ltr' },
+  mgr: { name: 'магар', native: 'Magar', endPunctuation: '.!?', direction: 'ltr' },
+  rai: { name: 'раи', native: 'Rai', endPunctuation: '.!?', direction: 'ltr' },
+  thq: { name: 'тхару', native: 'Tharu', endPunctuation: '.!?', direction: 'ltr' },
+  xmb: { name: 'мбахам', native: 'Mbahiam', endPunctuation: '.!?', direction: 'ltr' },
+
+  // ============================================================
+  // === ДОПОЛНИТЕЛЬНЫЕ ЯЗЫКИ КАВКАЗА ===
+  // ============================================================
+  bdk: { name: 'будухский', native: 'Будад мез', endPunctuation: '.!?', direction: 'ltr' },
+  krz: { name: 'крызский', native: 'Крыз', endPunctuation: '.!?', direction: 'ltr' },
+  hir: { name: 'хиналугский', native: 'Кäтш', endPunctuation: '.!?', direction: 'ltr' },
+
+  // ============================================================
+  // === НУРИСТАНСКИЕ ЯЗЫКИ ===
+  // ============================================================
+  bsh: { name: 'кати', native: 'Kati', endPunctuation: '.!?', direction: 'ltr' },
+  tra: { name: 'трегами', native: 'Tregami', endPunctuation: '.!?', direction: 'ltr' },
+  wbk: { name: 'вайгали', native: 'Waigali', endPunctuation: '.!?', direction: 'ltr' },
+  psi: { name: 'прасун', native: 'Prasun', endPunctuation: '.!?', direction: 'ltr' },
+  ask: { name: 'ашкунский', native: 'Ashkun', endPunctuation: '.!?', direction: 'ltr' },
+
+  // ============================================================
+  // === ДАРДСКИЕ ЯЗЫКИ ===
+  // ============================================================
+  kho2: { name: 'кховар', native: 'کھوار', endPunctuation: '.!?', direction: 'rtl' },
+  shd: { name: 'шина', native: 'شینا', endPunctuation: '.!?', direction: 'rtl' },
+  bfy: { name: 'башкарик', native: 'Bashkarik', endPunctuation: '.!?', direction: 'ltr' },
+  glh: { name: 'гилгитский шина', native: 'Gilgiti', endPunctuation: '.!?', direction: 'rtl' },
+  kal2: { name: 'калаша', native: 'Kalasha', endPunctuation: '.!?', direction: 'ltr' },
+  phl: { name: 'палула', native: 'Palula', endPunctuation: '.!?', direction: 'ltr' },
+
+  // ============================================================
+  // === ДОПОЛНИТЕЛЬНЫЕ ВОСТОЧНОИРАНСКИЕ ===
+  // ============================================================
+  yid: { name: 'ядгха', native: 'Yadgha', endPunctuation: '.!?', direction: 'ltr' },
+  prd: { name: 'парси-дари', native: 'Parsi-Dari', endPunctuation: '.!?', direction: 'ltr' },
+
+  // ============================================================
+  // === ВОСТОЧНОАФРИКАНСКИЕ (ДОП.) ===
+  // ============================================================
+  ren2: { name: 'рендилле', native: 'Rendille', endPunctuation: '.!?', direction: 'ltr' },
+  dsh: { name: 'дасанеч', native: 'Daasanach', endPunctuation: '.!?', direction: 'ltr' },
+  mur: { name: 'мурси', native: 'Mursi', endPunctuation: '.!?', direction: 'ltr' },
+  ham: { name: 'хамер', native: 'Hamar', endPunctuation: '.!?', direction: 'ltr' },
+  sur: { name: 'сури', native: 'Suri', endPunctuation: '.!?', direction: 'ltr' },
+
+  // ============================================================
+  // === КОНГОЛЕЗСКИЕ ЯЗЫКИ (ДОП.) ===
+  // ============================================================
+  mkw: { name: 'китуба', native: 'Kituba', endPunctuation: '.!?', direction: 'ltr' },
+  swc: { name: 'суахили конголезский', native: 'Kingwana', endPunctuation: '.!?', direction: 'ltr' },
+  ktu: { name: 'китуба (Конго)', native: 'Kituba', endPunctuation: '.!?', direction: 'ltr' },
+
+  // ============================================================
+  // === ДОПОЛНИТЕЛЬНЫЕ ТИХООКЕАНСКИЕ ===
+  // ============================================================
+  hag: { name: 'хангаского (Соломоновы)', native: 'Halia', endPunctuation: '.!?', direction: 'ltr' },
+  aro2: { name: 'ароси', native: 'Arosi', endPunctuation: '.!?', direction: 'ltr' },
+  mlu: { name: 'молу', native: 'To\'abaita', endPunctuation: '.!?', direction: 'ltr' },
+
+  // ============================================================
+  // === ЯЗЫКИ ВАНУАТУ (ДОП.) ===
+  // ============================================================
+  lnr: { name: 'ленакел', native: 'Lenakel', endPunctuation: '.!?', direction: 'ltr' },
+  tnp: { name: 'тангоа', native: 'Tangoa', endPunctuation: '.!?', direction: 'ltr' },
+
+  // ============================================================
+  // === ДОПОЛНИТЕЛЬНЫЕ МЕКСИКАНСКИЕ ===
+  // ============================================================
+  toq: { name: 'тотонакский', native: 'Totonac', endPunctuation: '.!?', direction: 'ltr' },
+  pua: { name: 'пуэрепеча', native: "P'urhépecha", endPunctuation: '.!?', direction: 'ltr' },
+  huv: { name: 'уичоль', native: 'Wixárika', endPunctuation: '.!?', direction: 'ltr' },
+  mhc: { name: 'мочо (майя)', native: "Mocho'", endPunctuation: '.!?', direction: 'ltr' },
+  tzh: { name: 'цельталь', native: "Tseltal", endPunctuation: '.!?', direction: 'ltr' },
+  tzo: { name: 'цоциль', native: "Tsotsil", endPunctuation: '.!?', direction: 'ltr' },
+  chol: { name: 'чоль', native: "Ch'ol", endPunctuation: '.!?', direction: 'ltr' },
+  mhx: { name: 'масауа', native: 'Mazahua', endPunctuation: '.!?', direction: 'ltr' },
+  ppi: { name: 'попольвухский', native: 'Popoluca', endPunctuation: '.!?', direction: 'ltr' },
 };
 
 const TEAM_EMAIL = 'energoferon41@gmail.com';

@@ -150,7 +150,7 @@ const LANGUAGE_MAP: Record<string, { name: string; native: string; endPunctuatio
   smj: { name: 'луле-саамский', native: 'Julevsámegiella', endPunctuation: '.!?', direction: 'ltr' },
   vro: { name: 'выруский', native: 'Võro', endPunctuation: '.!?', direction: 'ltr' },
   liv: { name: 'ливский', native: 'Līvõ kēļ', endPunctuation: '.!?', direction: 'ltr' },
-  vep: { name: 'вепсский', native: 'Vepsän kel'', endPunctuation: '.!?', direction: 'ltr' },
+  vep: { name: 'вепсский', native: `Vepsän kel'`, endPunctuation: '.!?', direction: 'ltr' },
   izh: { name: 'ижорский', native: 'Ižoran keel', endPunctuation: '.!?', direction: 'ltr' },
   krl: { name: 'карельский', native: 'Karjalan kieli', endPunctuation: '.!?', direction: 'ltr' },
   udm: { name: 'удмуртский', native: 'Удмурт кыл', endPunctuation: '.!?', direction: 'ltr' },

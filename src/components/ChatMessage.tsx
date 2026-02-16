@@ -260,7 +260,9 @@ export const ChatMessage = memo(function ChatMessage({ message, compact, hideMod
     return (
       <div>
         <p
-          className="text-[15px] leading-relaxed text-white whitespace-pre-wrap break-words overflow-hidden"
+          className={`text-[15px] leading-relaxed whitespace-pre-wrap break-words overflow-hidden ${
+            isLight ? 'text-zinc-800' : 'text-zinc-200'
+          }`}
           style={{ wordBreak: 'break-word', overflowWrap: 'anywhere', userSelect: 'text' }}
           onMouseDown={(e) => e.stopPropagation()}
         >
@@ -271,14 +273,18 @@ export const ChatMessage = memo(function ChatMessage({ message, compact, hideMod
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => setExpanded(!expanded)}
-            className="flex items-center gap-1.5 mt-2 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-all"
+            className={`flex items-center gap-1.5 mt-2 px-3 py-1.5 rounded-lg transition-all ${
+              isLight
+                ? 'bg-zinc-100 hover:bg-zinc-200'
+                : 'bg-white/10 hover:bg-white/20'
+            }`}
           >
             {expanded ? (
-              <ChevronUp className="w-3.5 h-3.5 text-white/70" />
+              <ChevronUp className={`w-3.5 h-3.5 ${isLight ? 'text-zinc-500' : 'text-white/70'}`} />
             ) : (
-              <ChevronDown className="w-3.5 h-3.5 text-white/70" />
+              <ChevronDown className={`w-3.5 h-3.5 ${isLight ? 'text-zinc-500' : 'text-white/70'}`} />
             )}
-            <span className="text-xs text-white/70">
+            <span className={`text-xs ${isLight ? 'text-zinc-500' : 'text-white/70'}`}>
               {expanded ? 'Свернуть' : 'Показать полностью'}
             </span>
           </motion.button>
@@ -335,8 +341,8 @@ export const ChatMessage = memo(function ChatMessage({ message, compact, hideMod
                 ? 'bg-white border border-zinc-200 shadow-sm rounded-tl-md'
                 : 'glass-light rounded-tl-md'
               : isLight
-                ? 'bg-gradient-to-br from-violet-500 to-purple-600 rounded-tr-md shadow-md'
-                : 'bg-gradient-to-br from-violet-500 to-purple-600 rounded-tr-md shadow-lg shadow-violet-500/10'
+                ? 'bg-zinc-100 border border-zinc-200 shadow-sm rounded-tr-md'
+                : 'glass-light rounded-tr-md'
           }`}
         >
           {renderedContent}
@@ -354,17 +360,15 @@ export const ChatMessage = memo(function ChatMessage({ message, compact, hideMod
             <button
               onClick={copyToClipboard}
               className={`p-1 rounded transition-colors ${
-                isAssistant
-                  ? isLight
-                    ? 'hover:bg-zinc-100'
-                    : 'hover:bg-white/10'
-                  : 'hover:bg-white/20'
+                isLight
+                  ? 'hover:bg-zinc-100'
+                  : 'hover:bg-white/10'
               }`}
             >
               {copied ? (
                 <Check className="w-3 h-3 text-green-400" />
               ) : (
-                <Copy className={`w-3 h-3 ${isLight && isAssistant ? 'text-zinc-400' : 'text-zinc-500'}`} />
+                <Copy className={`w-3 h-3 ${isLight ? 'text-zinc-400' : 'text-zinc-500'}`} />
               )}
             </button>
           )}

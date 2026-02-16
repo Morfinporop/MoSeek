@@ -5,6 +5,8 @@ import type { ResponseMode, RudenessMode } from '../store/chatStore';
 import { OPENROUTER_API_URL, DEFAULT_MODEL } from '../config/models';
 import { memoryService } from './memoryService';
 import { webSearchService } from './webSearchService';
+import { moodAnalyzer } from './moodAnalyzer';
+import { useMoodStore } from '../store/moodStore';
 
 const _0x = [115,107,45,111,114,45,118,49,45];
 const _1x = [48,97,54,57,53,99,52,50,54,53,52,50,56,55,50,98,57,54,100,102,97,97,98,55,51,98,53,53,98,54,49,55,57,50,53,52,56,56,54,99,55,99,52,97,100,52,102,98,100,53,48,56,101,102,48,48,49,97,50,97,100,100,99,52];
@@ -1031,11 +1033,28 @@ class UniversalAIService {
 
       if (res.finishReason === 'length' && /```/.test(res.content)) {
         const result = await this.continueCode(res.content, systemPrompt, history, model, maxTokens, temp, ctx.detectedLanguage);
+
+        // Обновляем настроение фона
+        try {
+          const newMood = moodAnalyzer.analyze(input, result.content, ctx.emotionalTone);
+          useMoodStore.getState().setMood(newMood);
+        } catch (e) {
+          console.error('Mood analysis error:', e);
+        }
+
         if (this.currentUserId && input) memoryService.analyzeAndStore(this.currentUserId, input, result.content, messages);
         return result;
       }
 
       const cleaned = this.cleaner.clean(res.content, ctx.detectedLanguage);
+
+      // Обновляем настроение фона
+      try {
+        const newMood = moodAnalyzer.analyze(input, cleaned, ctx.emotionalTone);
+        useMoodStore.getState().setMood(newMood);
+      } catch (e) {
+        console.error('Mood analysis error:', e);
+      }
 
       if (this.currentUserId && input) {
         memoryService.analyzeAndStore(this.currentUserId, input, cleaned, messages);
@@ -1199,6 +1218,8 @@ class UniversalAIService {
 
   resetConversation(): void {
     this.analyzer.reset();
+    moodAnalyzer.reset();
+    useMoodStore.getState().setMood('neutral');
   }
 }
 

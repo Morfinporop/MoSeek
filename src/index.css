@@ -1,5 +1,6 @@
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Comfortaa:wght@300..700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap');
 
 :root {
   --bg-primary: #050508;
@@ -14,12 +15,12 @@
 }
 
 * {
-  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: 'Comfortaa', -apple-system, BlinkMacSystemFont, sans-serif;
   box-sizing: border-box;
 }
 
 code, pre, .mono {
-  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-family: 'Roboto Mono', 'Fira Code', monospace;
 }
 
 html {
@@ -331,7 +332,7 @@ button:focus {
 /* ─── Блоки кода (CodeBlock компонент) ─── */
 .code-block-container {
   background: #0d0d1a;
-  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+  font-family: 'Roboto Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
 }
 
 .code-block-container pre {
@@ -361,7 +362,7 @@ button:focus {
   border-radius: 6px !important;
   padding: 2px 7px !important;
   font-size: 0.85em !important;
-  font-family: 'JetBrains Mono', 'Fira Code', monospace !important;
+  font-family: 'Roboto Mono', 'Fira Code', monospace !important;
   color: #c4b5fd !important;
   white-space: nowrap !important;
 }

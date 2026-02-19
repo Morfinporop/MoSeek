@@ -10,6 +10,16 @@ export const AI_MODELS: AIModel[] = [
     provider: 'MoGPT',
     icon: MODEL_ICON,
     color: 'from-cyan-400 to-blue-500',
+    supportsImage: false,
+  },
+  {
+    id: 'openai/gpt-4o-mini:free',
+    name: 'GPT-4o Mini',
+    description: 'Мультимодальная модель с поддержкой изображений',
+    provider: 'OpenAI',
+    icon: MODEL_ICON,
+    color: 'from-green-400 to-emerald-500',
+    supportsImage: true,
   },
 ];
 

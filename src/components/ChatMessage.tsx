@@ -20,7 +20,6 @@ marked.setOptions({
 
 const MAX_LENGTH = 10000;
 
-/* ─── Кнопка копирования кода ─── */
 const CodeCopyButton = memo(function CodeCopyButton({ code }: { code: string }) {
   const [copied, setCopied] = useState(false);
 
@@ -70,11 +69,9 @@ const CodeCopyButton = memo(function CodeCopyButton({ code }: { code: string }) 
   );
 });
 
-/* ─── Блок кода ─── */
 const CodeBlock = memo(function CodeBlock({ code, language }: { code: string; language?: string }) {
   return (
     <div className="code-block-container relative my-4 rounded-xl overflow-hidden border border-white/[0.06] shadow-lg">
-      {/* Шапка блока кода */}
       <div className="flex items-center justify-between px-4 py-2.5 bg-[#0a0a18] border-b border-white/[0.06]">
         <div className="flex items-center gap-2">
           <Code2 className="w-3.5 h-3.5 text-violet-400/70" />
@@ -91,8 +88,6 @@ const CodeBlock = memo(function CodeBlock({ code, language }: { code: string; la
         </div>
         <CodeCopyButton code={code} />
       </div>
-
-      {/* Тело кода */}
       <div className="relative bg-[#0d0d1a] overflow-x-auto">
         <pre className="!m-0 !p-4 !bg-transparent !border-0">
           <code className={`text-sm font-mono leading-relaxed text-zinc-200 ${language ? `language-${language}` : ''}`}>
@@ -104,7 +99,6 @@ const CodeBlock = memo(function CodeBlock({ code, language }: { code: string; la
   );
 });
 
-/* ─── Парсер контента: разделяет текст и код ─── */
 function parseContentBlocks(content: string): Array<{ type: 'text' | 'code'; content: string; language?: string }> {
   const blocks: Array<{ type: 'text' | 'code'; content: string; language?: string }> = [];
   const codeBlockRegex = /```(\w*)\n?([\s\S]*?)```/g;
@@ -143,16 +137,13 @@ function parseContentBlocks(content: string): Array<{ type: 'text' | 'code'; con
   return blocks;
 }
 
-/* ─── Рендер текстового блока через marked ─── */
 const TextBlock = memo(function TextBlock({ content, isLight }: { content: string; isLight: boolean }) {
   const html = useMemo(() => {
     let result = marked.parse(content, { async: false }) as string;
-
     result = result.replace(
       /<code(?!\s*class)(.*?)>([\s\S]*?)<\/code>/g,
       '<code class="inline-code"$1>$2</code>'
     );
-
     return result;
   }, [content]);
 
@@ -168,7 +159,41 @@ const TextBlock = memo(function TextBlock({ content, isLight }: { content: strin
   );
 });
 
-/* ─── Основной компонент сообщения ─── */
+const ImagePreview = memo(function ImagePreview({ src, isLight }: { src: string; isLight: boolean }) {
+  const [fullscreen, setFullscreen] = useState(false);
+
+  return (
+    <>
+      <div
+        className={`mb-3 rounded-xl overflow-hidden border cursor-pointer transition-transform hover:scale-[1.01] ${
+          isLight ? 'border-zinc-200' : 'border-white/[0.06]'
+        }`}
+        onClick={() => setFullscreen(true)}
+      >
+        <img
+          src={src}
+          alt="Прикрепленное изображение"
+          className="w-full max-w-md h-auto max-h-96 object-contain"
+          loading="lazy"
+        />
+      </div>
+
+      {fullscreen && (
+        <div
+          className="fixed inset-0 z-[9999] bg-black/90 flex items-center justify-center p-4 cursor-pointer"
+          onClick={() => setFullscreen(false)}
+        >
+          <img
+            src={src}
+            alt="Полноэкранное изображение"
+            className="max-w-full max-h-full object-contain rounded-lg"
+          />
+        </div>
+      )}
+    </>
+  );
+});
+
 export const ChatMessage = memo(function ChatMessage({ message, compact, hideModelLabel }: ChatMessageProps) {
   const [copied, setCopied] = useState(false);
   const [expanded, setExpanded] = useState(false);
@@ -345,6 +370,9 @@ export const ChatMessage = memo(function ChatMessage({ message, compact, hideMod
                 : 'glass-light rounded-tr-md'
           }`}
         >
+          {message.imageUrl && (
+            <ImagePreview src={message.imageUrl} isLight={isLight} />
+          )}
           {renderedContent}
         </motion.div>
 

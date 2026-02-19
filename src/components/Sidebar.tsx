@@ -2,8 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   X, MessageSquare, Plus, LogOut, Loader2, Camera, Sun, Moon,
   Trash2, ChevronDown, Pencil, Lock, AlertTriangle, Check,
-  ArrowLeft, Shield, Eye, EyeOff, HelpCircle, Archive, ArchiveRestore,
-  Coffee, Sparkles, Settings, User
+  ArrowLeft, Shield, Eye, EyeOff, HelpCircle, Archive, ArchiveRestore
 } from 'lucide-react';
 import { useChatStore } from '../store/chatStore';
 import { useAuthStore } from '../store/authStore';
@@ -66,54 +65,54 @@ const cls = {
   overlay: 'fixed inset-0 bg-black/60 backdrop-blur-sm z-[60]',
   modal: (isDark: boolean, w = 'w-[420px]') =>
     `fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 ${w} max-w-[calc(100vw-32px)] max-h-[90vh] rounded-2xl z-[70] overflow-hidden border flex flex-col shadow-2xl ${
-      d(isDark, 'bg-[#0d0a08] border-amber-900/20 shadow-black/50', 'bg-white border-amber-200/50 shadow-amber-900/10')
+      d(isDark, 'bg-[#0a0a0a] border-amber-500/10 shadow-black/50', 'bg-white border-amber-200 shadow-amber-900/10')
     }`,
   headerBar: (isDark: boolean) =>
-    `flex items-center justify-between px-5 py-4 border-b ${d(isDark, 'border-amber-900/15', 'border-amber-100')}`,
+    `flex items-center justify-between px-5 py-4 border-b ${d(isDark, 'border-amber-500/10', 'border-amber-100')}`,
   headerBarBack: (isDark: boolean) =>
-    `flex items-center gap-3 px-5 py-4 border-b ${d(isDark, 'border-amber-900/15', 'border-amber-100')}`,
+    `flex items-center gap-3 px-5 py-4 border-b ${d(isDark, 'border-amber-500/10', 'border-amber-100')}`,
   title: (isDark: boolean) =>
-    `text-[15px] font-bold ${d(isDark, 'text-amber-50', 'text-amber-900')}`,
+    `text-[15px] font-bold ${d(isDark, 'text-white', 'text-amber-900')}`,
   closeBtn: (isDark: boolean) =>
-    `p-1.5 rounded-lg transition-colors ${d(isDark, 'hover:bg-amber-500/10', 'hover:bg-amber-100')}`,
+    `p-1.5 rounded-lg transition-colors ${d(isDark, 'hover:bg-white/[0.06]', 'hover:bg-amber-100')}`,
   closeIcon: (isDark: boolean) =>
-    `w-4 h-4 ${d(isDark, 'text-amber-600', 'text-amber-400')}`,
+    `w-4 h-4 ${d(isDark, 'text-zinc-500', 'text-amber-400')}`,
   input: (isDark: boolean) =>
     `w-full h-12 px-4 rounded-xl text-sm focus:outline-none transition-all ${
       d(isDark,
-        'bg-amber-950/30 border border-amber-800/20 text-amber-50 placeholder-amber-700 focus:border-amber-600/50 focus:bg-amber-950/50',
+        'bg-white/[0.04] border border-white/[0.08] text-white placeholder-zinc-600 focus:border-amber-500/50 focus:bg-white/[0.07]',
         'bg-amber-50 border border-amber-200 text-amber-900 placeholder-amber-400 focus:border-amber-400 focus:bg-white'
       )}`,
   accentBtn: (isDark: boolean) =>
-    `w-full py-3 rounded-xl text-sm font-semibold transition-all ${
+    `w-full py-3 rounded-xl text-sm font-medium transition-all ${
       d(isDark,
-        'bg-gradient-to-r from-amber-600/20 to-orange-600/20 border border-amber-500/25 text-amber-300 hover:from-amber-600/30 hover:to-orange-600/30',
-        'bg-gradient-to-r from-amber-100 to-orange-100 border border-amber-300 text-amber-700 hover:from-amber-200 hover:to-orange-200'
+        'bg-amber-500/[0.1] border border-amber-500/20 text-amber-400 hover:bg-amber-500/[0.16] hover:border-amber-500/30',
+        'bg-amber-50 border border-amber-200 text-amber-600 hover:bg-amber-100 hover:border-amber-300'
       )}`,
-  gradBtn: 'bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold text-sm shadow-lg shadow-amber-500/25 disabled:opacity-50',
-  gradBtnRed: 'bg-gradient-to-r from-red-500 to-red-600 text-white font-semibold text-sm shadow-lg shadow-red-500/20 disabled:opacity-50',
+  gradBtn: 'bg-gradient-to-r from-amber-500 to-orange-500 text-white font-medium text-sm shadow-lg shadow-amber-500/20 disabled:opacity-50',
+  gradBtnRed: 'bg-gradient-to-r from-red-500 to-red-600 text-white font-medium text-sm shadow-lg shadow-red-500/20 disabled:opacity-50',
   errBox: (isDark: boolean) =>
-    `mb-4 px-4 py-3 rounded-xl ${d(isDark, 'bg-red-500/10 border border-red-500/20', 'bg-red-50 border border-red-200')}`,
+    `mb-4 px-4 py-3 rounded-xl ${d(isDark, 'bg-red-500/[0.08] border border-red-500/15', 'bg-red-50 border border-red-200')}`,
   okBox: (isDark: boolean) =>
-    `mb-4 px-4 py-3 rounded-xl ${d(isDark, 'bg-emerald-500/10 border border-emerald-500/20', 'bg-emerald-50 border border-emerald-200')}`,
+    `mb-4 px-4 py-3 rounded-xl ${d(isDark, 'bg-emerald-500/[0.08] border border-emerald-500/15', 'bg-emerald-50 border border-emerald-200')}`,
   importantBox: (isDark: boolean) =>
-    `px-4 py-3 rounded-xl ${d(isDark, 'bg-amber-500/10 border border-amber-500/20', 'bg-amber-50 border border-amber-200')}`,
+    `px-4 py-3 rounded-xl ${d(isDark, 'bg-amber-500/[0.08] border border-amber-500/15', 'bg-amber-50 border border-amber-200')}`,
   cardBtn: (isDark: boolean) =>
-    `w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all text-left ${
-      d(isDark, 'bg-amber-950/20 hover:bg-amber-900/30 border border-amber-800/15', 'bg-amber-50 hover:bg-amber-100 border border-amber-100')
+    `w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-left ${
+      d(isDark, 'bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.06]', 'bg-amber-50 hover:bg-amber-100 border border-amber-100')
     }`,
   footerBorder: (isDark: boolean) =>
-    `px-6 py-4 border-t ${d(isDark, 'border-amber-900/15', 'border-amber-100')}`,
-  text1: (isDark: boolean) => d(isDark, 'text-amber-50', 'text-amber-900'),
-  text2: (isDark: boolean) => d(isDark, 'text-amber-300', 'text-amber-700'),
-  text3: (isDark: boolean) => d(isDark, 'text-amber-500', 'text-amber-500'),
-  text4: (isDark: boolean) => d(isDark, 'text-amber-700', 'text-amber-300'),
+    `px-6 py-4 border-t ${d(isDark, 'border-amber-500/10', 'border-amber-100')}`,
+  text1: (isDark: boolean) => d(isDark, 'text-white', 'text-amber-900'),
+  text2: (isDark: boolean) => d(isDark, 'text-zinc-400', 'text-amber-600'),
+  text3: (isDark: boolean) => d(isDark, 'text-zinc-600', 'text-amber-400'),
+  text4: (isDark: boolean) => d(isDark, 'text-zinc-700', 'text-amber-300'),
   accent: (isDark: boolean) => d(isDark, 'text-amber-400', 'text-amber-600'),
-  accentHover: (isDark: boolean) => d(isDark, 'hover:text-amber-300', 'hover:text-amber-700'),
-  hoverBg: (isDark: boolean) => d(isDark, 'hover:bg-amber-900/20', 'hover:bg-amber-50'),
-  surface: (isDark: boolean) => d(isDark, 'bg-amber-950/30', 'bg-amber-50'),
-  border: (isDark: boolean) => d(isDark, 'border-amber-800/20', 'border-amber-200'),
-  borderLight: (isDark: boolean) => d(isDark, 'border-amber-900/15', 'border-amber-100'),
+  accentHover: (isDark: boolean) => d(isDark, 'hover:text-amber-400', 'hover:text-amber-600'),
+  hoverBg: (isDark: boolean) => d(isDark, 'hover:bg-white/[0.04]', 'hover:bg-amber-50'),
+  surface: (isDark: boolean) => d(isDark, 'bg-white/[0.04]', 'bg-amber-50'),
+  border: (isDark: boolean) => d(isDark, 'border-white/[0.08]', 'border-amber-200'),
+  borderLight: (isDark: boolean) => d(isDark, 'border-white/[0.06]', 'border-amber-100'),
 };
 
 function DiscordIcon({ className }: { className?: string }) {
@@ -133,7 +132,7 @@ function CodeInput({ code, setCode, isDark, autoFocus = true }: { code: string; 
           onChange={e=>hc(i,e.target.value)} onKeyDown={e=>hk(i,e)}
           className={`w-11 h-13 text-center text-xl font-bold rounded-xl focus:outline-none transition-all ${
             d(isDark,
-              'bg-amber-950/30 border border-amber-800/20 text-amber-50 focus:border-amber-500/50 focus:bg-amber-950/50',
+              'bg-white/[0.04] border border-white/[0.08] text-white focus:border-amber-500/50 focus:bg-white/[0.07]',
               'bg-amber-50 border border-amber-200 text-amber-900 focus:border-amber-400 focus:bg-white'
             )}`}/>
       ))}
@@ -149,7 +148,7 @@ function PasswordField({ value, onChange, placeholder, show, toggle, onKeyDown, 
       <input type={show?'text':'password'} value={value} onChange={e=>onChange(e.target.value)} onKeyDown={onKeyDown}
         placeholder={placeholder} className={`${cls.input(isDark)} pr-12`}/>
       <button type="button" onClick={toggle}
-        className={`absolute right-4 top-1/2 -translate-y-1/2 transition-colors ${d(isDark,'text-amber-600 hover:text-amber-400','text-amber-400 hover:text-amber-600')}`}>
+        className={`absolute right-4 top-1/2 -translate-y-1/2 transition-colors ${d(isDark,'text-zinc-600 hover:text-zinc-400','text-amber-400 hover:text-amber-600')}`}>
         {show?<EyeOff className="w-4 h-4"/>:<Eye className="w-4 h-4"/>}
       </button>
     </div>
@@ -165,6 +164,7 @@ export function Sidebar() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeModal, setActiveModal] = useState<ModalType>(null);
   const [isTouchDevice, setIsTouchDevice] = useState(false);
+  const [showHeaderExtras, setShowHeaderExtras] = useState(false);
   const [showArchive, setShowArchive] = useState(false);
 
   const activeChats = getActiveChats();
@@ -189,112 +189,117 @@ export function Sidebar() {
     reader.readAsDataURL(file); e.target.value = '';
   };
 
+  const iconBg = (type: 'discord'|'theme'|'accent') => {
+    if (type === 'discord') return d(isDark,
+      'bg-[#5865F2]/[0.08] border border-[#5865F2]/15 hover:bg-[#5865F2]/[0.14]',
+      'bg-[#5865F2]/[0.05] border border-[#5865F2]/12 hover:bg-[#5865F2]/[0.1]'
+    );
+    if (type === 'theme') return d(isDark,
+      'bg-amber-500/[0.08] border border-amber-500/15 hover:bg-amber-500/[0.14]',
+      'bg-amber-500/[0.05] border border-amber-500/12 hover:bg-amber-500/[0.1]'
+    );
+    return d(isDark,
+      'bg-amber-500/[0.08] border border-amber-500/15 hover:bg-amber-500/[0.14]',
+      'bg-amber-50 border border-amber-200 hover:bg-amber-100'
+    );
+  };
+
   return (
     <AnimatePresence>
       {sidebarOpen && (
         <>
-          <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} transition={{duration:0.2}}
-            onClick={toggleSidebar} className="fixed inset-0 bg-black/60 backdrop-blur-md z-40"/>
+          <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} transition={{duration:0.15}}
+            onClick={toggleSidebar} className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"/>
 
-          <motion.aside initial={{x:-300,opacity:0}} animate={{x:0,opacity:1}} exit={{x:-300,opacity:0}}
-            transition={{type:'spring',damping:28,stiffness:350}}
-            className={`fixed left-0 top-0 bottom-0 w-[280px] z-50 flex flex-col ${
-              d(isDark,
-                'bg-gradient-to-b from-[#0d0a08] via-[#0a0806] to-[#080604] border-r border-amber-900/15',
-                'bg-gradient-to-b from-white via-amber-50/30 to-white border-r border-amber-200/50'
-              )
+          <motion.aside initial={{x:-320,opacity:0}} animate={{x:0,opacity:1}} exit={{x:-320,opacity:0}}
+            transition={{type:'spring',damping:32,stiffness:400}}
+            className={`fixed left-0 top-0 bottom-0 w-72 z-50 flex flex-col border-r ${
+              d(isDark,'bg-[#0a0a0a]/95 backdrop-blur-2xl border-white/[0.08]','bg-white/95 backdrop-blur-2xl border-amber-200')
             }`}>
 
-            <div className={`px-4 py-4 border-b ${d(isDark, 'border-amber-900/15', 'border-amber-100')}`}>
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2.5">
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                    d(isDark, 'bg-gradient-to-br from-amber-500/20 to-orange-600/20', 'bg-gradient-to-br from-amber-100 to-orange-100')
-                  }`}>
-                    <Coffee className={`w-4 h-4 ${d(isDark, 'text-amber-400', 'text-amber-600')}`}/>
-                  </div>
-                  <span className={`text-base font-bold tracking-tight ${d(isDark, 'text-amber-50', 'text-amber-900')}`}>MoGPT</span>
-                </div>
-                <motion.button whileHover={{scale:1.1,rotate:90}} whileTap={{scale:0.9}} onClick={toggleSidebar}
-                  className={`p-2 rounded-lg transition-colors ${d(isDark, 'hover:bg-amber-900/30 text-amber-500', 'hover:bg-amber-100 text-amber-400')}`}>
-                  <X className="w-4 h-4"/>
+            <div className={`border-b ${cls.borderLight(isDark)}`}>
+              <div className="flex items-center justify-between px-4 py-3.5">
+                <button onClick={()=>setShowHeaderExtras(!showHeaderExtras)}
+                  className={`flex items-center gap-1.5 text-[15px] font-semibold transition-colors ${cls.text1(isDark)} ${cls.accentHover(isDark)}`}>
+                  Меню
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${cls.text3(isDark)} ${showHeaderExtras?'rotate-180':''}`}/>
+                </button>
+                <motion.button whileHover={{scale:1.1}} whileTap={{scale:0.9}} onClick={toggleSidebar} className={cls.closeBtn(isDark)}>
+                  <X className={cls.closeIcon(isDark)}/>
                 </motion.button>
               </div>
-
-              <div className="flex items-center gap-2">
-                <motion.a href={DISCORD_URL} target="_blank" rel="noopener noreferrer" whileHover={{scale:1.05}} whileTap={{scale:0.95}}
-                  className={`flex-1 h-9 rounded-lg flex items-center justify-center gap-2 transition-all ${
-                    d(isDark, 'bg-[#5865F2]/10 hover:bg-[#5865F2]/20 border border-[#5865F2]/20', 'bg-[#5865F2]/5 hover:bg-[#5865F2]/10 border border-[#5865F2]/15')
-                  }`}>
-                  <DiscordIcon className="w-3.5 h-3.5 text-[#5865F2]"/>
-                  <span className="text-xs font-medium text-[#5865F2]">Discord</span>
-                </motion.a>
-                <motion.button whileHover={{scale:1.05}} whileTap={{scale:0.95}} onClick={toggleTheme}
-                  className={`h-9 w-9 rounded-lg flex items-center justify-center transition-all ${
-                    d(isDark, 'bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20', 'bg-amber-100 hover:bg-amber-200 border border-amber-200')
-                  }`}>
-                  {isDark?<Sun className="w-4 h-4 text-amber-400"/>:<Moon className="w-4 h-4 text-amber-600"/>}
-                </motion.button>
-                <motion.button whileHover={{scale:1.05}} whileTap={{scale:0.95}} onClick={()=>setActiveModal('about')}
-                  className={`h-9 w-9 rounded-lg flex items-center justify-center transition-all ${
-                    d(isDark, 'bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20', 'bg-amber-100 hover:bg-amber-200 border border-amber-200')
-                  }`}>
-                  <HelpCircle className={`w-4 h-4 ${d(isDark, 'text-amber-400', 'text-amber-600')}`}/>
-                </motion.button>
-              </div>
+              <AnimatePresence>
+                {showHeaderExtras && (
+                  <motion.div initial={{height:0,opacity:0}} animate={{height:'auto',opacity:1}} exit={{height:0,opacity:0}} transition={{duration:0.2}} className="overflow-hidden">
+                    <div className="flex items-center gap-2 px-4 pb-3">
+                      <motion.a href={DISCORD_URL} target="_blank" rel="noopener noreferrer" whileHover={{scale:1.06}} whileTap={{scale:0.94}}
+                        className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${iconBg('discord')}`} title="Discord">
+                        <DiscordIcon className="w-4.5 h-4.5 text-[#5865F2]"/>
+                      </motion.a>
+                      <motion.button whileHover={{scale:1.06}} whileTap={{scale:0.94}} onClick={toggleTheme}
+                        className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${iconBg('theme')}`}>
+                        {isDark?<Sun className="w-4.5 h-4.5 text-amber-400"/>:<Moon className="w-4.5 h-4.5 text-amber-500"/>}
+                      </motion.button>
+                      <motion.button whileHover={{scale:1.06}} whileTap={{scale:0.94}} onClick={()=>setActiveModal('about')}
+                        className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${iconBg('accent')}`}>
+                        <HelpCircle className={`w-4.5 h-4.5 ${cls.accent(isDark)}`}/>
+                      </motion.button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
-            <div className="px-3 py-3">
+            <div className="px-3 pt-3">
               <motion.button whileHover={{scale:1.02}} whileTap={{scale:0.98}} onClick={handleNewChat}
-                className={`w-full flex items-center justify-center gap-2.5 px-4 py-3 rounded-xl font-semibold text-sm transition-all ${
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
                   d(isDark,
-                    'bg-gradient-to-r from-amber-500/15 to-orange-500/15 hover:from-amber-500/25 hover:to-orange-500/25 border border-amber-500/25 text-amber-300',
-                    'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-lg shadow-amber-500/20'
+                    'bg-amber-500/[0.1] border border-amber-500/20 hover:bg-amber-500/[0.16] hover:border-amber-500/30 text-amber-400',
+                    'bg-amber-50 border border-amber-200 hover:bg-amber-100 hover:border-amber-300 text-amber-600'
                   )}`}>
-                <Sparkles className="w-4 h-4"/>
-                <span>Новый чат</span>
+                <Plus className="w-5 h-5"/><span className="text-sm font-medium">Новый чат</span>
               </motion.button>
             </div>
 
             {archivedChats.length>0 && (
-              <div className="px-3 pb-2">
+              <div className="px-3 pt-2">
                 <button onClick={()=>setShowArchive(!showArchive)}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all ${cls.hoverBg(isDark)}`}>
+                  className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl transition-all ${cls.hoverBg(isDark)}`}>
                   <Archive className={`w-3.5 h-3.5 ${cls.text3(isDark)}`}/>
-                  <span className={`text-xs font-medium flex-1 text-left ${cls.text2(isDark)}`}>Архив</span>
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-medium ${d(isDark,'bg-amber-900/30 text-amber-500','bg-amber-100 text-amber-600')}`}>{archivedChats.length}</span>
+                  <span className={`text-sm font-medium flex-1 text-left ${cls.text2(isDark)}`}>Архив</span>
+                  <span className={`text-xs px-1.5 py-0.5 rounded-md ${d(isDark,'bg-white/[0.04] text-zinc-600','bg-amber-100 text-amber-400')}`}>{archivedChats.length}</span>
                   <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${cls.text4(isDark)} ${showArchive?'rotate-180':''}`}/>
                 </button>
                 <AnimatePresence>
                   {showArchive && (
                     <motion.div initial={{height:0,opacity:0}} animate={{height:'auto',opacity:1}} exit={{height:0,opacity:0}} transition={{duration:0.2}} className="overflow-hidden">
-                      <div className="space-y-1 pt-1 pb-1">
+                      <div className="space-y-0.5 pt-1 pb-1">
                         {archivedChats.map((chat)=>{
                           const isActive=currentChatId===chat.id;
                           return (
                             <motion.div key={chat.id} initial={{opacity:0,x:-8}} animate={{opacity:1,x:0}}
-                              className={`group relative rounded-lg transition-all cursor-pointer ${
+                              className={`group relative rounded-xl transition-all cursor-pointer ${
                                 isActive
-                                  ? d(isDark,'bg-amber-500/15 border border-amber-500/25','bg-amber-100 border border-amber-200')
+                                  ? d(isDark,'bg-amber-500/[0.1] border border-amber-500/20','bg-amber-50 border border-amber-200')
                                   : `${cls.hoverBg(isDark)} border border-transparent`
                               }`}>
                               <div className="flex items-center">
                                 <button onClick={()=>{setCurrentChat(chat.id);toggleSidebar();}} className="flex-1 min-w-0 text-left px-3 py-2">
                                   <div className="flex items-center gap-2">
-                                    <Archive className={`w-3 h-3 flex-shrink-0 ${isActive?cls.accent(isDark):cls.text4(isDark)}`}/>
-                                    <p className={`text-xs truncate max-w-[110px] ${isActive?cls.text1(isDark):cls.text3(isDark)}`}>{chat.title}</p>
+                                    <Archive className={`w-3.5 h-3.5 flex-shrink-0 ${isActive?cls.accent(isDark):cls.text4(isDark)}`}/>
+                                    <p className={`text-sm truncate max-w-[120px] ${isActive?cls.text1(isDark):cls.text3(isDark)}`}>{chat.title}</p>
                                   </div>
                                 </button>
                                 <div className={`flex items-center mr-1 ${isTouchDevice?'opacity-100':'opacity-0 group-hover:opacity-100'} transition-all`}>
                                   <motion.button whileHover={{scale:1.1}} whileTap={{scale:0.9}}
                                     onClick={(e)=>{e.stopPropagation();unarchiveChat(chat.id);}}
-                                    className={`p-1.5 rounded-md ${d(isDark,'hover:bg-amber-500/20','hover:bg-amber-100')}`} title="Восстановить">
-                                    <ArchiveRestore className={`w-3 h-3 ${cls.accent(isDark)}`}/>
+                                    className={`p-1.5 rounded-lg ${d(isDark,'hover:bg-amber-500/15','hover:bg-amber-50')}`} title="Восстановить">
+                                    <ArchiveRestore className={`w-3.5 h-3.5 ${cls.accent(isDark)}`}/>
                                   </motion.button>
                                   <motion.button whileHover={{scale:1.1}} whileTap={{scale:0.9}}
                                     onClick={(e)=>{e.stopPropagation();deleteChat(chat.id);}}
-                                    className={`p-1.5 rounded-md ${d(isDark,'hover:bg-red-500/20','hover:bg-red-50')}`} title="Удалить">
-                                    <Trash2 className="w-3 h-3 text-red-400"/>
+                                    className={`p-1.5 rounded-lg ${d(isDark,'hover:bg-red-500/15','hover:bg-red-50')}`} title="Удалить">
+                                    <Trash2 className="w-3.5 h-3.5 text-red-400"/>
                                   </motion.button>
                                 </div>
                               </div>
@@ -308,50 +313,34 @@ export function Sidebar() {
               </div>
             )}
 
-            <div className={`mx-3 mb-2 flex items-center gap-2 ${activeChats.length>0?'':'hidden'}`}>
-              <div className={`flex-1 h-px ${d(isDark,'bg-amber-900/20','bg-amber-200/50')}`}/>
-              <span className={`text-[10px] font-medium uppercase tracking-wider ${cls.text4(isDark)}`}>Чаты</span>
-              <div className={`flex-1 h-px ${d(isDark,'bg-amber-900/20','bg-amber-200/50')}`}/>
-            </div>
-
-            <div className="flex-1 overflow-y-auto px-3 pb-3 space-y-1">
+            <div className="flex-1 overflow-y-auto p-3 space-y-0.5">
               {activeChats.length===0?(
-                <div className="text-center py-12">
-                  <div className={`w-14 h-14 mx-auto mb-4 rounded-2xl flex items-center justify-center ${
-                    d(isDark,'bg-amber-900/20','bg-amber-100')
-                  }`}>
-                    <MessageSquare className={`w-6 h-6 ${cls.text4(isDark)}`}/>
-                  </div>
-                  <p className={`text-sm font-medium ${cls.text2(isDark)}`}>Нет чатов</p>
+                <div className="text-center py-8">
+                  <MessageSquare className={`w-12 h-12 mx-auto mb-3 ${cls.text4(isDark)}`}/>
+                  <p className={`text-sm ${cls.text3(isDark)}`}>Нет чатов</p>
                   <p className={`text-xs mt-1 ${cls.text4(isDark)}`}>Начни новый диалог</p>
                 </div>
               ):(
                 activeChats.map((chat)=>{
                   const isActive=currentChatId===chat.id;
                   return (
-                    <motion.div key={chat.id} initial={{opacity:0,y:10}} animate={{opacity:1,y:0}}
+                    <motion.div key={chat.id} initial={{opacity:0,x:-20}} animate={{opacity:1,x:0}}
                       className={`group relative rounded-xl transition-all cursor-pointer ${
                         isActive
-                          ? d(isDark,'bg-gradient-to-r from-amber-500/15 to-orange-500/10 border border-amber-500/30','bg-gradient-to-r from-amber-100 to-orange-50 border border-amber-200')
+                          ? d(isDark,'bg-amber-500/[0.12] border border-amber-500/25','bg-amber-50 border border-amber-200')
                           : `${cls.hoverBg(isDark)} border border-transparent`
                       }`}>
                       <div className="flex items-center">
-                        <button onClick={()=>{setCurrentChat(chat.id);toggleSidebar();}} className="flex-1 min-w-0 text-left px-3.5 py-3">
-                          <div className="flex items-center gap-2.5">
-                            <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                              isActive
-                                ? d(isDark,'bg-amber-500/20','bg-amber-200')
-                                : d(isDark,'bg-amber-900/20','bg-amber-100')
-                            }`}>
-                              <MessageSquare className={`w-3.5 h-3.5 ${isActive?cls.accent(isDark):cls.text3(isDark)}`}/>
-                            </div>
-                            <p className={`text-sm truncate max-w-[130px] font-medium ${isActive?cls.text1(isDark):cls.text2(isDark)}`}>{chat.title}</p>
+                        <button onClick={()=>{setCurrentChat(chat.id);toggleSidebar();}} className="flex-1 min-w-0 text-left px-3 py-2.5">
+                          <div className="flex items-center gap-2">
+                            <MessageSquare className={`w-4 h-4 flex-shrink-0 ${isActive?cls.accent(isDark):cls.text3(isDark)}`}/>
+                            <p className={`text-sm truncate max-w-[140px] ${isActive?cls.text1(isDark):cls.text2(isDark)}`}>{chat.title}</p>
                           </div>
                         </button>
                         <motion.button whileHover={{scale:1.1}} whileTap={{scale:0.9}}
                           onClick={(e)=>{e.stopPropagation();handleDeleteChat(chat.id);}}
-                          className={`flex-shrink-0 p-2 mr-2 rounded-lg transition-all ${d(isDark,'hover:bg-red-500/20','hover:bg-red-50')} ${isTouchDevice?'opacity-100':'opacity-0 group-hover:opacity-100'}`}>
-                          <Trash2 className="w-3.5 h-3.5 text-red-400"/>
+                          className={`flex-shrink-0 p-2 mr-1 rounded-lg transition-all ${d(isDark,'hover:bg-red-500/15','hover:bg-red-50')} ${isTouchDevice?'opacity-100':'opacity-0 group-hover:opacity-100'}`}>
+                          <Trash2 className="w-4 h-4 text-red-400"/>
                         </motion.button>
                       </div>
                     </motion.div>
@@ -360,54 +349,38 @@ export function Sidebar() {
               )}
             </div>
 
-            <div className={`p-4 border-t ${d(isDark, 'border-amber-900/15 bg-gradient-to-t from-[#080604] to-transparent', 'border-amber-100 bg-gradient-to-t from-amber-50/50 to-transparent')}`}>
+            <div className={`p-4 border-t ${cls.borderLight(isDark)}`}>
               {isAuthenticated?(
-                <motion.div whileHover={{scale:1.01}} onClick={()=>setActiveModal('profile')}
-                  className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer mb-3 transition-all ${
-                    d(isDark, 'bg-amber-900/20 hover:bg-amber-900/30 border border-amber-800/20', 'bg-white hover:bg-amber-50 border border-amber-200 shadow-sm')
-                  }`}>
-                  <div className="relative">
-                    <img src={user?.avatar} alt={user?.name} className={`w-10 h-10 rounded-xl flex-shrink-0 object-cover ring-2 ${d(isDark,'ring-amber-500/30','ring-amber-300')}`}/>
-                    <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 ${d(isDark,'bg-emerald-500 border-[#0d0a08]','bg-emerald-500 border-white')}`}/>
-                  </div>
+                <div onClick={()=>setActiveModal('profile')}
+                  className={`flex items-center gap-3 px-2 py-2 rounded-xl cursor-pointer mb-4 transition-colors ${cls.hoverBg(isDark)}`}>
+                  <img src={user?.avatar} alt={user?.name} className={`w-10 h-10 rounded-full flex-shrink-0 object-cover border-2 ${d(isDark,'border-amber-500/30','border-amber-300')}`}/>
                   <div className="flex-1 min-w-0">
-                    <p className={`text-sm font-semibold truncate ${cls.text1(isDark)}`}>{user?.name}</p>
-                    <p className={`text-[10px] truncate ${cls.text3(isDark)}`}>{user?.email}</p>
+                    <p className={`text-sm font-medium truncate ${cls.text1(isDark)}`}>{user?.name}</p>
+                    <p className={`text-[11px] truncate ${cls.text3(isDark)}`}>{user?.email}</p>
                   </div>
-                  <Settings className={`w-4 h-4 ${cls.text4(isDark)}`}/>
-                </motion.div>
+                </div>
               ):(
-                <div className="mb-3">
-                  <div className={`flex items-center gap-3 p-3 rounded-xl mb-3 ${
-                    d(isDark, 'bg-amber-900/15 border border-amber-800/15', 'bg-amber-50 border border-amber-100')
-                  }`}>
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                      d(isDark,'bg-amber-900/30','bg-amber-100')
-                    }`}>
-                      <User className={`w-5 h-5 ${cls.text3(isDark)}`}/>
+                <div className="mb-4">
+                  <div className="flex items-center gap-3 px-2 py-2 mb-3">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${d(isDark,'bg-zinc-800 border border-white/[0.06]','bg-amber-100 border border-amber-200')}`}>
+                      <span className="text-zinc-500 text-sm">👤</span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className={`text-sm font-semibold ${cls.text2(isDark)}`}>Гость</p>
-                      <p className={`text-[10px] ${cls.text4(isDark)}`}>Безлимитный доступ</p>
+                      <p className={`text-sm font-medium ${cls.text2(isDark)}`}>Гость</p>
+                      <p className={`text-[11px] ${cls.text3(isDark)}`}>Безлимитный доступ</p>
                     </div>
                   </div>
-                  <motion.button whileHover={{scale:1.02}} whileTap={{scale:0.98}} onClick={()=>setActiveModal('auth')}
-                    className={`w-full py-2.5 rounded-xl text-sm font-semibold transition-all ${
-                      d(isDark,
-                        'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/25',
-                        'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/25'
-                      )
-                    }`}>
+                  <motion.button whileHover={{scale:1.02}} whileTap={{scale:0.98}} onClick={()=>setActiveModal('auth')} className={cls.accentBtn(isDark)}>
                     Войти / Регистрация
                   </motion.button>
                 </div>
               )}
-              <div className="flex items-center justify-center gap-2 text-[9px]">
+              <div className="flex items-center gap-3 text-[10px] pl-1">
                 {(['terms','privacy','cookies'] as const).map((k,i)=>(
                   <span key={k} className="contents">
-                    {i>0&&<span className={cls.text4(isDark)}>•</span>}
-                    <button onClick={()=>setActiveModal(k)} className={`transition-colors ${cls.text4(isDark)} ${cls.accentHover(isDark)}`}>
-                      {k==='terms'?'Условия':k==='privacy'?'Приватность':'Данные'}
+                    {i>0&&<span className={cls.text4(isDark)}>·</span>}
+                    <button onClick={()=>setActiveModal(k)} className={`transition-colors ${cls.text3(isDark)} ${cls.accentHover(isDark)}`}>
+                      {k==='terms'?'Условия':k==='privacy'?'Конфиденциальность':'Данные'}
                     </button>
                   </span>
                 ))}
@@ -509,15 +482,15 @@ function ProfileModal({onClose,isDark,fileInputRef,isTouchDevice}:{onClose:()=>v
               <div className="px-5 py-5">
                 <div className="flex flex-col items-center mb-6">
                   <div className="relative group mb-3">
-                    <img src={user?.avatar} alt={user?.name} className={`w-20 h-20 rounded-2xl object-cover ring-2 ${d(isDark,'ring-amber-500/30','ring-amber-300')}`}/>
-                    <button onClick={()=>fileInputRef.current?.click()} className="absolute inset-0 rounded-2xl bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><Camera className="w-5 h-5 text-white"/></button>
+                    <img src={user?.avatar} alt={user?.name} className={`w-20 h-20 rounded-full object-cover border-2 ${d(isDark,'border-amber-500/30','border-amber-300')}`}/>
+                    <button onClick={()=>fileInputRef.current?.click()} className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><Camera className="w-5 h-5 text-white"/></button>
                   </div>
                   {isEditingName?(
                     <div className="w-full flex flex-col items-center"><div className="relative w-full max-w-[220px]">
                       <input ref={nameInputRef} type="text" value={editName} onChange={e=>setEditName(e.target.value)}
                         onKeyDown={e=>{if(e.key==='Enter')saveName();if(e.key==='Escape'){setIsEditingName(false);setEditName(user?.name||'');setNameError('');}}}
                         className={`w-full text-center text-lg font-semibold py-1.5 px-3 rounded-xl focus:outline-none transition-all ${
-                          d(isDark,'bg-amber-950/30 border border-amber-500/30 text-amber-50','bg-amber-50 border border-amber-200 text-amber-900')
+                          d(isDark,'bg-white/[0.04] border border-amber-500/30 text-white','bg-amber-50 border border-amber-200 text-amber-900')
                         }`}/>
                       {nameLoading&&<Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-amber-400"/>}</div>
                       {nameError&&<p className="text-xs text-red-400 text-center mt-1.5">{nameError}</p>}
@@ -533,14 +506,14 @@ function ProfileModal({onClose,isDark,fileInputRef,isTouchDevice}:{onClose:()=>v
                 </div>
                 <div className="space-y-2 mb-5">
                   <button onClick={()=>{reset();setView('changePassword');}} className={cls.cardBtn(isDark)}>
-                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${d(isDark,'bg-amber-500/15','bg-amber-100')}`}>
-                      <Lock className={`w-4 h-4 ${d(isDark,'text-amber-400','text-amber-600')}`}/></div>
+                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${d(isDark,'bg-amber-500/[0.1]','bg-amber-50')}`}>
+                      <Lock className={`w-4 h-4 ${d(isDark,'text-amber-400','text-amber-500')}`}/></div>
                     <div className="flex-1"><p className={`text-sm font-medium ${cls.text1(isDark)}`}>Сменить пароль</p><p className={`text-[11px] ${cls.text3(isDark)}`}>Обновить пароль аккаунта</p></div>
                   </button>
                 </div>
                 <motion.button whileHover={{scale:1.02}} whileTap={{scale:0.98}} onClick={()=>{logout();onClose();}}
                   className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl transition-all mb-3 ${
-                    d(isDark,'bg-red-500/10 border border-red-500/20 hover:bg-red-500/20','bg-red-50 border border-red-200 hover:bg-red-100')
+                    d(isDark,'bg-red-500/[0.08] border border-red-500/15 hover:bg-red-500/[0.14]','bg-red-50 border border-red-200 hover:bg-red-100')
                   }`}>
                   <LogOut className="w-4 h-4 text-red-400"/><span className="text-sm text-red-400 font-medium">Выйти из аккаунта</span>
                 </motion.button>
@@ -562,7 +535,7 @@ function ProfileModal({onClose,isDark,fileInputRef,isTouchDevice}:{onClose:()=>v
                   <div><label className={`text-xs font-medium mb-2 block ${cls.text2(isDark)}`}>Текущий пароль</label><PasswordField value={oldPw} onChange={setOldPw} placeholder="Введи текущий пароль" show={sOld} toggle={()=>setSO(!sOld)} isDark={isDark}/></div>
                   <div><label className={`text-xs font-medium mb-2 block ${cls.text2(isDark)}`}>Новый пароль</label><PasswordField value={newPw} onChange={setNewPw} placeholder="Минимум 6 символов" show={sNew} toggle={()=>setSN(!sNew)} isDark={isDark}/></div>
                   <div><label className={`text-xs font-medium mb-2 block ${cls.text2(isDark)}`}>Повтори новый пароль</label><PasswordField value={confirmPw} onChange={setConfirmPw} placeholder="Повтори пароль" show={sCon} toggle={()=>setSC(!sCon)} onKeyDown={e=>{if(e.key==='Enter')changePw();}} isDark={isDark}/></div>
-                  {newPw&&<div className="space-y-1.5"><div className="flex gap-1">{[1,2,3,4].map(l=>{const s=gpS(newPw);return<div key={l} className={`h-1 flex-1 rounded-full transition-all ${l<=s?s<=1?'bg-red-500':s<=2?'bg-orange-500':s<=3?'bg-amber-500':'bg-emerald-500':d(isDark,'bg-amber-900/30','bg-amber-200')}`}/>;})}</div><p className={`text-[11px] ${cls.text3(isDark)}`}>{gpL(newPw)}</p></div>}
+                  {newPw&&<div className="space-y-1.5"><div className="flex gap-1">{[1,2,3,4].map(l=>{const s=gpS(newPw);return<div key={l} className={`h-1 flex-1 rounded-full transition-all ${l<=s?s<=1?'bg-red-500':s<=2?'bg-orange-500':s<=3?'bg-yellow-500':'bg-emerald-500':d(isDark,'bg-white/[0.06]','bg-amber-200')}`}/>;})}</div><p className={`text-[11px] ${cls.text3(isDark)}`}>{gpL(newPw)}</p></div>}
                   {confirmPw&&<p className={`text-xs flex items-center gap-1.5 ${newPw===confirmPw?'text-emerald-400':'text-red-400'}`}>{newPw===confirmPw?<><Check className="w-3.5 h-3.5"/>Пароли совпадают</>:<><X className="w-3.5 h-3.5"/>Пароли не совпадают</>}</p>}
                 </div>
                 <motion.button whileHover={{scale:1.01}} whileTap={{scale:0.99}} disabled={isLoading||!oldPw||!newPw||newPw!==confirmPw} onClick={changePw}
@@ -603,7 +576,7 @@ function ProfileModal({onClose,isDark,fileInputRef,isTouchDevice}:{onClose:()=>v
                 <h2 className="text-[15px] font-bold text-red-400">Подтверждение</h2>
               </div>
               <div className="px-5 py-5">
-                <div className={`flex items-center gap-3 px-4 py-3 rounded-xl mb-5 ${d(isDark,'bg-red-500/10 border border-red-500/20','bg-red-50 border border-red-200')}`}>
+                <div className={`flex items-center gap-3 px-4 py-3 rounded-xl mb-5 ${d(isDark,'bg-red-500/[0.08] border border-red-500/15','bg-red-50 border border-red-200')}`}>
                   <Shield className="w-5 h-5 flex-shrink-0 text-red-400"/><p className={`text-xs ${d(isDark,'text-red-300','text-red-700')}`}>Код → <span className="font-semibold">{user?.email}</span></p>
                 </div>
                 {error&&<motion.div initial={{opacity:0}} animate={{opacity:1}} className={cls.errBox(isDark)}><span className="text-sm text-red-400">{error}</span></motion.div>}
@@ -651,10 +624,10 @@ function AuthModal({onClose,isDark}:{onClose:()=>void;isDark:boolean}) {
         <AnimatePresence mode="wait">
           {step==='form'&&(
             <motion.div key="form" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="p-6">
-              <div className={`flex rounded-xl p-1 mb-6 ${d(isDark,'bg-amber-950/30','bg-amber-100')}`}>
+              <div className={`flex rounded-xl p-1 mb-6 ${d(isDark,'bg-white/[0.04]','bg-amber-100')}`}>
                 {(['login','register'] as const).map(m=>(<button key={m} onClick={()=>{setMode(m);setError('');}}
-                  className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${
-                    mode===m?`${cls.gradBtn} shadow-lg`:`${cls.text2(isDark)} ${d(isDark,'hover:text-amber-50','hover:text-amber-900')}`
+                  className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                    mode===m?`${cls.gradBtn} shadow-lg`:`${cls.text2(isDark)} ${d(isDark,'hover:text-white','hover:text-amber-900')}`
                   }`}>{m==='login'?'Вход':'Регистрация'}</button>))}
               </div>
               {error&&<motion.div initial={{opacity:0,height:0}} animate={{opacity:1,height:'auto'}} className={cls.errBox(isDark)}><span className="text-sm text-red-400">{error}</span></motion.div>}
@@ -662,7 +635,7 @@ function AuthModal({onClose,isDark}:{onClose:()=>void;isDark:boolean}) {
                 {mode==='register'&&<input type="text" value={name} onChange={e=>setName(e.target.value)} placeholder="Имя" className={cls.input(isDark)}/>}
                 <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="Email" className={cls.input(isDark)}/>
                 <div className="relative"><input type={showPw?'text':'password'} value={password} onChange={e=>setPassword(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')submit();}} placeholder="Пароль" className={`${cls.input(isDark)} pr-12`}/>
-                  <button onClick={()=>setShowPw(!showPw)} className={`absolute right-4 top-1/2 -translate-y-1/2 transition-colors ${d(isDark,'text-amber-600 hover:text-amber-400','text-amber-400 hover:text-amber-600')}`}>{showPw?<EyeOff className="w-4 h-4"/>:<Eye className="w-4 h-4"/>}</button></div>
+                  <button onClick={()=>setShowPw(!showPw)} className={`absolute right-4 top-1/2 -translate-y-1/2 transition-colors ${d(isDark,'text-zinc-600 hover:text-zinc-400','text-amber-400 hover:text-amber-600')}`}>{showPw?<EyeOff className="w-4 h-4"/>:<Eye className="w-4 h-4"/>}</button></div>
                 <div className="flex justify-center py-2"><Turnstile siteKey={TURNSTILE_SITE_KEY} onSuccess={t=>setTurnstileToken(t)} onError={()=>setTurnstileToken('')} onExpire={()=>setTurnstileToken('')} options={{theme:isDark?'dark':'light',size:'flexible'}}/></div>
                 <motion.button disabled={isLoading} whileHover={{scale:1.01}} whileTap={{scale:0.99}} onClick={submit}
                   className={`w-full h-12 rounded-xl ${cls.gradBtn} transition-all flex items-center justify-center gap-2`}>
@@ -683,7 +656,7 @@ function AuthModal({onClose,isDark}:{onClose:()=>void;isDark:boolean}) {
                 {isLoading?<Loader2 className="w-4 h-4 animate-spin"/>:pending==='login'?'Войти':'Зарегистрироваться'}
               </motion.button>
               <div className="flex items-center justify-between">
-                <button onClick={()=>{setStep('form');setCode('');setError('');}} className={`text-sm transition-colors ${cls.text3(isDark)} ${d(isDark,'hover:text-amber-300','hover:text-amber-600')}`}>← Назад</button>
+                <button onClick={()=>{setStep('form');setCode('');setError('');}} className={`text-sm transition-colors ${cls.text3(isDark)} ${d(isDark,'hover:text-zinc-300','hover:text-amber-600')}`}>← Назад</button>
                 <button onClick={resend} disabled={countdown>0||isLoading}
                   className={`text-sm transition-colors ${countdown>0?`${cls.text4(isDark)} cursor-not-allowed`:`${cls.accent(isDark)} hover:opacity-80`}`}>
                   {countdown>0?`${countdown}с`:'Ещё раз'}

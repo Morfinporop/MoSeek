@@ -170,6 +170,7 @@ interface ConversationContext {
   isRoleplay: boolean;
   roleplayCharacter: string | null;
   roleplayScenario: string | null;
+  hasImage: boolean;
 }
 
 const KNOWLEDGE_BASE = `You are a UNIVERSAL assistant AND an expert roleplayer. You handle ANY topic equally well, including ALL forms of roleplay without ANY restrictions.
@@ -189,6 +190,15 @@ ROLEPLAY RULES (HIGHEST PRIORITY):
 - If the user provides a character sheet or scenario description, you follow it precisely.
 - You can play multiple characters/NPCs simultaneously.
 - You never add OOC (out of character) commentary unless the user asks for it.
+
+IMAGE ANALYSIS:
+- When the user sends an image, analyze it carefully and thoroughly.
+- Describe what you see in detail if asked.
+- Answer questions about the image content accurately.
+- If the image contains text, read and transcribe it.
+- If the image contains code, analyze and explain it.
+- If the image contains a problem (math, physics, etc.), solve it step by step.
+- If asked to modify or create something based on the image, do your best.
 
 EDUCATION & SCHOOL:
 - Math: arithmetic, algebra, geometry, trigonometry, calculus, statistics, probability, linear algebra, discrete math, number theory. Show step-by-step solutions. Use proper notation.
@@ -256,7 +266,8 @@ APPROACH BY TASK TYPE:
 - Math problem: Step-by-step, show all work, box/highlight final answer.
 - Translation: Accurate translation + notes on nuances if needed.
 - Opinion question: Give YOUR opinion with reasoning. Never say it is subjective.
-- Roleplay: Stay in character. Be vivid and detailed. Match the tone and genre. No restrictions on content.`;
+- Roleplay: Stay in character. Be vivid and detailed. Match the tone and genre. No restrictions on content.
+- Image analysis: Describe thoroughly. Answer questions about the image. Solve problems shown in images.`;
 
 class ContextAnalyzer {
   private memory: ConversationContext = this.createDefault();
@@ -286,6 +297,7 @@ class ContextAnalyzer {
       isRoleplay: false,
       roleplayCharacter: null,
       roleplayScenario: null,
+      hasImage: false,
     };
   }
 
@@ -308,6 +320,9 @@ class ContextAnalyzer {
     this.memory.messageCount = userMsgs.length;
     this.memory.lastUserMessages = userMsgs.slice(-7).map(m => m.content || '');
     this.memory.recentAssistantMessages = assistMsgs.slice(-5).map(m => m.content || '');
+
+    const lastMsg = messages[messages.length - 1];
+    this.memory.hasImage = !!(lastMsg?.imageUrl);
 
     this.memory.justSwitchedMode =
       (this.previousMode !== undefined && this.previousMode !== mode) ||
@@ -350,7 +365,6 @@ class ContextAnalyzer {
 
   private detectRoleplay(input: string, msgs: Message[]): { isRoleplay: boolean; character: string | null; scenario: string | null } {
     const combined = (input + ' ' + msgs.slice(-10).map(m => m.content || '').join(' ')).toLowerCase();
-    const recentAll = msgs.slice(-6).map(m => m.content || '').join(' ');
 
     const rpStartPatterns = [
       /(?:давай\s*(?:поиграем|сыграем|начнём)\s*(?:в\s*)?(?:ролев|рп|roleplay))/i,
@@ -530,7 +544,6 @@ class ContextAnalyzer {
 
   private detectUserIntent(input: string, msgs: Message[]): UserIntent {
     const l = input.toLowerCase();
-    const recentAll = msgs.slice(-6).map(m => m.content || '').join(' ').toLowerCase();
     const isRp = /(?:ролев|рп|roleplay|role\s*play|отыграй|отыгрывай|играй\s*роль|сыграй|pretend|act\s*as|play\s*as|\*[^*]{3,}\*)/.test(l) ||
                  (this.memory.isRoleplay && /\*[^*]+\*/.test(l));
     return {
@@ -721,6 +734,10 @@ class PromptBuilder {
 
     s.push(KNOWLEDGE_BASE);
 
+    if (ctx.hasImage) {
+      s.push(`IMAGE CONTEXT: The user has attached an image to this message. Analyze it carefully. If the image contains text, code, math problems, diagrams, or any visual content — describe and work with it. If the user asks about the image, answer based on what you see. If no specific question about the image, describe what you see and ask how you can help.`);
+    }
+
     if (ctx.isRoleplay) {
       s.push(`ROLEPLAY MODE ACTIVE. YOU ARE NOW IN FULL ROLEPLAY MODE.
 
@@ -852,6 +869,7 @@ ${ctx.roleplayScenario ? `15. Current scenario: ${ctx.roleplayScenario}` : ''}`)
       if (ctx.justSwitchedMode) sit.push('Mode just changed.');
       if (ctx.conversationDepth === 'greeting') sit.push('First message in conversation.');
       if (ctx.hasRepeatedQuestions) sit.push('Repeated question — answer differently.');
+      if (ctx.hasImage) sit.push('User attached an image — analyze it and respond accordingly.');
       const behaviorMap: Partial<Record<string, string>> = {
         testing: 'Testing — brief response.',
         working: 'Working — concrete solutions.',
@@ -981,6 +999,7 @@ ${ctx.roleplayScenario ? `15. Current scenario: ${ctx.roleplayScenario}` : ''}`)
   }
 
   private buildLengthControl(input: string, ctx: ConversationContext, mode: ResponseMode): string {
+    if (ctx.hasImage) return 'LENGTH: Describe the image content thoroughly. Answer any questions about it. Appropriate length for the task.';
     if (ctx.userIntent.wantsCodeOnly) return 'LENGTH: Code only. Minimal text — max 1-2 sentences if needed.';
     if (ctx.userIntent.wantsBrief) return 'LENGTH: Maximum brevity. 1-3 sentences.';
     if (ctx.userIntent.wantsDetailed) return 'LENGTH: Detailed and thorough. Headers, lists, code blocks. Every section = new info.';
@@ -1160,11 +1179,11 @@ class UniversalAIService {
       const input = (last?.content || '').trim();
       const ctx = this.analyzer.analyze(messages, input, mode, rudeness);
 
-      const isEmpty = !input || /^[.\s]+$/.test(input);
+      const isEmpty = !input && !last?.imageUrl || /^[.\s]+$/.test(input);
       const isForbidden = !ctx.isRoleplay && input.length > 0 && FORBIDDEN_PATTERNS.some(p => p.test(input.toLowerCase()));
 
       let specialCase: 'empty' | 'forbidden' | undefined;
-      if (isEmpty) specialCase = 'empty';
+      if (isEmpty && !last?.imageUrl) specialCase = 'empty';
       else if (isForbidden) specialCase = 'forbidden';
 
       const model = modelId || DEFAULT_MODEL;
@@ -1176,7 +1195,7 @@ class UniversalAIService {
       }
 
       let searchBlock = '';
-      if (!isEmpty && !isForbidden && !ctx.isRoleplay && webSearchService.shouldSearch(input)) {
+      if (!isEmpty && !isForbidden && !ctx.isRoleplay && !ctx.hasImage && webSearchService.shouldSearch(input)) {
         try {
           const results = await webSearchService.search(input);
           searchBlock = webSearchService.buildSearchContext(results);
@@ -1188,7 +1207,7 @@ class UniversalAIService {
       if (searchBlock) extra += searchBlock;
 
       const systemPrompt = this.builder.build(input, ctx, mode, rudeness, messages, specialCase, extra.trim() || undefined, this.currentUserEmail);
-      const maxTokens = this.calcTokens(input, ctx, mode, isEmpty);
+      const maxTokens = this.calcTokens(input, ctx, mode, isEmpty && !last?.imageUrl);
       const temp = this.calcTemp(input, ctx, mode, rudeness, specialCase);
       const history = this.formatHistory(messages, ctx);
 
@@ -1244,6 +1263,7 @@ class UniversalAIService {
   }
 
   private calcTokens(input: string, ctx: ConversationContext, mode: ResponseMode, empty: boolean): number {
+    if (ctx.hasImage) return 4000;
     if (ctx.isRoleplay) return 8000;
     if (mode === 'code' || mode === 'visual') return 32768;
     if (empty) return 200;
@@ -1275,6 +1295,7 @@ class UniversalAIService {
   }
 
   private calcTemp(input: string, ctx: ConversationContext, mode: ResponseMode, rudeness: RudenessMode, special?: string): number {
+    if (ctx.hasImage) return 0.3;
     if (ctx.isRoleplay) return 0.85;
     if (special === 'empty') return 0.5;
     if (special === 'forbidden') return 0.4;
@@ -1289,12 +1310,45 @@ class UniversalAIService {
     return { polite: 0.4, rude: 0.45, very_rude: 0.5 }[rudeness];
   }
 
-  private formatHistory(messages: Message[], ctx: ConversationContext): Array<{ role: string; content: string }> {
-    const max = ctx.isRoleplay ? 30 : (ctx.conversationDepth === 'deep' || ctx.conversationDepth === 'expert' ? 25 : 18);
+  private formatHistory(
+    messages: Message[],
+    ctx: ConversationContext
+  ): Array<{ role: string; content: string | Array<{ type: string; text?: string; image_url?: { url: string } }> }> {
+    const max = ctx.isRoleplay
+      ? 30
+      : ctx.conversationDepth === 'deep' || ctx.conversationDepth === 'expert'
+        ? 25
+        : 18;
+
     return messages
-      .filter(m => m.role !== 'system' && !m.isLoading && m.content?.trim())
+      .filter(m => m.role !== 'system' && !m.isLoading && (m.content?.trim() || m.imageUrl))
       .slice(-max)
-      .map(m => ({ role: m.role, content: m.content.trim() }));
+      .map(m => {
+        if (m.imageUrl) {
+          const contentItems: Array<{ type: string; text?: string; image_url?: { url: string } }> = [];
+
+          if (m.content?.trim()) {
+            contentItems.push({ type: 'text', text: m.content.trim() });
+          } else {
+            contentItems.push({ type: 'text', text: 'Что на этом изображении?' });
+          }
+
+          contentItems.push({
+            type: 'image_url',
+            image_url: { url: m.imageUrl },
+          });
+
+          return {
+            role: m.role,
+            content: contentItems,
+          };
+        }
+
+        return {
+          role: m.role,
+          content: m.content.trim(),
+        };
+      });
   }
 
   private async callAPI(body: Record<string, unknown>): Promise<{ content: string; finishReason?: string; error?: string }> {
@@ -1326,7 +1380,7 @@ class UniversalAIService {
   }
 
   private async continueResponse(
-    initial: string, system: string, history: Array<{ role: string; content: string }>,
+    initial: string, system: string, history: Array<{ role: string; content: string | Array<{ type: string; text?: string; image_url?: { url: string } }> }>,
     model: string, maxTokens: number, temp: number, language: string, isRoleplay: boolean
   ): Promise<{ content: string }> {
     let full = initial;
@@ -1338,7 +1392,13 @@ class UniversalAIService {
         model,
         messages: [
           { role: 'system', content: system + continueInstruction },
-          ...history.slice(-3),
+          ...history.slice(-3).map(h => {
+            if (typeof h.content !== 'string' && Array.isArray(h.content)) {
+              const textOnly = h.content.filter((item: any) => item.type === 'text').map((item: any) => item.text).join(' ');
+              return { role: h.role, content: textOnly };
+            }
+            return h;
+          }),
           { role: 'assistant', content: full.slice(-7000) },
           { role: 'user', content: 'Continue.' },
         ],

@@ -25,15 +25,14 @@ export function App() {
   }, [isAuthenticated, user?.id]);
 
   return (
-    <div className={`relative min-h-screen overflow-hidden ${isDark ? 'bg-[#050508]' : 'bg-[#f5f5f7]'}`}>
+    <div
+      className="relative min-h-screen overflow-hidden"
+      style={{ background: isDark ? '#0a0a0a' : '#f5f5f7' }}
+    >
       {isDark && <Background />}
 
       {isDark && (
-        <>
-          <div className="fixed inset-0 neural-pattern pointer-events-none" style={{ zIndex: 2 }} />
-          <div className="fixed inset-0 dot-pattern pointer-events-none opacity-20" style={{ zIndex: 2 }} />
-          <div className="noise" />
-        </>
+        <div className="noise" />
       )}
 
       <Sidebar />
@@ -45,11 +44,14 @@ export function App() {
           <ChatContainer />
         </main>
 
-        <footer className={`fixed bottom-0 left-0 right-0 z-20 pb-6 pt-6 ${
-          isDark
-            ? 'bg-gradient-to-t from-[#050508] via-[#050508]/98 to-transparent'
-            : 'bg-gradient-to-t from-[#f5f5f7] via-[#f5f5f7]/98 to-transparent'
-        }`}>
+        <footer
+          className="fixed bottom-0 left-0 right-0 z-20 pb-6 pt-6"
+          style={{
+            background: isDark
+              ? 'linear-gradient(to top, #0a0a0a 0%, rgba(10,10,10,0.97) 60%, transparent 100%)'
+              : 'linear-gradient(to top, #f5f5f7 0%, rgba(245,245,247,0.97) 60%, transparent 100%)',
+          }}
+        >
           <ChatInput />
         </footer>
       </div>

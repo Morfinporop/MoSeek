@@ -1,5 +1,3 @@
-// src/store/chatStore.ts
-
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { ChatState, Message, Chat } from '../types';
@@ -126,6 +124,7 @@ export const useChatStore = create<ExtendedChatState>()(
           id: msgId,
           role: message.role,
           content: message.content,
+          imageUrl: message.imageUrl,
           timestamp: new Date(),
           isLoading: message.isLoading,
           model: message.model,
@@ -148,7 +147,7 @@ export const useChatStore = create<ExtendedChatState>()(
           chats = chats.map(chat => {
             if (chat.id === currentChatId) {
               const newTitle = chat.messages.length === 0 && message.role === 'user'
-                ? message.content.slice(0, 40) + (message.content.length > 40 ? '...' : '')
+                ? (message.content || 'Изображение').slice(0, 40) + ((message.content || '').length > 40 ? '...' : '')
                 : chat.title;
               return {
                 ...chat,

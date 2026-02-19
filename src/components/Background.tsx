@@ -4,16 +4,16 @@ import { useMoodStore } from '../store/moodStore';
 import type { Mood } from '../store/moodStore';
 
 const COFFEE_COLORS: Record<Mood, string[]> = {
-  neutral: ['139, 90, 43', '166, 123, 81', '194, 154, 108'],
-  happy: ['255, 183, 77', '255, 167, 38', '230, 150, 30'],
-  excited: ['255, 138, 101', '239, 108, 77', '214, 93, 62'],
-  calm: ['161, 136, 127', '141, 110, 99', '121, 85, 72'],
-  focused: ['188, 143, 93', '162, 117, 67', '139, 90, 43'],
-  curious: ['205, 133, 63', '184, 115, 51', '160, 95, 35'],
-  confused: ['128, 107, 98', '109, 88, 79', '93, 74, 66'],
-  frustrated: ['156, 87, 67', '138, 72, 52', '121, 58, 38'],
-  grateful: ['218, 165, 105', '198, 145, 85', '178, 125, 65'],
-  reflective: ['130, 110, 100', '110, 90, 80', '90, 70, 60'],
+  neutral: ['180, 130, 70', '200, 150, 90', '220, 170, 110'],
+  happy: ['255, 190, 90', '255, 175, 55', '240, 160, 45'],
+  excited: ['255, 150, 110', '245, 120, 90', '230, 105, 75'],
+  calm: ['175, 150, 140', '155, 125, 115', '140, 105, 90'],
+  focused: ['200, 160, 110', '180, 135, 85', '160, 115, 65'],
+  curious: ['220, 150, 80', '200, 130, 65', '180, 115, 50'],
+  confused: ['145, 125, 115', '125, 105, 95', '110, 90, 80'],
+  frustrated: ['175, 105, 85', '160, 90, 70', '145, 75, 55'],
+  grateful: ['235, 185, 125', '215, 165, 105', '195, 145, 85'],
+  reflective: ['150, 130, 120', '130, 110, 100', '110, 90, 80'],
 };
 
 const COFFEE_PHYSICS: Record<Mood, { speed: number; size: number; energy: number }> = {
@@ -72,17 +72,13 @@ interface Particle {
   opacity: number;
 }
 
-interface SteamParticle {
+interface GridNode {
   x: number;
   y: number;
-  vx: number;
-  vy: number;
-  life: number;
-  maxLife: number;
-  size: number;
-  opacity: number;
-  wobble: number;
-  wobbleSpeed: number;
+  baseX: number;
+  baseY: number;
+  offset: number;
+  speed: number;
 }
 
 function parseColor(c: string): [number, number, number] {
@@ -111,7 +107,7 @@ export function Background() {
   const orbsRef = useRef<Orb[]>([]);
   const starsRef = useRef<Star[]>([]);
   const particlesRef = useRef<Particle[]>([]);
-  const steamRef = useRef<SteamParticle[]>([]);
+  const gridRef = useRef<GridNode[]>([]);
   const idCounterRef = useRef(0);
   const mouseRef = useRef({ x: -1000, y: -1000 });
   const { theme } = useThemeStore();
@@ -123,37 +119,10 @@ export function Background() {
         eventCounterRef.current = state.eventCounter;
         spawnOrb(state.currentMood);
         spawnParticles(state.currentMood);
-        spawnSteam();
       }
     });
     return unsub;
   }, []);
-
-  function spawnSteam() {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const w = canvas.width;
-    const h = canvas.height;
-    const count = 2 + Math.floor(Math.random() * 3);
-
-    for (let i = 0; i < count; i++) {
-      steamRef.current.push({
-        x: w * 0.5 + (Math.random() - 0.5) * w * 0.1,
-        y: h * 0.5 + Math.random() * h * 0.1,
-        vx: (Math.random() - 0.5) * 0.3,
-        vy: -(0.3 + Math.random() * 0.5),
-        life: 1,
-        maxLife: 4 + Math.random() * 3,
-        size: 15 + Math.random() * 25,
-        opacity: 0.015 + Math.random() * 0.02,
-        wobble: Math.random() * Math.PI * 2,
-        wobbleSpeed: 0.5 + Math.random() * 0.5,
-      });
-    }
-    if (steamRef.current.length > 20) {
-      steamRef.current = steamRef.current.slice(-15);
-    }
-  }
 
   function spawnParticles(mood: Mood) {
     const canvas = canvasRef.current;
@@ -161,25 +130,25 @@ export function Background() {
     const w = canvas.width;
     const h = canvas.height;
     const colors = COFFEE_COLORS[mood];
-    const count = 2 + Math.floor(Math.random() * 3);
+    const count = 4 + Math.floor(Math.random() * 5);
 
     for (let i = 0; i < count; i++) {
       const angle = Math.random() * Math.PI * 2;
-      const speed = 0.08 + Math.random() * 0.5;
+      const speed = 0.15 + Math.random() * 0.6;
       particlesRef.current.push({
-        x: w * 0.5 + (Math.random() - 0.5) * w * 0.25,
-        y: h * 0.45 + (Math.random() - 0.5) * h * 0.25,
+        x: w * 0.5 + (Math.random() - 0.5) * w * 0.2,
+        y: h * 0.45 + (Math.random() - 0.5) * h * 0.2,
         vx: Math.cos(angle) * speed,
         vy: Math.sin(angle) * speed,
         life: 1,
-        maxLife: 4 + Math.random() * 5,
-        size: 0.4 + Math.random() * 1.2,
+        maxLife: 3 + Math.random() * 4,
+        size: 1 + Math.random() * 2,
         color: colors[Math.floor(Math.random() * colors.length)],
-        opacity: 0.06 + Math.random() * 0.1,
+        opacity: 0.15 + Math.random() * 0.2,
       });
     }
-    if (particlesRef.current.length > 40) {
-      particlesRef.current = particlesRef.current.slice(-30);
+    if (particlesRef.current.length > 60) {
+      particlesRef.current = particlesRef.current.slice(-45);
     }
   }
 
@@ -192,12 +161,12 @@ export function Background() {
     const physics = COFFEE_PHYSICS[mood];
     const color = colors[Math.floor(Math.random() * colors.length)];
 
-    const cx = w * 0.5 + (Math.random() - 0.5) * w * 0.4;
-    const cy = h * 0.45 + (Math.random() - 0.5) * h * 0.4;
+    const cx = w * 0.5 + (Math.random() - 0.5) * w * 0.35;
+    const cy = h * 0.45 + (Math.random() - 0.5) * h * 0.35;
 
     const angle = Math.random() * Math.PI * 2;
-    const speed = (0.15 + Math.random() * 0.6) * physics.speed;
-    const baseRadius = (100 + Math.random() * 150) * physics.size;
+    const speed = (0.2 + Math.random() * 0.7) * physics.speed;
+    const baseRadius = (70 + Math.random() * 100) * physics.size;
 
     orbsRef.current.push({
       id: idCounterRef.current++,
@@ -205,20 +174,20 @@ export function Background() {
       y: cy,
       vx: Math.cos(angle) * speed,
       vy: Math.sin(angle) * speed,
-      radius: 8,
+      radius: 10,
       targetRadius: baseRadius,
       color,
       targetColor: color,
       opacity: 0,
-      targetOpacity: 0.018 + physics.energy * 0.012,
+      targetOpacity: 0.12 + physics.energy * 0.08,
       mood,
       pulseOffset: Math.random() * Math.PI * 2,
-      pulseSpeed: 0.12 + physics.energy * 0.2,
+      pulseSpeed: 0.2 + physics.energy * 0.3,
       mass: baseRadius,
       breathePhase: Math.random() * Math.PI * 2,
     });
 
-    const MAX_ORBS = 8;
+    const MAX_ORBS = 12;
     if (orbsRef.current.length > MAX_ORBS) {
       orbsRef.current[0].targetOpacity = 0;
       orbsRef.current[0].targetRadius = 0;
@@ -252,21 +221,38 @@ export function Background() {
       const w = window.innerWidth;
       const h = window.innerHeight;
 
-      const count = Math.floor((w * h) / 30000);
-      starsRef.current = Array.from({ length: count }, () => ({
+      const starCount = Math.floor((w * h) / 28000);
+      starsRef.current = Array.from({ length: starCount }, () => ({
         x: Math.random() * w,
         y: Math.random() * h,
-        size: Math.random() * 1.0 + 0.2,
-        opacity: Math.random() * 0.12 + 0.02,
-        twinkleSpeed: Math.random() * 0.6 + 0.15,
+        size: Math.random() * 1.0 + 0.3,
+        opacity: Math.random() * 0.12 + 0.03,
+        twinkleSpeed: Math.random() * 0.5 + 0.15,
         offset: Math.random() * Math.PI * 2,
-        driftY: -(Math.random() * 0.02 + 0.003),
+        driftY: -(Math.random() * 0.02 + 0.005),
         driftX: (Math.random() - 0.5) * 0.008,
         warmth: Math.random(),
       }));
 
+      const gridSpacing = 80;
+      const cols = Math.ceil(w / gridSpacing) + 2;
+      const rows = Math.ceil(h / gridSpacing) + 2;
+      gridRef.current = [];
+      for (let i = 0; i < cols; i++) {
+        for (let j = 0; j < rows; j++) {
+          gridRef.current.push({
+            x: i * gridSpacing - gridSpacing,
+            y: j * gridSpacing - gridSpacing,
+            baseX: i * gridSpacing - gridSpacing,
+            baseY: j * gridSpacing - gridSpacing,
+            offset: Math.random() * Math.PI * 2,
+            speed: 0.3 + Math.random() * 0.4,
+          });
+        }
+      }
+
       if (orbsRef.current.length === 0) {
-        (['neutral', 'calm', 'focused'] as Mood[]).forEach(m => spawnOrb(m));
+        (['neutral', 'calm', 'focused', 'curious'] as Mood[]).forEach(m => spawnOrb(m));
       }
     };
 
@@ -285,19 +271,74 @@ export function Background() {
       ctx.clearRect(0, 0, w, h);
 
       const ambientGlow = ctx.createRadialGradient(
-        w * 0.5 + Math.sin(t * 0.05) * w * 0.05,
-        h * 0.4 + Math.cos(t * 0.04) * h * 0.05,
+        w * 0.5 + Math.sin(t * 0.04) * w * 0.06,
+        h * 0.4 + Math.cos(t * 0.03) * h * 0.06,
         0,
         w * 0.5,
         h * 0.5,
-        Math.max(w, h) * 0.7
+        Math.max(w, h) * 0.6
       );
-      ambientGlow.addColorStop(0, 'rgba(139, 90, 43, 0.015)');
-      ambientGlow.addColorStop(0.3, 'rgba(100, 65, 30, 0.008)');
-      ambientGlow.addColorStop(0.6, 'rgba(60, 40, 20, 0.003)');
+      ambientGlow.addColorStop(0, 'rgba(180, 130, 70, 0.04)');
+      ambientGlow.addColorStop(0.3, 'rgba(140, 100, 55, 0.02)');
+      ambientGlow.addColorStop(0.6, 'rgba(80, 55, 30, 0.008)');
       ambientGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
       ctx.fillStyle = ambientGlow;
       ctx.fillRect(0, 0, w, h);
+
+      gridRef.current.forEach((node) => {
+        node.x = node.baseX + Math.sin(t * node.speed + node.offset) * 8;
+        node.y = node.baseY + Math.cos(t * node.speed * 0.8 + node.offset) * 8;
+      });
+
+      ctx.strokeStyle = 'rgba(180, 140, 90, 0.015)';
+      ctx.lineWidth = 0.5;
+      const gridSpacing = 80;
+      const cols = Math.ceil(w / gridSpacing) + 2;
+
+      for (let i = 0; i < gridRef.current.length; i++) {
+        const node = gridRef.current[i];
+        const rightIdx = i + 1;
+        const bottomIdx = i + cols;
+
+        if (rightIdx < gridRef.current.length && (i + 1) % cols !== 0) {
+          const right = gridRef.current[rightIdx];
+          ctx.beginPath();
+          ctx.moveTo(node.x, node.y);
+          ctx.lineTo(right.x, right.y);
+          ctx.stroke();
+        }
+
+        if (bottomIdx < gridRef.current.length) {
+          const bottom = gridRef.current[bottomIdx];
+          ctx.beginPath();
+          ctx.moveTo(node.x, node.y);
+          ctx.lineTo(bottom.x, bottom.y);
+          ctx.stroke();
+        }
+      }
+
+      gridRef.current.forEach((node) => {
+        let nodeColor = '160, 130, 90';
+        let nodeOpacity = 0.03;
+
+        for (const orb of orbsRef.current) {
+          const dx = node.x - orb.x;
+          const dy = node.y - orb.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < orb.radius * 2) {
+            const influence = smoothstep(orb.radius * 2, 0, dist);
+            nodeColor = lerpColor(nodeColor, orb.color, influence * 0.6);
+            nodeOpacity = lerp(nodeOpacity, orb.opacity * 0.4, influence);
+          }
+        }
+
+        if (nodeOpacity > 0.01) {
+          ctx.beginPath();
+          ctx.arc(node.x, node.y, 1.5, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(${nodeColor}, ${nodeOpacity})`;
+          ctx.fill();
+        }
+      });
 
       const orbs = orbsRef.current;
       const centerX = w * 0.5;
@@ -308,25 +349,25 @@ export function Background() {
       for (let i = 0; i < orbs.length; i++) {
         const a = orbs[i];
 
-        a.radius = lerp(a.radius, a.targetRadius, delta * 1.0);
-        a.opacity = lerp(a.opacity, a.targetOpacity, delta * 1.2);
-        a.color = lerpColor(a.color, a.targetColor, delta * 1.8);
-        a.breathePhase += delta * 0.35;
+        a.radius = lerp(a.radius, a.targetRadius, delta * 1.5);
+        a.opacity = lerp(a.opacity, a.targetOpacity, delta * 1.8);
+        a.color = lerpColor(a.color, a.targetColor, delta * 2);
+        a.breathePhase += delta * 0.4;
 
         const dxC = centerX - a.x;
         const dyC = centerY - a.y;
         const distC = Math.sqrt(dxC * dxC + dyC * dyC);
-        if (distC > 60) {
-          a.vx += (dxC / distC) * 0.00006 * distC;
-          a.vy += (dyC / distC) * 0.00006 * distC;
+        if (distC > 50) {
+          a.vx += (dxC / distC) * 0.00007 * distC;
+          a.vy += (dyC / distC) * 0.00007 * distC;
         }
 
         if (mx > 0 && my > 0) {
           const dxM = a.x - mx;
           const dyM = a.y - my;
           const distM = Math.sqrt(dxM * dxM + dyM * dyM);
-          if (distM < 220 && distM > 1) {
-            const force = smoothstep(220, 0, distM) * 0.06;
+          if (distM < 200 && distM > 1) {
+            const force = smoothstep(200, 0, distM) * 0.07;
             a.vx += (dxM / distM) * force;
             a.vy += (dyM / distM) * force;
           }
@@ -337,7 +378,7 @@ export function Background() {
           const dx = b.x - a.x;
           const dy = b.y - a.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
-          const minDist = a.radius * 0.65 + b.radius * 0.65;
+          const minDist = a.radius * 0.6 + b.radius * 0.6;
 
           if (dist < minDist && dist > 0.1) {
             const overlap = minDist - dist;
@@ -365,56 +406,64 @@ export function Background() {
           }
         }
 
-        a.vx *= 0.990;
-        a.vy *= 0.990;
+        a.vx *= 0.991;
+        a.vy *= 0.991;
         a.x += a.vx;
         a.y += a.vy;
 
-        const margin = a.radius * 0.35;
+        const margin = a.radius * 0.3;
         if (a.x < margin) a.vx += 0.025;
         if (a.x > w - margin) a.vx -= 0.025;
         if (a.y < margin) a.vy += 0.025;
         if (a.y > h - margin) a.vy -= 0.025;
       }
 
-      orbsRef.current = orbs.filter(o => o.opacity > 0.0008 || o.targetOpacity > 0);
+      orbsRef.current = orbs.filter(o => o.opacity > 0.001 || o.targetOpacity > 0);
 
       const sorted = [...orbsRef.current].sort((a, b) => b.radius - a.radius);
 
       for (const orb of sorted) {
-        if (orb.opacity < 0.0004) continue;
+        if (orb.opacity < 0.005) continue;
 
-        const pulse = Math.sin(t * orb.pulseSpeed + orb.pulseOffset) * 0.03 + 1;
-        const breathe = Math.sin(t * 0.2 + orb.breathePhase) * 0.015 + 1;
+        const pulse = Math.sin(t * orb.pulseSpeed + orb.pulseOffset) * 0.05 + 1;
+        const breathe = Math.sin(t * 0.25 + orb.breathePhase) * 0.03 + 1;
         const r = orb.radius * pulse * breathe;
 
-        const outer = ctx.createRadialGradient(orb.x, orb.y, 0, orb.x, orb.y, r * 3);
-        outer.addColorStop(0, `rgba(${orb.color}, ${orb.opacity * 0.06})`);
-        outer.addColorStop(0.35, `rgba(${orb.color}, ${orb.opacity * 0.025})`);
-        outer.addColorStop(0.7, `rgba(${orb.color}, ${orb.opacity * 0.008})`);
+        const outer = ctx.createRadialGradient(orb.x, orb.y, 0, orb.x, orb.y, r * 2.5);
+        outer.addColorStop(0, `rgba(${orb.color}, ${orb.opacity * 0.25})`);
+        outer.addColorStop(0.25, `rgba(${orb.color}, ${orb.opacity * 0.12})`);
+        outer.addColorStop(0.5, `rgba(${orb.color}, ${orb.opacity * 0.05})`);
         outer.addColorStop(1, 'rgba(0, 0, 0, 0)');
         ctx.beginPath();
-        ctx.arc(orb.x, orb.y, r * 3, 0, Math.PI * 2);
+        ctx.arc(orb.x, orb.y, r * 2.5, 0, Math.PI * 2);
         ctx.fillStyle = outer;
         ctx.fill();
 
-        const main = ctx.createRadialGradient(orb.x, orb.y, 0, orb.x, orb.y, r * 1.4);
-        main.addColorStop(0, `rgba(${orb.color}, ${orb.opacity * 0.28})`);
-        main.addColorStop(0.3, `rgba(${orb.color}, ${orb.opacity * 0.12})`);
-        main.addColorStop(0.65, `rgba(${orb.color}, ${orb.opacity * 0.035})`);
+        const main = ctx.createRadialGradient(orb.x, orb.y, 0, orb.x, orb.y, r * 1.3);
+        main.addColorStop(0, `rgba(${orb.color}, ${orb.opacity * 0.7})`);
+        main.addColorStop(0.3, `rgba(${orb.color}, ${orb.opacity * 0.35})`);
+        main.addColorStop(0.6, `rgba(${orb.color}, ${orb.opacity * 0.12})`);
         main.addColorStop(1, 'rgba(0, 0, 0, 0)');
         ctx.beginPath();
-        ctx.arc(orb.x, orb.y, r * 1.4, 0, Math.PI * 2);
+        ctx.arc(orb.x, orb.y, r * 1.3, 0, Math.PI * 2);
         ctx.fillStyle = main;
         ctx.fill();
 
-        const core = ctx.createRadialGradient(orb.x, orb.y, 0, orb.x, orb.y, r * 0.4);
-        core.addColorStop(0, `rgba(${orb.color}, ${orb.opacity * 0.45})`);
-        core.addColorStop(0.5, `rgba(${orb.color}, ${orb.opacity * 0.18})`);
+        const core = ctx.createRadialGradient(orb.x, orb.y, 0, orb.x, orb.y, r * 0.45);
+        core.addColorStop(0, `rgba(${orb.color}, ${orb.opacity * 1.2})`);
+        core.addColorStop(0.4, `rgba(${orb.color}, ${orb.opacity * 0.6})`);
         core.addColorStop(1, 'rgba(0, 0, 0, 0)');
         ctx.beginPath();
-        ctx.arc(orb.x, orb.y, r * 0.4, 0, Math.PI * 2);
+        ctx.arc(orb.x, orb.y, r * 0.45, 0, Math.PI * 2);
         ctx.fillStyle = core;
+        ctx.fill();
+
+        const innerGlow = ctx.createRadialGradient(orb.x, orb.y, 0, orb.x, orb.y, r * 0.2);
+        innerGlow.addColorStop(0, `rgba(255, 240, 220, ${orb.opacity * 0.15})`);
+        innerGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.beginPath();
+        ctx.arc(orb.x, orb.y, r * 0.2, 0, Math.PI * 2);
+        ctx.fillStyle = innerGlow;
         ctx.fill();
       }
 
@@ -425,62 +474,47 @@ export function Background() {
           const dx = b.x - a.x;
           const dy = b.y - a.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
-          const connectDist = (a.radius + b.radius) * 1.4;
+          const connectDist = (a.radius + b.radius) * 2;
 
           if (dist < connectDist && dist > 0) {
-            const strength = (1 - dist / connectDist) * Math.min(a.opacity, b.opacity) * 2.5;
+            const strength = (1 - dist / connectDist) * Math.min(a.opacity, b.opacity) * 4;
 
-            if (strength > 0.0015) {
+            if (strength > 0.005) {
               const midX = (a.x + b.x) / 2;
               const midY = (a.y + b.y) / 2;
               const midColor = lerpColor(a.color, b.color, 0.5);
 
-              const perpX = -dy / dist * 10 * Math.sin(t * 0.25 + i * 0.4);
-              const perpY = dx / dist * 10 * Math.sin(t * 0.25 + i * 0.4);
+              const perpX = -dy / dist * 15 * Math.sin(t * 0.3 + i * 0.4);
+              const perpY = dx / dist * 15 * Math.sin(t * 0.3 + i * 0.4);
 
               const grad = ctx.createLinearGradient(a.x, a.y, b.x, b.y);
               grad.addColorStop(0, `rgba(${a.color}, 0)`);
-              grad.addColorStop(0.2, `rgba(${a.color}, ${strength * 0.06})`);
-              grad.addColorStop(0.5, `rgba(${midColor}, ${strength * 0.12})`);
-              grad.addColorStop(0.8, `rgba(${b.color}, ${strength * 0.06})`);
+              grad.addColorStop(0.15, `rgba(${a.color}, ${strength * 0.2})`);
+              grad.addColorStop(0.5, `rgba(${midColor}, ${strength * 0.35})`);
+              grad.addColorStop(0.85, `rgba(${b.color}, ${strength * 0.2})`);
               grad.addColorStop(1, `rgba(${b.color}, 0)`);
 
               ctx.beginPath();
               ctx.moveTo(a.x, a.y);
               ctx.quadraticCurveTo(midX + perpX, midY + perpY, b.x, b.y);
               ctx.strokeStyle = grad;
-              ctx.lineWidth = 0.6 + strength * 2.5;
+              ctx.lineWidth = 1.5 + strength * 4;
               ctx.lineCap = 'round';
               ctx.stroke();
+
+              const glowR = 20 + strength * 25;
+              const glow = ctx.createRadialGradient(midX + perpX * 0.3, midY + perpY * 0.3, 0, midX, midY, glowR);
+              glow.addColorStop(0, `rgba(${midColor}, ${strength * 0.25})`);
+              glow.addColorStop(0.5, `rgba(${midColor}, ${strength * 0.08})`);
+              glow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+              ctx.beginPath();
+              ctx.arc(midX, midY, glowR, 0, Math.PI * 2);
+              ctx.fillStyle = glow;
+              ctx.fill();
             }
           }
         }
       }
-
-      steamRef.current = steamRef.current.filter(s => {
-        s.life -= delta / s.maxLife;
-        if (s.life <= 0) return false;
-
-        s.wobble += delta * s.wobbleSpeed;
-        s.x += s.vx + Math.sin(s.wobble) * 0.3;
-        s.y += s.vy;
-        s.vy *= 0.998;
-        s.size += delta * 8;
-
-        const alpha = s.opacity * smoothstep(0, 0.2, s.life) * smoothstep(1, 0.6, 1 - s.life);
-        if (alpha < 0.001) return true;
-
-        const sg = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.size);
-        sg.addColorStop(0, `rgba(200, 180, 160, ${alpha * 0.5})`);
-        sg.addColorStop(0.4, `rgba(180, 160, 140, ${alpha * 0.2})`);
-        sg.addColorStop(1, 'rgba(0, 0, 0, 0)');
-        ctx.beginPath();
-        ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
-        ctx.fillStyle = sg;
-        ctx.fill();
-
-        return true;
-      });
 
       particlesRef.current = particlesRef.current.filter(p => {
         p.life -= delta / p.maxLife;
@@ -490,17 +524,17 @@ export function Background() {
         p.y += p.vy;
         p.vx *= 0.996;
         p.vy *= 0.996;
-        p.vy -= 0.0015;
+        p.vy -= 0.002;
 
         const alpha = p.opacity * smoothstep(0, 0.2, p.life) * smoothstep(1, 0.7, 1 - p.life);
-        if (alpha < 0.0008) return true;
+        if (alpha < 0.002) return true;
 
-        const pg = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 5);
-        pg.addColorStop(0, `rgba(${p.color}, ${alpha * 0.2})`);
-        pg.addColorStop(0.5, `rgba(${p.color}, ${alpha * 0.06})`);
+        const pg = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 4);
+        pg.addColorStop(0, `rgba(${p.color}, ${alpha * 0.4})`);
+        pg.addColorStop(0.5, `rgba(${p.color}, ${alpha * 0.15})`);
         pg.addColorStop(1, 'rgba(0, 0, 0, 0)');
         ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size * 5, 0, Math.PI * 2);
+        ctx.arc(p.x, p.y, p.size * 4, 0, Math.PI * 2);
         ctx.fillStyle = pg;
         ctx.fill();
 
@@ -520,15 +554,15 @@ export function Background() {
         let starColor: string;
         if (star.warmth < 0.3) starColor = '200, 185, 170';
         else if (star.warmth < 0.6) starColor = '220, 200, 175';
-        else if (star.warmth < 0.85) starColor = '235, 210, 180';
-        else starColor = '245, 225, 190';
+        else if (star.warmth < 0.85) starColor = '235, 215, 185';
+        else starColor = '250, 235, 200';
 
         for (const orb of orbsRef.current) {
           const dx = star.x - orb.x;
           const dy = star.y - orb.y;
           const dd = Math.sqrt(dx * dx + dy * dy);
-          if (dd < orb.radius * 2.2) {
-            const inf = smoothstep(orb.radius * 2.2, 0, dd) * 0.2;
+          if (dd < orb.radius * 2) {
+            const inf = smoothstep(orb.radius * 2, 0, dd) * 0.3;
             starColor = lerpColor(starColor, orb.color, inf);
             break;
           }
@@ -536,7 +570,7 @@ export function Background() {
 
         if (star.size > 0.6) {
           const sg = ctx.createRadialGradient(star.x, star.y, 0, star.x, star.y, star.size * 2.5);
-          sg.addColorStop(0, `rgba(${starColor}, ${alpha * 0.06})`);
+          sg.addColorStop(0, `rgba(${starColor}, ${alpha * 0.08})`);
           sg.addColorStop(1, 'rgba(0, 0, 0, 0)');
           ctx.fillStyle = sg;
           ctx.beginPath();
@@ -551,12 +585,12 @@ export function Background() {
       });
 
       const vig = ctx.createRadialGradient(
-        w * 0.5, h * 0.5, Math.min(w, h) * 0.25,
+        w * 0.5, h * 0.5, Math.min(w, h) * 0.2,
         w * 0.5, h * 0.5, Math.max(w, h) * 0.85
       );
       vig.addColorStop(0, 'rgba(0, 0, 0, 0)');
-      vig.addColorStop(0.6, 'rgba(10, 6, 3, 0.15)');
-      vig.addColorStop(1, 'rgba(10, 6, 3, 0.35)');
+      vig.addColorStop(0.5, 'rgba(8, 5, 3, 0.1)');
+      vig.addColorStop(1, 'rgba(8, 5, 3, 0.4)');
       ctx.fillStyle = vig;
       ctx.fillRect(0, 0, w, h);
 
